@@ -110,12 +110,13 @@ input, select { font: inherit; }
 /* The container-query context: the two-pane split below reacts to how wide the
    page actually is, so the narrow editor preview and phones stay single-column
    even on a desktop viewport. */
-.release-frame { container-type: inline-size; }
+.release-frame { container-type: inline-size; --cover-w: min(320px, 78vw); }
 
-/* Mobile / default: single column — artwork on top, content below (matches the
-   rest of the app's stacked look). */
+/* Mobile / default: single column — artwork on top, content below. The content
+   column is locked to the cover's width and centred, so the platform icons line
+   up with the cover's left edge and the Play buttons with its right edge. */
 .release-layout { display: flex; flex-direction: column; }
-.release-main { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 600px; margin: 0 auto; }
+.release-main { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: var(--cover-w); margin: 0 auto; }
 
 /* release artwork */
 .release-art {
@@ -127,8 +128,8 @@ input, select { font: inherit; }
 /* The blurred backdrop only appears in the wide desktop split. */
 .release-art-bg { display: none; }
 .release-cover {
-  width: min(320px, 78vw);
-  height: min(320px, 78vw);
+  width: var(--cover-w);
+  height: var(--cover-w);
   border-radius: 14px;
   object-fit: cover;
   box-shadow: 0 10px 30px rgb(20 22 26 / 0.18);
