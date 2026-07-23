@@ -64,6 +64,13 @@ export default function PublicPage({ slug }) {
     ? `${page.release.title} — ${page.release.artist || ''}`.trim().replace(/—$/, '').trim()
     : page.band?.name || 'Band links'
 
+  const footer = (
+    <footer className="page-footer">
+      <span>Anonymous, cookieless visit statistics only.</span>
+      <a href="/privacy">Privacy</a>
+    </footer>
+  )
+
   return (
     <div className="public-page">
       <ShareButton
@@ -71,11 +78,9 @@ export default function PublicPage({ slug }) {
         title={shareTitle}
         onShare={(channel) => onLinkClick(`share:${channel}`)}
       />
-      <WidgetStack page={page} onLinkClick={onLinkClick} />
-      <footer className="page-footer">
-        <span>Anonymous, cookieless visit statistics only.</span>
-        <a href="/privacy">Privacy</a>
-      </footer>
+      {/* WidgetStack places the footer for us — inside the content pane on the
+          two-pane release layout, below the stack on the band page. */}
+      <WidgetStack page={page} onLinkClick={onLinkClick} footer={footer} />
     </div>
   )
 }

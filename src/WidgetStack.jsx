@@ -420,7 +420,7 @@ function Sections({ sections, onLinkClick }) {
 
 // `onLinkClick(target)` reports outbound clicks (public page wires it to the
 // click beacon; the editor preview leaves it unset).
-export default function WidgetStack({ page, onLinkClick = noopClick }) {
+export default function WidgetStack({ page, onLinkClick = noopClick, footer = null }) {
   // Release pages use a two-pane layout: artwork on one side, content on the
   // other. The `.release-frame` container-query context (styles.css) drives the
   // side-by-side split only when the page itself is wide — so the narrow editor
@@ -436,6 +436,10 @@ export default function WidgetStack({ page, onLinkClick = noopClick }) {
             {/* The band header normally hosts the socials; the release header
                 replaces it, so they live at the foot of the content pane. */}
             <SocialLinks band={page.band} onLinkClick={onLinkClick} className="release-socials" linkClassName="release-social" size={20} />
+            {/* The page footer lives inside the content pane so the desktop
+                split keeps the whole viewport as artwork + content, with no
+                plain page background below the two panes. */}
+            {footer}
           </div>
         </div>
       </div>
@@ -443,9 +447,12 @@ export default function WidgetStack({ page, onLinkClick = noopClick }) {
   }
 
   return (
-    <div className="stack">
-      <BandHeader band={page.band} onLinkClick={onLinkClick} />
-      <Sections sections={page.sections} onLinkClick={onLinkClick} />
-    </div>
+    <>
+      <div className="stack">
+        <BandHeader band={page.band} onLinkClick={onLinkClick} />
+        <Sections sections={page.sections} onLinkClick={onLinkClick} />
+      </div>
+      {footer}
+    </>
   )
 }

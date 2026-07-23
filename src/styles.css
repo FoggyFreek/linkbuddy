@@ -10,6 +10,13 @@
   --shadow: 0 1px 3px rgb(20 22 26 / 0.08);
   --accent: #17181c;
   --green: #3ec93e;
+  /* Named surfaces (light defaults). Declared here, before the dark block, so
+     the dark overrides win by source order — a data-theme="dark" element can
+     sit on <html> (public page) or on a nested div (editor preview), so this
+     must not rely on :root-only specificity to beat them. */
+  --card-border: #ecedf1;
+  --surface-2: #f0f1f4;
+  --surface-3: #e4e6ea;
 }
 
 /* Band-selectable dark theme. Set as data-theme="dark" on <html> for the
@@ -25,14 +32,6 @@
   --card-border: rgb(255 255 255 / 0.05);
   --surface-2: #35485e;
   --surface-3: #3f5468;
-}
-
-/* Light theme shares these named surfaces so component rules can reference one
-   token and both themes stay in sync. */
-:root {
-  --card-border: #ecedf1;
-  --surface-2: #f0f1f4;
-  --surface-3: #e4e6ea;
 }
 
 /* Dark-only surface tweaks. Cards gain a hairline outline (they read as
@@ -157,7 +156,10 @@ input, select { font: inherit; }
   .release-layout {
     flex-direction: row;
     align-items: stretch;
-    min-height: min(88vh, 780px);
+    /* Fill the viewport so the artwork pane is full-height and no plain page
+       background shows below the split. The bleed margins cancel the
+       .public-page padding, so the layout starts flush at the viewport top. */
+    min-height: 100vh;
     margin: -40px -16px -24px; /* bleed to the .public-page padding edges */
   }
   .release-art {
@@ -195,6 +197,11 @@ input, select { font: inherit; }
   .release-header { text-align: left; margin-bottom: 8px; }
   .release-title { font-size: 20px; }
   .release-socials { justify-content: flex-start; }
+  /* The ▶ preview control returns in the desktop split (hidden on mobile). */
+  .release-main .platform-preview { display: flex; }
+  /* Pin the privacy footer to the foot of the content pane, left-aligned to
+     match the rest of the desktop column. */
+  .release-main .page-footer { margin-top: auto; justify-content: flex-start; }
 }
 
 /* release page socials — circular outlined buttons at the foot of the stack */
@@ -228,7 +235,9 @@ input, select { font: inherit; }
 .platform-row-main .platform-card { flex: 1; }
 .platform-preview {
   flex: 0 0 auto;
-  display: flex;
+  /* Hidden on mobile: the ▶ reads as a redundant second control beside the
+     Play button. It returns in the wide desktop split (container query below). */
+  display: none;
   align-items: center;
   justify-content: center;
   border: none;
