@@ -36,6 +36,31 @@ function formatGigDate(iso) {
   return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+// The band's social icons, shared by the band header (plain icons) and the
+// release page footer (circular buttons). Renders nothing when the band has
+// set no socials.
+function SocialLinks({ band, onLinkClick, className, linkClassName, size }) {
+  const items = SOCIALS.filter((s) => band?.socials?.[s.key])
+  if (!items.length) return null
+  return (
+    <div className={className}>
+      {items.map((s) => (
+        <a
+          key={s.key}
+          className={linkClassName}
+          href={socialHref(s, band.socials[s.key])}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={s.key}
+          onClick={() => onLinkClick(`social:${s.key}`)}
+        >
+          <s.Icon size={size} />
+        </a>
+      ))}
+    </div>
+  )
+}
+
 function BandHeader({ band, onLinkClick }) {
   if (!band) return null
   return (
@@ -43,21 +68,7 @@ function BandHeader({ band, onLinkClick }) {
       {band.logoUrl && <img className="band-avatar" src={band.logoUrl} alt={band.name || 'Band logo'} />}
       <h1 className="band-name">{band.name}</h1>
       {band.bio && <p className="band-bio">{band.bio}</p>}
-      <div className="band-socials">
-        {SOCIALS.filter((s) => band.socials?.[s.key]).map((s) => (
-          <a
-            key={s.key}
-            className="social-link"
-            href={socialHref(s, band.socials[s.key])}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={s.key}
-            onClick={() => onLinkClick(`social:${s.key}`)}
-          >
-            <s.Icon size={30} />
-          </a>
-        ))}
-      </div>
+      <SocialLinks band={band} onLinkClick={onLinkClick} className="band-socials" linkClassName="social-link" size={30} />
     </header>
   )
 }
@@ -217,19 +228,19 @@ function PlatformsWidget({ widget, onLinkClick }) {
           <div key={i} className="platform-row">
             <div className="platform-row-main">
               <a
-                className="card platform-card"
+                className="platform-card"
                 href={platform.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={platform.label}
                 onClick={() => onLinkClick(`platform:${platform.id}`)}
               >
-                <span className="card-icon"><Icon size={26} /></span>
-                <span className="card-label">{platform.label}</span>
+                <span className="platform-logo"><Icon size={30} /></span>
                 <span className="platform-play">Play</span>
               </a>
               {platform.embed && (
                 <button
-                  className="card platform-preview"
+                  className="platform-preview"
                   onClick={() => preview(platform, i)}
                   aria-label={`Preview on ${platform.label}`}
                   title="Preview here"
@@ -399,6 +410,11 @@ export default function WidgetStack({ page, onLinkClick = noopClick }) {
           })}
         </section>
       ))}
+      {/* Release pages carry the band's socials at the foot (the band header,
+          which normally hosts them, is replaced by the release header). */}
+      {page.release && (
+        <SocialLinks band={page.band} onLinkClick={onLinkClick} className="release-socials" linkClassName="release-social" size={20} />
+      )}
     </div>
   )
 }
