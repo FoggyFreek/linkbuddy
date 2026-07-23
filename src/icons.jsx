@@ -1,5 +1,7 @@
 // Inline SVG icons — no icon library, no external requests (the public page
 // must stay fully self-hosted). All take a `size` prop and inherit color.
+import { PLATFORMS } from '../shared/platforms.js'
+import { LINK_ICON_KEYS } from '../shared/linkIcons.js'
 
 function Svg({ size = 24, children, ...rest }) {
   return (
@@ -132,28 +134,35 @@ export function BandcampIcon({ size }) {
   )
 }
 
-// Platform button icons for release landing pages (detectPlatform ids).
-export const PLATFORM_ICON_COMPONENTS = {
-  spotify: SpotifyIcon,
-  apple: AppleIcon,
-  'youtube-music': YoutubeIcon,
-  youtube: YoutubeIcon,
-  deezer: DeezerIcon,
-  tidal: TidalIcon,
-  amazon: MusicIcon,
-  soundcloud: SoundcloudIcon,
-  bandcamp: BandcampIcon,
-  other: MusicIcon,
-}
-
-export const LINK_ICON_COMPONENTS = {
+// Every icon keyed by the string names used across the shared registries
+// (platform `iconKey`s and link-widget icon keys).
+const ICONS_BY_KEY = {
   globe: GlobeIcon,
   instagram: InstagramIcon,
   facebook: FacebookIcon,
   youtube: YoutubeIcon,
   tiktok: TiktokIcon,
   spotify: SpotifyIcon,
+  apple: AppleIcon,
+  deezer: DeezerIcon,
+  tidal: TidalIcon,
+  soundcloud: SoundcloudIcon,
+  bandcamp: BandcampIcon,
   calendar: CalendarIcon,
   music: MusicIcon,
   shop: ShopIcon,
 }
+
+// Platform button icons for release landing pages, derived from the shared
+// platform registry (id → iconKey → component). 'other' is the generic
+// fallback for unrecognized links.
+export const PLATFORM_ICON_COMPONENTS = {
+  ...Object.fromEntries(PLATFORMS.map((p) => [p.id, ICONS_BY_KEY[p.iconKey]])),
+  other: MusicIcon,
+}
+
+// Link-widget icons, derived from the shared allow-list the server validates
+// against, so the editor can never offer an icon the page can't render.
+export const LINK_ICON_COMPONENTS = Object.fromEntries(
+  LINK_ICON_KEYS.map((key) => [key, ICONS_BY_KEY[key]]),
+)

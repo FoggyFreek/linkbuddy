@@ -1,18 +1,25 @@
 // Streaming-platform detection from a link URL. Used to turn a song's links
 // into "choose your platform" buttons on release landing pages, and to label
 // click events for conversion statistics.
+//
+// The platform vocabulary (id + label + icon) lives in the shared registry so
+// the server, the editor's statistics, and the button icons stay in sync; the
+// host-matching predicates below are server-only and keyed to those ids.
+import { PLATFORMS } from '../shared/platforms.js'
 
-const RULES = [
-  { id: 'spotify', label: 'Spotify', test: (h) => h === 'open.spotify.com' || h === 'spotify.com' },
-  { id: 'apple', label: 'Apple Music', test: (h) => h === 'music.apple.com' || h === 'itunes.apple.com' || h === 'geo.music.apple.com' },
-  { id: 'youtube-music', label: 'YouTube Music', test: (h) => h === 'music.youtube.com' },
-  { id: 'youtube', label: 'YouTube', test: (h) => h === 'youtube.com' || h === 'youtu.be' },
-  { id: 'deezer', label: 'Deezer', test: (h) => h === 'deezer.com' || h === 'deezer.page.link' },
-  { id: 'tidal', label: 'TIDAL', test: (h) => h === 'tidal.com' || h === 'listen.tidal.com' },
-  { id: 'amazon', label: 'Amazon Music', test: (h) => h === 'music.amazon.com' || (h.startsWith('music.amazon.') && h.split('.').length === 3) || h === 'amazon.com' },
-  { id: 'soundcloud', label: 'SoundCloud', test: (h) => h === 'soundcloud.com' || h === 'on.soundcloud.com' },
-  { id: 'bandcamp', label: 'Bandcamp', test: (h) => h === 'bandcamp.com' || h.endsWith('.bandcamp.com') },
-]
+const MATCHERS = {
+  spotify: (h) => h === 'open.spotify.com' || h === 'spotify.com',
+  apple: (h) => h === 'music.apple.com' || h === 'itunes.apple.com' || h === 'geo.music.apple.com',
+  'youtube-music': (h) => h === 'music.youtube.com',
+  youtube: (h) => h === 'youtube.com' || h === 'youtu.be',
+  deezer: (h) => h === 'deezer.com' || h === 'deezer.page.link',
+  tidal: (h) => h === 'tidal.com' || h === 'listen.tidal.com',
+  amazon: (h) => h === 'music.amazon.com' || (h.startsWith('music.amazon.') && h.split('.').length === 3) || h === 'amazon.com',
+  soundcloud: (h) => h === 'soundcloud.com' || h === 'on.soundcloud.com',
+  bandcamp: (h) => h === 'bandcamp.com' || h.endsWith('.bandcamp.com'),
+}
+
+const RULES = PLATFORMS.map((p) => ({ id: p.id, label: p.label, test: MATCHERS[p.id] }))
 
 // Returns { id, label } — falls back to a generic entry using the link's own
 // label (or hostname) so unknown platforms still get a button.

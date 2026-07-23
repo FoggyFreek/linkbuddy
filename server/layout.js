@@ -6,6 +6,7 @@
 // types are rejected, unknown fields dropped, strings capped, and URLs
 // restricted to http(s).
 import crypto from 'node:crypto'
+import { LINK_ICON_KEYS } from '../shared/linkIcons.js'
 
 const MAX_SECTIONS = 20
 const MAX_WIDGETS_PER_SECTION = 30
@@ -14,9 +15,7 @@ const MAX_TITLE = 120
 const MAX_LABEL = 160
 const MAX_URL = 2000
 
-export const LINK_ICONS = new Set([
-  'globe', 'instagram', 'facebook', 'youtube', 'tiktok', 'spotify', 'calendar', 'music', 'shop',
-])
+export const LINK_ICONS = new Set(LINK_ICON_KEYS)
 
 function fail(message) {
   return { error: message }

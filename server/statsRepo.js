@@ -1,5 +1,6 @@
 // SQL for visit statistics. Reads are aggregate-only by design: the editor
 // UI shows counts per dimension, never individual view rows.
+import { DEFAULT_STATS_RETENTION_DAYS, MAX_STATS_RETENTION_DAYS } from './entitlements.js'
 
 export async function insertView(executor, pageId, { device, source, country, visitorHash }) {
   await executor.query(
@@ -124,16 +125,17 @@ export async function aggregateStats(executor, pageId, since) {
 // would otherwise put the cutoff in the FUTURE and delete every row.
 export function normalizeRetentionDays(value) {
   const n = Math.floor(Number(value))
-  if (!Number.isFinite(n) || n < 1) return 30
-  return Math.min(n, 90)
+  if (!Number.isFinite(n) || n < 1) return DEFAULT_STATS_RETENTION_DAYS
+  return Math.min(n, MAX_STATS_RETENTION_DAYS)
 }
 
 // GREATEST(1, LEAST(..., 90)) clamps BOTH the per-page window and the default
 // into [1, 90] in SQL too — belt and suspenders, so no configuration or synced
-// value can ever produce a future cutoff that wipes all statistics.
+// value can ever produce a future cutoff that wipes all statistics. The cap is
+// single-sourced from entitlements so it can't drift from the JS clamp above.
 const RETENTION_PREDICATE = `
   occurred_at < NOW() - make_interval(days =>
-    GREATEST(1, LEAST(COALESCE((p.content->'entitlements'->>'statsRetentionDays')::int, $1), 90)))`
+    GREATEST(1, LEAST(COALESCE((p.content->'entitlements'->>'statsRetentionDays')::int, $1), ${MAX_STATS_RETENTION_DAYS})))`
 
 export async function purgeOldViews(executor, defaultRetentionDays) {
   const { rowCount } = await executor.query(
