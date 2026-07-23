@@ -17,6 +17,8 @@ const coverMidnight = cover('#0f172a', '#3b82f6', '☾')
 const coverEmber = cover('#7c2d12', '#f59e0b', '✦')
 const merchTee = cover('#111827', '#374151', 'T')
 const merchVinyl = cover('#1e1b4b', '#6d28d9', '●')
+const coverVideo = cover('#7f1d1d', '#ef4444', '▶')
+const coverReview = cover('#134e4a', '#14b8a6', '★')
 
 const socials = { instagram: 'nightjar.band', facebook: 'nightjarband', youtube: '@nightjar', tiktok: '@nightjar', spotify: 'artist/xyz' }
 
@@ -84,6 +86,47 @@ const releasePage = {
           ],
         },
       ],
+    },
+  ],
+}
+
+// ---- "all widget types" gallery (one section per widget type) ----
+const songWidget = bandSections[0].widgets[0]
+const gigsWidget = bandSections[0].widgets[1]
+const merchWidget = bandSections[0].widgets[2]
+const linkWidget = bandSections[0].widgets[3]
+const platformsWidget = releasePage.sections[0].widgets[0]
+const widgetsPage = {
+  band: { name: 'Nightjar', slug: 'nightjar', logoUrl: logo, socials, theme: 'light' },
+  sections: [
+    { id: 'g-song', title: 'Song', widgets: [songWidget] },
+    { id: 'g-platforms', title: 'Platform buttons', widgets: [{ ...platformsWidget, title: null }] },
+    { id: 'g-gigs', title: 'Gigs', widgets: [gigsWidget] },
+    { id: 'g-merch', title: 'Merch', widgets: [merchWidget] },
+    { id: 'g-link', title: 'Link', widgets: [linkWidget] },
+    {
+      id: 'g-embed-inline', title: 'Embed · inline player',
+      widgets: [{
+        id: 'ei', type: 'embed', url: 'https://open.spotify.com/track/x',
+        title: 'Midnight Signals', description: 'Nightjar · single', imageUrl: coverMidnight,
+        embed: { display: 'inline', type: 'spotify', src: 'https://open.spotify.com/embed/track/x' },
+      }],
+    },
+    {
+      id: 'g-embed-video', title: 'Embed · video',
+      widgets: [{
+        id: 'ev', type: 'embed', url: 'https://youtube.com/watch?v=x',
+        title: 'Midnight Signals (Official Video)', description: 'Nightjar', imageUrl: coverVideo,
+        embed: { display: 'overlay', type: 'youtube', src: 'https://www.youtube-nocookie.com/embed/x' },
+      }],
+    },
+    {
+      id: 'g-embed-rich', title: 'Embed · rich link card',
+      widgets: [{
+        id: 'er', type: 'embed', url: 'https://example.com/review',
+        title: 'Album review: Midnight Signals', description: 'Indie Sound Weekly — “a luminous debut”',
+        imageUrl: coverReview, embed: null,
+      }],
     },
   ],
 }
@@ -157,6 +200,7 @@ async function mock(page) {
     if (url.match(/\/api\/editor\/pages\/[^/]+$/)) return json(route, editorMain)
     if (url.endsWith('/api/editor/pages')) return json(route, editorPagesList)
     if (url.includes('/api/pages/nightjar/midnight-signals')) return json(route, releasePage)
+    if (url.includes('/api/pages/nightjar-widgets')) return json(route, widgetsPage)
     if (url.includes('/api/pages/nightjar-dark')) return json(route, bandPage('dark'))
     if (url.includes('/api/pages/nightjar')) return json(route, bandPage('light'))
     return json(route, {})
@@ -171,6 +215,7 @@ const shots = [
   { name: '5-editor-build', url: '/edit', vw: 1000, vh: 1100, wait: '.editor-section', session: true },
   { name: '6-editor-stats', url: '/edit', vw: 1000, vh: 1500, wait: '.stat-tile', session: true, tab: 'Statistics' },
   { name: '7-privacy', url: '/privacy', vw: 800, vh: 1000, wait: '.privacy-page' },
+  { name: '8-all-widgets', url: '/nightjar-widgets', vw: 480, vh: 2000, wait: '.embed-video-facade', expandGigs: true },
 ]
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' })
@@ -182,6 +227,7 @@ for (const s of shots) {
   await page.goto(BASE + s.url, { waitUntil: 'networkidle' })
   if (s.wait) await page.waitForSelector(s.wait, { timeout: 8000 }).catch(() => {})
   if (s.tab) { await page.getByRole('button', { name: s.tab }).click(); await page.waitForSelector('.stat-tile', { timeout: 8000 }).catch(() => {}) }
+  if (s.expandGigs) await page.locator('.gigs-summary').click().catch(() => {})
   await page.waitForTimeout(500)
   await page.screenshot({ path: OUT + s.name + '.png', fullPage: true })
   console.log('shot', s.name)
