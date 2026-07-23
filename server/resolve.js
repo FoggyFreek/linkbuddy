@@ -88,8 +88,15 @@ export function resolvePage(content, layout, release = null) {
     }
   }
   return {
-    band: content.band || null,
+    band: content.band ? { ...content.band, theme: normalizeTheme(content.band.theme) } : null,
     release: resolvedRelease,
     sections,
   }
+}
+
+// Band-level look, chosen in gigbuddy and shipped in the content snapshot.
+// Anything other than the explicit 'dark' opt-in renders the default light
+// theme, so a missing or unknown value never breaks the page.
+function normalizeTheme(theme) {
+  return theme === 'dark' ? 'dark' : 'light'
 }

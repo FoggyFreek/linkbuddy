@@ -36,6 +36,17 @@ export default function PublicPage({ slug }) {
     }
   }, [slug])
 
+  // Paint the whole viewport in the band's chosen theme (light default). Scoped
+  // to the public route: cleaned up on unmount so the editor/privacy chrome
+  // never inherits a visitor page's dark theme.
+  useEffect(() => {
+    const theme = page?.band?.theme === 'dark' ? 'dark' : 'light'
+    document.documentElement.dataset.theme = theme
+    return () => {
+      delete document.documentElement.dataset.theme
+    }
+  }, [page])
+
   const onLinkClick = useCallback(
     (target) => {
       sendClick(slug, target, { referrer: document.referrer, utmSource: utmSourceFromLocation() })

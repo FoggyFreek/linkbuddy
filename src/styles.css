@@ -12,6 +12,39 @@
   --green: #3ec93e;
 }
 
+/* Band-selectable dark theme. Set as data-theme="dark" on <html> for the
+   public page and on the preview box in the editor, so the same variables and
+   scoped overrides drive both. Anything not listed inherits the light values. */
+[data-theme='dark'] {
+  --bg: #26374d;
+  --card: #2f4257;
+  --text: #f2f5f9;
+  --text-dim: #9fb1c2;
+  --shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  --accent: #f2f5f9;
+  --card-border: #3b4f68;
+  --surface-2: #35485e;
+  --surface-3: #3f5468;
+}
+
+/* Light theme shares these named surfaces so component rules can reference one
+   token and both themes stay in sync. */
+:root {
+  --card-border: #ecedf1;
+  --surface-2: #f0f1f4;
+  --surface-3: #e4e6ea;
+}
+
+/* Dark-only surface tweaks. Cards gain a hairline outline (they read as
+   flat panels on the dark canvas, where the light theme's drop shadow all but
+   disappears), and the single band logo gets a ring + soft glow so a mark
+   authored for a light background still separates from the dark page. */
+[data-theme='dark'] .card { border: 1px solid var(--card-border); }
+[data-theme='dark'] .band-avatar,
+[data-theme='dark'] .release-cover {
+  box-shadow: 0 0 0 1px var(--card-border), 0 10px 30px rgb(0 0 0 / 0.35);
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -108,7 +141,7 @@ input, select { font: inherit; }
   color: var(--text);
   padding: 0;
 }
-.platform-preview:hover { background: #f4f5f7; }
+.platform-preview:hover { background: var(--surface-2); }
 .platform-card { display: flex; align-items: center; gap: 12px; min-height: 62px; }
 .platform-card .card-label { text-align: left; }
 .platform-play {
@@ -159,7 +192,7 @@ input, select { font: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #e4e6ea;
+  background: var(--surface-3);
   color: var(--text-dim);
   font-size: 24px;
 }
@@ -172,12 +205,12 @@ input, select { font: inherit; }
   padding: 10px 4px 4px;
 }
 .pill {
-  background: #f0f1f4;
+  background: var(--surface-2);
   border-radius: 999px;
   padding: 4px 12px;
   font-size: 13px;
 }
-.pill:hover { background: #e4e6ea; }
+.pill:hover { background: var(--surface-3); }
 
 /* link */
 .link-card { display: flex; align-items: center; gap: 12px; min-height: 64px; }
@@ -203,7 +236,7 @@ input, select { font: inherit; }
   display: flex;
   flex-direction: column;
   padding: 10px 0;
-  border-top: 1px solid #f0f1f4;
+  border-top: 1px solid var(--surface-2);
 }
 .gig-date { font-size: 13px; color: var(--text-dim); }
 .gig-title { font-weight: 600; }
@@ -223,7 +256,7 @@ input, select { font: inherit; }
   flex: 0 0 150px;
   display: flex;
   flex-direction: column;
-  border: 1px solid #ecedf1;
+  border: 1px solid var(--card-border);
   border-radius: 10px;
   overflow: hidden;
   background: var(--card);
@@ -231,7 +264,7 @@ input, select { font: inherit; }
 .merch-image {
   position: relative;
   height: 140px;
-  background: #f4f5f7;
+  background: var(--surface-2);
   display: flex;
   align-items: center;
   justify-content: center;

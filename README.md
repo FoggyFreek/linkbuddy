@@ -177,7 +177,11 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
 ## Integration contract (GigBuddy side)
 
 - `GET /api/public/linkpage/export/:slug` — full content snapshot;
-  `Authorization: Bearer <shared secret>`; 404 for unknown slugs.
+  `Authorization: Bearer <shared secret>`; 404 for unknown slugs. The `band`
+  object may carry an optional `theme: 'light' | 'dark'` (band-selectable in
+  GigBuddy) that skins every one of the band's public pages, including the
+  smart-link release pages; anything but the explicit `'dark'` opt-in renders
+  the default light theme.
 - `GET /api/public/linkpage/image?t=<token>` — streams band logo / song cover;
   the token is HMAC-signed by GigBuddy with the same secret and embedded in
   the export payload's image URLs.
