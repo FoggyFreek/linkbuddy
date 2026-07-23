@@ -105,8 +105,27 @@ input, select { font: inherit; }
 
 .stack-section { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
 
-/* release landing page header */
-.release-header { text-align: center; margin-bottom: 18px; }
+/* ---------- release landing page ---------- */
+
+/* The container-query context: the two-pane split below reacts to how wide the
+   page actually is, so the narrow editor preview and phones stay single-column
+   even on a desktop viewport. */
+.release-frame { container-type: inline-size; }
+
+/* Mobile / default: single column — artwork on top, content below (matches the
+   rest of the app's stacked look). */
+.release-layout { display: flex; flex-direction: column; }
+.release-main { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 600px; margin: 0 auto; }
+
+/* release artwork */
+.release-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+/* The blurred backdrop only appears in the wide desktop split. */
+.release-art-bg { display: none; }
 .release-cover {
   width: min(320px, 78vw);
   height: min(320px, 78vw);
@@ -122,9 +141,58 @@ input, select { font: inherit; }
   color: #fff;
   font-size: 72px;
 }
-.release-title { font-size: 30px; margin: 18px 0 4px; font-weight: 700; }
+
+.release-header { text-align: center; margin-bottom: 4px; }
+.release-title { font-size: 30px; margin: 0 0 4px; font-weight: 700; }
 .release-artist { font-size: 18px; color: var(--text-dim); margin: 0 0 10px; }
-.release-band-link { font-size: 14px; color: var(--text-dim); text-decoration: underline; }
+.release-band-link { display: inline-block; margin-top: 12px; font-size: 14px; color: var(--text-dim); text-decoration: underline; }
+
+/* Wide desktop view: artwork pane on the left (cover floating on a blurred,
+   stretched copy of itself), content pane on the right. */
+@container (min-width: 840px) {
+  .release-layout {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: min(88vh, 780px);
+    margin: -40px -16px -24px; /* bleed to the .public-page padding edges */
+  }
+  .release-art {
+    position: relative;
+    flex: 1 1 58%;
+    margin: 0;
+    padding: 56px;
+    overflow: hidden;
+  }
+  .release-art-bg {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(42px) saturate(1.3);
+    transform: scale(1.25);
+    z-index: 0;
+  }
+  .release-art .release-cover {
+    position: relative;
+    z-index: 1;
+    width: min(440px, 64cqw);
+    height: auto;
+    aspect-ratio: 1;
+  }
+  .release-main {
+    flex: 0 0 clamp(360px, 36%, 480px);
+    max-width: none;
+    margin: 0;
+    padding: 56px 44px;
+    overflow-y: auto;
+  }
+  .release-header { text-align: left; margin-bottom: 8px; }
+  .release-title { font-size: 26px; }
+  .release-divider { margin-left: 0 !important; margin-right: 0 !important; }
+  .release-socials { justify-content: flex-start; }
+}
 
 /* release page socials — circular outlined buttons at the foot of the stack */
 .release-socials { display: flex; justify-content: center; gap: 16px; margin-top: 30px; }

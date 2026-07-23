@@ -360,22 +360,34 @@ function EmbedWidget({ widget, onLinkClick }) {
   )
 }
 
-// Release landing page header: big artwork, release title, artist, and a
-// small link back to the band's main page.
-function ReleaseHeader({ release, band }) {
+// The release artwork (left pane on desktop, top on mobile): the cover sits on
+// a blurred, stretched copy of itself so the wide desktop view fills the space
+// beside the cover instead of leaving dead canvas. The blurred layer is hidden
+// on narrow screens (see .release-art-bg in styles.css).
+function ReleaseArt({ release }) {
   return (
-    <header className="release-header">
+    <div className="release-art">
+      {release.coverUrl && (
+        <img className="release-art-bg" src={release.coverUrl} alt="" aria-hidden="true" />
+      )}
       {release.coverUrl ? (
         <img className="release-cover" src={release.coverUrl} alt={release.title} />
       ) : (
         <div className="release-cover release-cover-placeholder">♪</div>
       )}
+    </div>
+  )
+}
+
+// Release title, artist, and a small link back to the band's main page. On
+// desktop this is the head of the right-hand content pane; on mobile it sits
+// under the artwork.
+function ReleaseInfo({ release, band }) {
+  return (
+    <header className="release-header">
       <h1 className="release-title">{release.title}</h1>
       {release.artist && <p className="release-artist">{release.artist}</p>}
-      <Divider
-        className="release-divider"
-        sx={{ borderColor: 'var(--card-border)', width: 'min(320px, 78vw)', mx: 'auto', mt: 1.5 }}
-      />
+      <Divider className="release-divider" sx={{ borderColor: 'var(--card-border)', mt: 1.5 }} />
       {band?.slug && (
         <a className="release-band-link" href={`/${band.slug}`}>
           More from {band.name || 'this band'} →
@@ -396,30 +408,46 @@ const WIDGETS = {
 
 const noopClick = () => {}
 
+function Sections({ sections, onLinkClick }) {
+  return sections.map((section) => (
+    <section key={section.id} className="stack-section">
+      {section.title && <h2 className="section-title">{section.title}</h2>}
+      {section.widgets.map((widget) => {
+        const Widget = WIDGETS[widget.type]
+        return Widget ? <Widget key={widget.id} widget={widget} onLinkClick={onLinkClick} /> : null
+      })}
+    </section>
+  ))
+}
+
 // `onLinkClick(target)` reports outbound clicks (public page wires it to the
 // click beacon; the editor preview leaves it unset).
 export default function WidgetStack({ page, onLinkClick = noopClick }) {
+  // Release pages use a two-pane layout: artwork on one side, content on the
+  // other. The `.release-frame` container-query context (styles.css) drives the
+  // side-by-side split only when the page itself is wide — so the narrow editor
+  // preview and phones keep the single stacked column.
+  if (page.release) {
+    return (
+      <div className="release-frame">
+        <div className="release-layout">
+          <ReleaseArt release={page.release} />
+          <div className="release-main">
+            <ReleaseInfo release={page.release} band={page.band} />
+            <Sections sections={page.sections} onLinkClick={onLinkClick} />
+            {/* The band header normally hosts the socials; the release header
+                replaces it, so they live at the foot of the content pane. */}
+            <SocialLinks band={page.band} onLinkClick={onLinkClick} className="release-socials" linkClassName="release-social" size={20} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="stack">
-      {page.release ? (
-        <ReleaseHeader release={page.release} band={page.band} />
-      ) : (
-        <BandHeader band={page.band} onLinkClick={onLinkClick} />
-      )}
-      {page.sections.map((section) => (
-        <section key={section.id} className="stack-section">
-          {section.title && <h2 className="section-title">{section.title}</h2>}
-          {section.widgets.map((widget) => {
-            const Widget = WIDGETS[widget.type]
-            return Widget ? <Widget key={widget.id} widget={widget} onLinkClick={onLinkClick} /> : null
-          })}
-        </section>
-      ))}
-      {/* Release pages carry the band's socials at the foot (the band header,
-          which normally hosts them, is replaced by the release header). */}
-      {page.release && (
-        <SocialLinks band={page.band} onLinkClick={onLinkClick} className="release-socials" linkClassName="release-social" size={20} />
-      )}
+      <BandHeader band={page.band} onLinkClick={onLinkClick} />
+      <Sections sections={page.sections} onLinkClick={onLinkClick} />
     </div>
   )
 }
