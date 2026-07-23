@@ -197,8 +197,6 @@ input, select { font: inherit; }
   .release-header { text-align: left; margin-bottom: 8px; }
   .release-title { font-size: 20px; }
   .release-socials { justify-content: flex-start; }
-  /* The ▶ preview control returns in the desktop split (hidden on mobile). */
-  .release-main .platform-preview { display: flex; }
   /* Pin the privacy footer to the foot of the content pane, left-aligned to
      match the rest of the desktop column. */
   .release-main .page-footer { margin-top: auto; justify-content: flex-start; }
@@ -235,8 +233,8 @@ input, select { font: inherit; }
 .platform-row-main .platform-card { flex: 1; }
 .platform-preview {
   flex: 0 0 auto;
-  /* Hidden on mobile: the ▶ reads as a redundant second control beside the
-     Play button. It returns in the wide desktop split (container query below). */
+  /* Hidden at every width: the ▶ reads as a redundant second control beside
+     the Play button. */
   display: none;
   align-items: center;
   justify-content: center;
