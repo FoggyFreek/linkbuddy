@@ -97,18 +97,37 @@ function SongWidget({ widget, onLinkClick }) {
       </a>
       {extras.length > 0 && (
         <div className="song-extra-links">
-          {extras.map((link, i) => (
-            <a
-              key={i}
-              className="pill"
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => onLinkClick(`song:${link.label || 'listen'}`)}
-            >
-              {link.label || 'Listen'}
-            </a>
-          ))}
+          {extras.map((link, i) => {
+            // A link that resolves to a known platform renders as that
+            // platform's clickable icon; anything else keeps the text pill.
+            const platformId = link.platform && link.platform.id !== 'other' ? link.platform.id : null
+            const Icon = platformId ? PLATFORM_ICON_COMPONENTS[platformId] : null
+            return Icon ? (
+              <a
+                key={i}
+                className="song-platform-icon"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={link.platform.label}
+                title={link.platform.label}
+                onClick={() => onLinkClick(`platform:${platformId}`)}
+              >
+                <Icon size={26} />
+              </a>
+            ) : (
+              <a
+                key={i}
+                className="pill"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onLinkClick(`song:${link.label || 'listen'}`)}
+              >
+                {link.label || 'Listen'}
+              </a>
+            )
+          })}
         </div>
       )}
     </div>
@@ -420,7 +439,7 @@ function Sections({ sections, onLinkClick }) {
 
 // `onLinkClick(target)` reports outbound clicks (public page wires it to the
 // click beacon; the editor preview leaves it unset).
-export default function WidgetStack({ page, onLinkClick = noopClick }) {
+export default function WidgetStack({ page, onLinkClick = noopClick, footer = null }) {
   // Release pages use a two-pane layout: artwork on one side, content on the
   // other. The `.release-frame` container-query context (styles.css) drives the
   // side-by-side split only when the page itself is wide — so the narrow editor
@@ -436,6 +455,10 @@ export default function WidgetStack({ page, onLinkClick = noopClick }) {
             {/* The band header normally hosts the socials; the release header
                 replaces it, so they live at the foot of the content pane. */}
             <SocialLinks band={page.band} onLinkClick={onLinkClick} className="release-socials" linkClassName="release-social" size={20} />
+            {/* The page footer lives inside the content pane so the desktop
+                split keeps the whole viewport as artwork + content, with no
+                plain page background below the two panes. */}
+            {footer}
           </div>
         </div>
       </div>
@@ -443,9 +466,12 @@ export default function WidgetStack({ page, onLinkClick = noopClick }) {
   }
 
   return (
-    <div className="stack">
-      <BandHeader band={page.band} onLinkClick={onLinkClick} />
-      <Sections sections={page.sections} onLinkClick={onLinkClick} />
-    </div>
+    <>
+      <div className="stack">
+        <BandHeader band={page.band} onLinkClick={onLinkClick} />
+        <Sections sections={page.sections} onLinkClick={onLinkClick} />
+      </div>
+      {footer}
+    </>
   )
 }

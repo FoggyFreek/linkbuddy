@@ -16,7 +16,10 @@ function resolveWidget(widget, content) {
         title: song.title,
         artist: song.artist,
         coverUrl: song.coverUrl,
-        links: song.links,
+        // Tag each link with its detected platform so the stack can render a
+        // recognized platform's icon in place of a text pill (id 'other' when
+        // the host matches no known platform).
+        links: song.links.map((link) => ({ ...link, platform: detectPlatform(link.url, link.label) })),
       }
     }
     case 'platforms': {
