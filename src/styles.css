@@ -22,7 +22,7 @@
   --text-dim: #9fb1c2;
   --shadow: 0 1px 3px rgb(0 0 0 / 0.35);
   --accent: #f2f5f9;
-  --card-border: rgb(255 255 255 / 0.09);
+  --card-border: rgb(255 255 255 / 0.05);
   --surface-2: #35485e;
   --surface-3: #3f5468;
 }
@@ -44,6 +44,9 @@
 [data-theme='dark'] .release-cover {
   box-shadow: 0 0 0 1px var(--card-border), 0 10px 30px rgb(0 0 0 / 0.35);
 }
+/* Soften the Play button outline on dark too — the white (var(--text)) border
+   reads as harsh against the navy; keep a faint outline instead. */
+[data-theme='dark'] .platform-play { border-color: rgb(255 255 255 / 0.16); }
 
 * { box-sizing: border-box; }
 
