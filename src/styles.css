@@ -22,7 +22,7 @@
   --text-dim: #9fb1c2;
   --shadow: 0 1px 3px rgb(0 0 0 / 0.35);
   --accent: #f2f5f9;
-  --card-border: #3b4f68;
+  --card-border: rgb(255 255 255 / 0.09);
   --surface-2: #35485e;
   --surface-3: #3f5468;
 }
