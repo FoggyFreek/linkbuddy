@@ -305,7 +305,7 @@ export default function Editor() {
       {tab === 'preview' && preview && (
         <div className="preview-frame">
           <div className="preview-note">This is exactly what visitors see.</div>
-          <div className="public-page">
+          <div className="public-page" data-theme={preview.band?.theme === 'dark' ? 'dark' : 'light'}>
             <WidgetStack page={preview} />
           </div>
         </div>

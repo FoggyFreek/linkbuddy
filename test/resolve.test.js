@@ -110,6 +110,17 @@ describe('resolvePage', () => {
     expect(resolvePage(content, layout).release).toBeNull()
   })
 
+  it('normalizes the band theme to a light/dark opt-in', () => {
+    const layout = { sections: [] }
+    // Explicit dark opt-in is preserved.
+    expect(resolvePage({ band: { name: 'A', theme: 'dark' } }, layout).band.theme).toBe('dark')
+    // Missing or unknown values fall back to light so the page never breaks.
+    expect(resolvePage({ band: { name: 'A' } }, layout).band.theme).toBe('light')
+    expect(resolvePage({ band: { name: 'A', theme: 'neon' } }, layout).band.theme).toBe('light')
+    // No band at all stays null.
+    expect(resolvePage({}, layout).band).toBeNull()
+  })
+
   it('survives an empty snapshot', () => {
     const page = resolvePage({}, { sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'gigs', limit: 5 }] }] })
     expect(page.sections[0].widgets[0].gigs).toEqual([])
