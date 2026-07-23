@@ -140,15 +140,12 @@ input, select { font: inherit; }
 }
 .release-social:hover { background: var(--surface-2); }
 
-/* platform buttons — one bordered panel wraps the whole list; each row is
-   borderless (brand logo left, Play button right). */
+/* platform buttons — borderless rows (logo + name left, Play button right),
+   no card or panel border around them. */
 .platforms {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
-  padding: 10px 20px;
 }
 .platform-row { display: flex; flex-direction: column; gap: 10px; }
 .platform-row-main { display: flex; gap: 8px; align-items: center; }
@@ -167,6 +164,7 @@ input, select { font: inherit; }
 .platform-preview:hover { color: var(--text); }
 .platform-card { display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 6px 0; }
 .platform-logo { display: inline-flex; color: var(--text); flex: 0 0 auto; }
+.platform-name { font-size: 17px; font-weight: 500; min-width: 0; }
 .platform-play {
   margin-left: auto;
   border: 1.5px solid var(--text);

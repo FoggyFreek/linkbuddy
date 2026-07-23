@@ -2,6 +2,7 @@
 // widget cards. Used verbatim by the public page and the editor's
 // preview-as-visitor mode, so preview can never drift from reality.
 import { useState } from 'react'
+import Divider from '@mui/material/Divider'
 import { InlineEmbed, VideoOverlay } from './embeds.jsx'
 import {
   InstagramIcon,
@@ -232,10 +233,10 @@ function PlatformsWidget({ widget, onLinkClick }) {
                 href={platform.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={platform.label}
                 onClick={() => onLinkClick(`platform:${platform.id}`)}
               >
                 <span className="platform-logo"><Icon size={30} /></span>
+                <span className="platform-name">{platform.label}</span>
                 <span className="platform-play">Play</span>
               </a>
               {platform.embed && (
@@ -371,6 +372,10 @@ function ReleaseHeader({ release, band }) {
       )}
       <h1 className="release-title">{release.title}</h1>
       {release.artist && <p className="release-artist">{release.artist}</p>}
+      <Divider
+        className="release-divider"
+        sx={{ borderColor: 'var(--card-border)', width: 'min(320px, 78vw)', mx: 'auto', mt: 1.5 }}
+      />
       {band?.slug && (
         <a className="release-band-link" href={`/${band.slug}`}>
           More from {band.name || 'this band'} →
