@@ -97,18 +97,37 @@ function SongWidget({ widget, onLinkClick }) {
       </a>
       {extras.length > 0 && (
         <div className="song-extra-links">
-          {extras.map((link, i) => (
-            <a
-              key={i}
-              className="pill"
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => onLinkClick(`song:${link.label || 'listen'}`)}
-            >
-              {link.label || 'Listen'}
-            </a>
-          ))}
+          {extras.map((link, i) => {
+            // A link that resolves to a known platform renders as that
+            // platform's clickable icon; anything else keeps the text pill.
+            const platformId = link.platform && link.platform.id !== 'other' ? link.platform.id : null
+            const Icon = platformId ? PLATFORM_ICON_COMPONENTS[platformId] : null
+            return Icon ? (
+              <a
+                key={i}
+                className="song-platform-icon"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={link.platform.label}
+                title={link.platform.label}
+                onClick={() => onLinkClick(`platform:${platformId}`)}
+              >
+                <Icon size={26} />
+              </a>
+            ) : (
+              <a
+                key={i}
+                className="pill"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onLinkClick(`song:${link.label || 'listen'}`)}
+              >
+                {link.label || 'Listen'}
+              </a>
+            )
+          })}
         </div>
       )}
     </div>

@@ -28,7 +28,13 @@ const bandSections = [
     widgets: [
       {
         id: 'w1', type: 'song', title: 'Midnight Signals', artist: 'Nightjar', coverUrl: coverMidnight,
-        links: [{ url: 'https://example.com/s', label: 'Spotify' }, { url: '#', label: 'Apple Music' }, { url: '#', label: 'YouTube' }],
+        links: [
+          { url: 'https://open.spotify.com/track/x', label: 'Spotify', platform: { id: 'spotify', label: 'Spotify' } },
+          { url: 'https://music.apple.com/x', label: 'Apple Music', platform: { id: 'apple', label: 'Apple Music' } },
+          { url: 'https://youtube.com/watch?v=x', label: 'YouTube', platform: { id: 'youtube', label: 'YouTube' } },
+          { url: 'https://deezer.com/x', label: 'Deezer', platform: { id: 'deezer', label: 'Deezer' } },
+          { url: 'https://example.com/download', label: 'Free download', platform: { id: 'other', label: 'Free download' } },
+        ],
       },
       {
         id: 'w2', type: 'gigs', title: 'Upcoming Gigs',

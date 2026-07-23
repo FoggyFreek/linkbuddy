@@ -316,6 +316,15 @@ input, select { font: inherit; }
   font-size: 13px;
 }
 .pill:hover { background: var(--surface-3); }
+.song-platform-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  padding: 7px;
+  border-radius: 10px;
+}
+.song-platform-icon:hover { background: var(--surface-2); }
 
 /* link */
 .link-card { display: flex; align-items: center; gap: 12px; min-height: 64px; }
