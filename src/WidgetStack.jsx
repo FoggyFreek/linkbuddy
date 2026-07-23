@@ -2,7 +2,6 @@
 // widget cards. Used verbatim by the public page and the editor's
 // preview-as-visitor mode, so preview can never drift from reality.
 import { useState } from 'react'
-import Divider from '@mui/material/Divider'
 import { InlineEmbed, VideoOverlay } from './embeds.jsx'
 import {
   InstagramIcon,
@@ -387,7 +386,6 @@ function ReleaseInfo({ release, band }) {
     <header className="release-header">
       <h1 className="release-title">{release.title}</h1>
       {release.artist && <p className="release-artist">{release.artist}</p>}
-      <Divider className="release-divider" sx={{ borderColor: 'var(--card-border)', mt: 1.5 }} />
       {band?.slug && (
         <a className="release-band-link" href={`/${band.slug}`}>
           More from {band.name || 'this band'} →

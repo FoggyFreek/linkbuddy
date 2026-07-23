@@ -191,7 +191,6 @@ input, select { font: inherit; }
   }
   .release-header { text-align: left; margin-bottom: 8px; }
   .release-title { font-size: 26px; }
-  .release-divider { margin-left: 0 !important; margin-right: 0 !important; }
   .release-socials { justify-content: flex-start; }
 }
 
@@ -209,12 +208,17 @@ input, select { font: inherit; }
 }
 .release-social:hover { background: var(--surface-2); }
 
-/* platform buttons — borderless rows (logo + name left, Play button right),
-   no card or panel border around them. */
+/* platform buttons — the whole list sits in one rounded card; each row is
+   borderless inside it (logo + name left, Play button right). */
 .platforms {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px 18px;
 }
 .platform-row { display: flex; flex-direction: column; gap: 10px; }
 .platform-row-main { display: flex; gap: 8px; align-items: center; }
