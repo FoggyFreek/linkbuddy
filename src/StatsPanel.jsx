@@ -1,22 +1,14 @@
 import { useEffect, useState } from 'react'
 import { getStats } from './api.js'
+import { PLATFORM_LABELS } from '../shared/platforms.js'
 
 // Statistics live in a rolling window (30 days, 90 on gold) — ranges beyond
 // the page's window are disabled.
 const RANGES = [7, 30, 90]
 
-const PLATFORM_NAMES = {
-  spotify: 'Spotify',
-  apple: 'Apple Music',
-  'youtube-music': 'YouTube Music',
-  youtube: 'YouTube',
-  deezer: 'Deezer',
-  tidal: 'TIDAL',
-  amazon: 'Amazon Music',
-  soundcloud: 'SoundCloud',
-  bandcamp: 'Bandcamp',
-  other: 'Other',
-}
+// Platform display names come from the shared registry; 'other' is the local
+// label for links that didn't match a known platform.
+const PLATFORM_NAMES = { ...PLATFORM_LABELS, other: 'Other' }
 
 const SHARE_NAMES = {
   native: 'device menu',

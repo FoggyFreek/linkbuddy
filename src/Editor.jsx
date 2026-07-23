@@ -1,14 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import {
   unfurlUrl,
-  getStoredSession,
-  storeSession,
-  exchangeHandoff,
-  listEditorPages,
   createReleasePage,
   getEditorPage,
   deleteEditorPage,
-  saveDraft,
   getPreview,
   publishPage,
   refreshContent,
@@ -16,447 +11,43 @@ import {
 import WidgetStack from './WidgetStack.jsx'
 import StatsPanel from './StatsPanel.jsx'
 import ShareButton from './ShareButton.jsx'
-import { LINK_ICON_COMPONENTS } from './icons.jsx'
-
-const ICON_OPTIONS = Object.keys(LINK_ICON_COMPONENTS)
+import { useEditorSession } from './hooks/useEditorSession.js'
+import { useLayoutEditor } from './hooks/useLayoutEditor.js'
+import { WidgetEditor } from './widgets/WidgetEditors.jsx'
+import NewReleaseForm from './widgets/NewReleaseForm.jsx'
+import { makeWidget, widgetSummary } from './widgets/widgetModel.js'
+import { moveItem, saveErrorState, toListEntry } from './editorUtils.js'
 
 function newId() {
   return crypto.randomUUID()
 }
 
-function moveItem(list, index, delta) {
-  const target = index + delta
-  if (target < 0 || target >= list.length) return list
-  const next = [...list]
-  const [item] = next.splice(index, 1)
-  next.splice(target, 0, item)
-  return next
-}
-
-function slugify(value) {
-  return value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
-}
-
-// ---------- per-widget editors ----------
-
-function SongSelect({ value, songs, onChange }) {
-  return (
-    <select value={value} onChange={(e) => onChange(Number(e.target.value))}>
-      {songs.map((song) => (
-        <option key={song.id} value={song.id}>
-          {song.title}
-          {song.artist ? ` — ${song.artist}` : ''}
-        </option>
-      ))}
-    </select>
-  )
-}
-
-function SongWidgetEditor({ widget, songs, onChange }) {
-  return <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId })} />
-}
-
-function PlatformsWidgetEditor({ widget, songs, onChange }) {
-  return (
-    <div className="widget-fields">
-      <input
-        placeholder="Title (optional)"
-        value={widget.title || ''}
-        onChange={(e) => onChange({ ...widget, title: e.target.value || null })}
-      />
-      <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId })} />
-      <p className="field-hint">One button per streaming link of this song, platform detected automatically.</p>
-    </div>
-  )
-}
-
-function GigsWidgetEditor({ widget, onChange }) {
-  return (
-    <div className="widget-fields">
-      <input
-        placeholder="Title (Upcoming Gigs)"
-        value={widget.title || ''}
-        onChange={(e) => onChange({ ...widget, title: e.target.value })}
-      />
-      <label className="inline-field">
-        Max gigs
-        <input
-          type="number"
-          min="1"
-          max="50"
-          value={widget.limit}
-          onChange={(e) => onChange({ ...widget, limit: Number(e.target.value) || 10 })}
-        />
-      </label>
-    </div>
-  )
-}
-
-function MerchWidgetEditor({ widget, products, onChange }) {
-  const included = new Map(widget.items.map((item) => [item.productId, item]))
-  const toggle = (productId) => {
-    const items = included.has(productId)
-      ? widget.items.filter((item) => item.productId !== productId)
-      : [...widget.items, { productId, imageUrl: null, badge: null }]
-    onChange({ ...widget, items })
-  }
-  const updateItem = (productId, patch) => {
-    onChange({
-      ...widget,
-      items: widget.items.map((item) => (item.productId === productId ? { ...item, ...patch } : item)),
-    })
-  }
-  return (
-    <div className="widget-fields">
-      <input
-        placeholder="Title (e.g. Album CDs and LPs)"
-        value={widget.title || ''}
-        onChange={(e) => onChange({ ...widget, title: e.target.value })}
-      />
-      <input
-        placeholder="Shop URL the items link to (optional)"
-        value={widget.shopUrl || ''}
-        onChange={(e) => onChange({ ...widget, shopUrl: e.target.value || null })}
-      />
-      <ul className="merch-editor-list">
-        {products.map((product) => {
-          const item = included.get(product.id)
-          return (
-            <li key={product.id}>
-              <label className="inline-field">
-                <input type="checkbox" checked={!!item} onChange={() => toggle(product.id)} />
-                {product.name}
-              </label>
-              {item && (
-                <div className="merch-item-fields">
-                  <input
-                    placeholder="Image URL (optional)"
-                    value={item.imageUrl || ''}
-                    onChange={(e) => updateItem(product.id, { imageUrl: e.target.value || null })}
-                  />
-                  <input
-                    placeholder="Badge (e.g. NEW)"
-                    maxLength={20}
-                    value={item.badge || ''}
-                    onChange={(e) => updateItem(product.id, { badge: e.target.value || null })}
-                  />
-                </div>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-    </div>
-  )
-}
-
-function LinkWidgetEditor({ widget, onChange, onUnfurl }) {
-  const [fetching, setFetching] = useState(false)
-  const [fetchError, setFetchError] = useState(null)
-  const fill = async () => {
-    setFetching(true)
-    setFetchError(null)
-    try {
-      const meta = await onUnfurl(widget.url)
-      onChange({
-        ...widget,
-        imageUrl: meta.imageUrl || widget.imageUrl,
-        label: widget.label || meta.title || widget.label,
-        sublabel: widget.sublabel || meta.siteName || null,
-      })
-    } catch (err) {
-      setFetchError(err.message)
-    } finally {
-      setFetching(false)
-    }
-  }
-  return (
-    <div className="widget-fields">
-      <input
-        placeholder="Label"
-        value={widget.label || ''}
-        onChange={(e) => onChange({ ...widget, label: e.target.value })}
-      />
-      <input
-        placeholder="https://…"
-        value={widget.url || ''}
-        onChange={(e) => onChange({ ...widget, url: e.target.value })}
-      />
-      <input
-        placeholder="Sublabel (optional)"
-        value={widget.sublabel || ''}
-        onChange={(e) => onChange({ ...widget, sublabel: e.target.value || null })}
-      />
-      <input
-        placeholder="Thumbnail image URL (optional)"
-        value={widget.imageUrl || ''}
-        onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })}
-      />
-      <label className="inline-field">
-        Icon
-        <select value={widget.icon} onChange={(e) => onChange({ ...widget, icon: e.target.value })}>
-          {ICON_OPTIONS.map((icon) => (
-            <option key={icon} value={icon}>{icon}</option>
-          ))}
-        </select>
-      </label>
-      <div className="unfurl-row">
-        <button className="btn" onClick={fill} disabled={fetching || !widget.url}>
-          {fetching ? 'Fetching…' : 'Fetch image & info from link'}
-        </button>
-        {fetchError && <span className="form-error">{fetchError}</span>}
-      </div>
-    </div>
-  )
-}
-
-// Embed widget: paste a URL, load its metadata (oEmbed / Open Graph), and it
-// renders as a player (Spotify inline, YouTube overlay) or a rich link card.
-function EmbedWidgetEditor({ widget, onChange, onUnfurl }) {
-  const [fetching, setFetching] = useState(false)
-  const [fetchError, setFetchError] = useState(null)
-  const [provider, setProvider] = useState(null)
-  const load = async () => {
-    setFetching(true)
-    setFetchError(null)
-    try {
-      const meta = await onUnfurl(widget.url)
-      setProvider(meta.embed ? meta.embed.type : meta.siteName || 'link card')
-      onChange({
-        ...widget,
-        title: meta.title || widget.title,
-        description: meta.description || widget.description,
-        imageUrl: meta.imageUrl || widget.imageUrl,
-      })
-    } catch (err) {
-      setFetchError(err.message)
-    } finally {
-      setFetching(false)
-    }
-  }
-  return (
-    <div className="widget-fields">
-      <input
-        placeholder="Paste a Spotify, YouTube, SoundCloud or any other URL"
-        value={widget.url || ''}
-        onChange={(e) => onChange({ ...widget, url: e.target.value })}
-      />
-      <div className="unfurl-row">
-        <button className="btn" onClick={load} disabled={fetching || !widget.url}>
-          {fetching ? 'Fetching…' : 'Load info from link'}
-        </button>
-        {provider && <span className="field-hint">Renders as: {provider}</span>}
-        {fetchError && <span className="form-error">{fetchError}</span>}
-      </div>
-      <input
-        placeholder="Title"
-        value={widget.title || ''}
-        onChange={(e) => onChange({ ...widget, title: e.target.value || null })}
-      />
-      <input
-        placeholder="Description (optional)"
-        value={widget.description || ''}
-        onChange={(e) => onChange({ ...widget, description: e.target.value || null })}
-      />
-      <input
-        placeholder="Image URL (auto-filled from the link)"
-        value={widget.imageUrl || ''}
-        onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })}
-      />
-      <p className="field-hint">
-        Spotify/SoundCloud play inline, YouTube opens in an overlay — always click-to-play.
-      </p>
-    </div>
-  )
-}
-
-function widgetSummary(widget, content) {
-  const songTitle = (songId) => (content.songs || []).find((s) => s.id === songId)?.title || 'missing song'
-  switch (widget.type) {
-    case 'song':
-      return `Song · ${songTitle(widget.songId)}`
-    case 'platforms':
-      return `Platform buttons · ${songTitle(widget.songId)}`
-    case 'gigs':
-      return `Gigs · ${widget.title || 'Upcoming Gigs'}`
-    case 'merch':
-      return `Merch · ${widget.title || `${widget.items.length} products`}`
-    case 'link':
-      return `Link · ${widget.label || widget.url}`
-    case 'embed':
-      return `Embed · ${widget.title || widget.url || 'new'}`
-    default:
-      return widget.type
-  }
-}
-
-function WidgetEditor({ widget, content, onChange, onUnfurl }) {
-  switch (widget.type) {
-    case 'song':
-      return <SongWidgetEditor widget={widget} songs={content.songs || []} onChange={onChange} />
-    case 'platforms':
-      return <PlatformsWidgetEditor widget={widget} songs={content.songs || []} onChange={onChange} />
-    case 'gigs':
-      return <GigsWidgetEditor widget={widget} onChange={onChange} />
-    case 'merch':
-      return <MerchWidgetEditor widget={widget} products={content.products || []} onChange={onChange} />
-    case 'link':
-      return <LinkWidgetEditor widget={widget} onChange={onChange} onUnfurl={onUnfurl} />
-    case 'embed':
-      return <EmbedWidgetEditor widget={widget} onChange={onChange} onUnfurl={onUnfurl} />
-    default:
-      return null
-  }
-}
-
-// ---------- new release page form ----------
-
-function NewReleaseForm({ songs, mainSlug, onCreate, onCancel }) {
-  const [songId, setSongId] = useState(songs[0]?.id ?? 0)
-  const [slugTail, setSlugTail] = useState(songs[0] ? slugify(songs[0].title) : '')
-  const [error, setError] = useState(null)
-  const [busy, setBusy] = useState(false)
-
-  const pickSong = (id) => {
-    setSongId(id)
-    const song = songs.find((s) => s.id === id)
-    if (song) setSlugTail(slugify(song.title))
-  }
-
-  const create = async () => {
-    setBusy(true)
-    setError(null)
-    try {
-      await onCreate(songId, `${mainSlug}/${slugTail}`)
-    } catch (err) {
-      setError(err.message)
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div className="editor-section new-release-form">
-      <h3>New release page</h3>
-      <p className="field-hint">
-        A landing page for a song or album launch: one button per streaming platform, plus anything
-        else you add. Share its link in your campaign.
-      </p>
-      <div className="widget-fields">
-        <SongSelect value={songId} songs={songs} onChange={pickSong} />
-        <label className="inline-field slug-field">
-          <span>/{mainSlug}/</span>
-          <input value={slugTail} onChange={(e) => setSlugTail(slugify(e.target.value))} />
-        </label>
-      </div>
-      {error && <p className="form-error">{error}</p>}
-      <div className="editor-actions">
-        <button className="btn" onClick={onCancel} disabled={busy}>Cancel</button>
-        <button className="btn btn-primary" onClick={create} disabled={busy || !songId || !slugTail}>
-          Create
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ---------- editor page ----------
-
+// The editor page: a stack of sections, each a stack of widgets that link to
+// the band's GigBuddy content. Session/page loading lives in useEditorSession,
+// draft persistence in useLayoutEditor; this component wires them to the UI and
+// owns the immutable layout transforms.
 export default function Editor() {
-  const [session, setSession] = useState(null)
-  const [pages, setPages] = useState([])
+  const sessionRef = useRef(null)
   const [page, setPage] = useState(null)
-  const [layout, setLayout] = useState(null)
   const [tab, setTab] = useState('build')
   const [preview, setPreview] = useState(null)
-  const [fatal, setFatal] = useState(null)
-  const [saveState, setSaveState] = useState('saved')
   const [publishedAt, setPublishedAt] = useState(null)
   const [openWidget, setOpenWidget] = useState(null)
   const [creatingRelease, setCreatingRelease] = useState(false)
 
-  const layoutRef = useRef(null)
-  const sessionRef = useRef(null)
-  const pageIdRef = useRef(null)
-  const timerRef = useRef(null)
+  const { layout, saveState, setSaveState, applyLayout, flushSave, loadLayout } = useLayoutEditor(sessionRef)
 
+  // Adopt a loaded page: reset the draft layout and all per-page UI state.
   const adoptPage = useCallback((loaded) => {
     setPage(loaded)
-    setLayout(loaded.draftLayout)
-    layoutRef.current = loaded.draftLayout
-    pageIdRef.current = loaded.id
+    loadLayout(loaded.id, loaded.draftLayout)
     setPublishedAt(loaded.publishedAt)
     setPreview(null)
     setOpenWidget(null)
-    setSaveState('saved')
     setTab('build')
-  }, [])
+  }, [loadLayout])
 
-  // Enter the editor: exchange a fresh handoff token from the URL fragment,
-  // or resume the stored session.
-  useEffect(() => {
-    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-    const gbtoken = hash.get('gbtoken')
-    const boot = async () => {
-      try {
-        if (gbtoken) {
-          const { session: token, pages: loadedPages, page: loaded } = await exchangeHandoff(gbtoken)
-          window.history.replaceState(null, '', window.location.pathname)
-          storeSession(token)
-          sessionRef.current = token
-          setSession(token)
-          setPages(loadedPages)
-          adoptPage(loaded)
-          return
-        }
-        const stored = getStoredSession()
-        if (!stored) {
-          setFatal('Open the editor from GigBuddy (Profile → Edit link page).')
-          return
-        }
-        const { pages: loadedPages } = await listEditorPages(stored)
-        sessionRef.current = stored
-        setSession(stored)
-        setPages(loadedPages)
-        const main = loadedPages.find((p) => p.pageType === 'main') || loadedPages[0]
-        adoptPage(await getEditorPage(stored, main.id))
-      } catch (err) {
-        setFatal(err.message)
-      }
-    }
-    boot()
-  }, [adoptPage])
-
-  const doSave = useCallback(async () => {
-    if (!layoutRef.current || !sessionRef.current || !pageIdRef.current) return
-    setSaveState('saving')
-    try {
-      await saveDraft(sessionRef.current, pageIdRef.current, layoutRef.current)
-      setSaveState('saved')
-    } catch (err) {
-      setSaveState(err.status === 401 ? 'expired' : 'error')
-    }
-  }, [])
-
-  const applyLayout = useCallback((next) => {
-    layoutRef.current = next
-    setLayout(next)
-    setSaveState('dirty')
-    clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(doSave, 800)
-  }, [doSave])
-
-  const flushSave = useCallback(async () => {
-    clearTimeout(timerRef.current)
-    await doSave()
-  }, [doSave])
-
-  useEffect(() => () => clearTimeout(timerRef.current), [])
+  const { session, pages, setPages, fatal, setFatal } = useEditorSession(sessionRef, adoptPage)
 
   if (fatal) return <div className="page-status">{fatal}</div>
   if (!page || !layout) return <div className="page-status" aria-busy="true" />
@@ -478,13 +69,7 @@ export default function Editor() {
 
   const createRelease = async (songId, slug) => {
     const { page: created } = await createReleasePage(sessionRef.current, songId, slug)
-    setPages((prev) => [...prev, {
-      id: created.id,
-      slug: created.slug,
-      pageType: created.pageType,
-      release: created.release,
-      publishedAt: created.publishedAt,
-    }])
+    setPages((prev) => [...prev, toListEntry(created)])
     setCreatingRelease(false)
     adoptPage(created)
   }
@@ -530,32 +115,8 @@ export default function Editor() {
   }
 
   const buildWidget = (section, type) => {
-    const firstSong = (content.songs || [])[0]
-    switch (type) {
-      case 'song':
-        if (!firstSong) return
-        addWidget(section, { id: newId(), type: 'song', songId: firstSong.id })
-        break
-      case 'platforms':
-        if (!firstSong) return
-        addWidget(section, { id: newId(), type: 'platforms', songId: firstSong.id, title: null })
-        break
-      case 'gigs':
-        addWidget(section, { id: newId(), type: 'gigs', title: 'Upcoming Gigs', limit: 10 })
-        break
-      case 'merch': {
-        const items = (content.products || []).map((p) => ({ productId: p.id, imageUrl: null, badge: null }))
-        if (!items.length) return
-        addWidget(section, { id: newId(), type: 'merch', title: null, shopUrl: null, items })
-        break
-      }
-      case 'link':
-        addWidget(section, { id: newId(), type: 'link', label: '', url: '', sublabel: null, imageUrl: null, icon: 'globe' })
-        break
-      case 'embed':
-        addWidget(section, { id: newId(), type: 'embed', url: '', title: null, description: null, imageUrl: null })
-        break
-    }
+    const widget = makeWidget(type, content)
+    if (widget) addWidget(section, widget)
   }
 
   const publish = async () => {
@@ -565,7 +126,7 @@ export default function Editor() {
       setPublishedAt(result.publishedAt)
       setPages((prev) => prev.map((p) => (p.id === page.id ? { ...p, publishedAt: result.publishedAt } : p)))
     } catch (err) {
-      setSaveState(err.status === 401 ? 'expired' : 'error')
+      setSaveState(saveErrorState(err))
     }
   }
 
@@ -575,7 +136,7 @@ export default function Editor() {
       setPreview(await getPreview(sessionRef.current, page.id))
       setTab('preview')
     } catch (err) {
-      setSaveState(err.status === 401 ? 'expired' : 'error')
+      setSaveState(saveErrorState(err))
     }
   }
 
@@ -603,7 +164,7 @@ export default function Editor() {
     <div className="editor">
       <header className="editor-header">
         <div>
-          <h1>{pageLabel({ ...page, pageType: page.pageType })} — {page.pageType === 'release' ? 'release page' : 'link page'}</h1>
+          <h1>{pageLabel(page)} — {page.pageType === 'release' ? 'release page' : 'link page'}</h1>
           <span className="save-state">{saveLabel}</span>
         </div>
         <div className="editor-actions">
