@@ -1,3 +1,4 @@
+import Typography from '@mui/material/Typography'
 import PublicPage from './PublicPage.jsx'
 import Editor from './Editor.jsx'
 import Privacy from './Privacy.jsx'
@@ -12,16 +13,20 @@ export default function App() {
   if (path === '/privacy') return <Privacy />
   if (path === '/') {
     return (
-      <div className="page-status">
+      <Typography className="page-status" variant="body1" component="div">
         This is a GigBuddy band link page server. Open a band&apos;s page via its own address.
-      </div>
+      </Typography>
     )
   }
   // Malformed percent-encoding (e.g. /%E0%A4%A) yields null → not-found,
   // rather than throwing a URIError during render.
   const slug = slugFromPath(path)
   if (slug === null) {
-    return <div className="page-status">This page doesn&apos;t exist (or isn&apos;t published yet).</div>
+    return (
+      <Typography className="page-status" variant="body1" component="div">
+        This page doesn&apos;t exist (or isn&apos;t published yet).
+      </Typography>
+    )
   }
   return <PublicPage slug={slug} />
 }

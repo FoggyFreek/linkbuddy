@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
+import { Fragment, useState } from 'react'
 import IconButton from '@mui/material/IconButton'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
@@ -14,9 +13,6 @@ import XIcon from '@mui/icons-material/X'
 import TelegramIcon from '@mui/icons-material/Telegram'
 import EmailIcon from '@mui/icons-material/Email'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
-
-// Match the page's system font instead of MUI's Roboto default.
-const theme = createTheme({ typography: { fontFamily: 'inherit' } })
 
 // The social/chat channels a page URL can be shared to. Each opens the
 // platform's share intent in a new tab; `text` rides along where supported.
@@ -100,13 +96,14 @@ export default function ShareButton({ url, title, onShare = () => {}, variant = 
     top: 12,
     right: 12,
     zIndex: 10,
-    bgcolor: '#ffffff',
-    boxShadow: '0 1px 3px rgb(20 22 26 / 0.15)',
-    '&:hover': { bgcolor: '#f4f5f7' },
+    color: 'text.primary',
+    bgcolor: 'background.paper',
+    boxShadow: 'var(--shadow)',
+    '&:hover': { bgcolor: 'action.hover' },
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <Fragment>
       <IconButton
         aria-label="Share this page"
         onClick={(e) => setAnchorEl(e.currentTarget)}
@@ -146,6 +143,6 @@ export default function ShareButton({ url, title, onShare = () => {}, variant = 
         message="Link copied"
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       />
-    </ThemeProvider>
+    </Fragment>
   )
 }

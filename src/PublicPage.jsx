@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import Typography from '@mui/material/Typography'
 import { getPublicPage, sendView, sendClick } from './api.js'
 import WidgetStack from './WidgetStack.jsx'
 import ShareButton from './ShareButton.jsx'
@@ -56,9 +57,19 @@ export default function PublicPage({ slug }) {
 
   if (status === 'loading') return <div className="page-status" aria-busy="true" />
   if (status === 'notfound') {
-    return <div className="page-status">This page doesn&apos;t exist (or isn&apos;t published yet).</div>
+    return (
+      <Typography className="page-status" variant="body1" component="div">
+        This page doesn&apos;t exist (or isn&apos;t published yet).
+      </Typography>
+    )
   }
-  if (status === 'error') return <div className="page-status">Something went wrong — try again later.</div>
+  if (status === 'error') {
+    return (
+      <Typography className="page-status" variant="body1" component="div">
+        Something went wrong — try again later.
+      </Typography>
+    )
+  }
 
   const shareTitle = page.release?.title
     ? `${page.release.title} — ${page.release.artist || ''}`.trim().replace(/—$/, '').trim()
@@ -66,7 +77,7 @@ export default function PublicPage({ slug }) {
 
   const footer = (
     <footer className="page-footer">
-      <span>Anonymous, cookieless visit statistics only.</span>
+      <Typography component="span" variant="caption">Anonymous, cookieless visit statistics only.</Typography>
       <a href="/privacy">Privacy</a>
     </footer>
   )

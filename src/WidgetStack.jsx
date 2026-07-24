@@ -2,6 +2,7 @@
 // widget cards. Used verbatim by the public page and the editor's
 // preview-as-visitor mode, so preview can never drift from reality.
 import { useState } from 'react'
+import Typography from '@mui/material/Typography'
 import { InlineEmbed, VideoOverlay } from './embeds.jsx'
 import {
   InstagramIcon,
@@ -39,6 +40,33 @@ function formatGigDate(iso) {
   }
 }
 
+// A card's primary label with an optional dimmer sub-label beneath it. Both are
+// MUI Typography so their sizing/weight come from the theme's type scale
+// (body1 for the label, caption for the sub-label); the flex column layout stays
+// in the shared `.card-label` class.
+function CardLabel({ label, sublabel, className = 'card-label' }) {
+  return (
+    <Typography component="span" variant="body1" className={className}>
+      {label}
+      {sublabel && (
+        <Typography component="span" variant="caption" color="text.secondary" className="card-sublabel">
+          {sublabel}
+        </Typography>
+      )}
+    </Typography>
+  )
+}
+
+// A centred section heading (MUI h3 scale). Rendered as an <h2> so the document
+// keeps a sensible heading outline under the band/release <h1>.
+function SectionTitle({ children }) {
+  return (
+    <Typography variant="h3" component="h2" className="section-title">
+      {children}
+    </Typography>
+  )
+}
+
 // The band's social icons, shared by the band header (plain icons) and the
 // release page footer (circular buttons). Renders nothing when the band has
 // set no socials.
@@ -69,8 +97,8 @@ function BandHeader({ band, onLinkClick }) {
   return (
     <header className="band-header">
       {band.logoUrl && <img className="band-avatar" src={band.logoUrl} alt={band.name || 'Band logo'} />}
-      <h1 className="band-name">{band.name}</h1>
-      {band.bio && <p className="band-bio">{band.bio}</p>}
+      <Typography variant="h1" className="band-name">{band.name}</Typography>
+      {band.bio && <Typography variant="subtitle1" component="p" className="band-bio">{band.bio}</Typography>}
       <SocialLinks band={band} onLinkClick={onLinkClick} className="band-socials" linkClassName="social-link" size={30} />
     </header>
   )
@@ -93,10 +121,7 @@ function SongWidget({ widget, onLinkClick }) {
         ) : (
           <div className="song-cover song-cover-placeholder">♪</div>
         )}
-        <span className="card-label">
-          {widget.title}
-          {widget.artist && <span className="card-sublabel">{widget.artist}</span>}
-        </span>
+        <CardLabel label={widget.title} sublabel={widget.artist} />
       </a>
       {extras.length > 0 && (
         <div className="song-extra-links">
@@ -142,7 +167,7 @@ function GigsWidget({ widget }) {
     <details className="card gigs-card">
       <summary className="gigs-summary">
         <span className="card-icon"><CalendarIcon size={26} /></span>
-        <span className="card-label">{widget.title}</span>
+        <CardLabel label={widget.title} />
         <span className="gigs-chevron" aria-hidden="true">▾</span>
       </summary>
       {widget.gigs.length === 0 ? (
@@ -199,7 +224,7 @@ function MerchProduct({ product, shopUrl, onLinkClick }) {
 function MerchWidget({ widget, onLinkClick }) {
   return (
     <div className="card merch-card">
-      {widget.title && <h3 className="merch-title">{widget.title}</h3>}
+      {widget.title && <Typography variant="h4" component="h3" className="merch-title">{widget.title}</Typography>}
       <div className="merch-scroll">
         {widget.products.map((product) => (
           <MerchProduct key={product.id} product={product} shopUrl={widget.shopUrl} onLinkClick={onLinkClick} />
@@ -224,10 +249,7 @@ function LinkWidget({ widget, onLinkClick }) {
       ) : (
         <span className="card-icon"><Icon size={26} /></span>
       )}
-      <span className="card-label">
-        {widget.label}
-        {widget.sublabel && <span className="card-sublabel">{widget.sublabel}</span>}
-      </span>
+      <CardLabel label={widget.label} sublabel={widget.sublabel} />
     </a>
   )
 }
@@ -251,7 +273,7 @@ function PlatformsWidget({ widget, onLinkClick }) {
 
   return (
     <div className="platforms">
-      {widget.title && <h3 className="section-title">{widget.title}</h3>}
+      {widget.title && <SectionTitle>{widget.title}</SectionTitle>}
       {widget.platforms.map((platform, i) => {
         const Icon = PLATFORM_ICON_COMPONENTS[platform.id] || PLATFORM_ICON_COMPONENTS.other
         return (
@@ -265,7 +287,7 @@ function PlatformsWidget({ widget, onLinkClick }) {
                 onClick={() => onLinkClick(`platform:${platform.id}`)}
               >
                 <span className="platform-logo"><Icon size={30} /></span>
-                <span className="platform-name">{platform.label}</span>
+                <Typography component="span" variant="body1" className="platform-name">{platform.label}</Typography>
                 <span className="platform-play">Play</span>
               </a>
               {platform.embed && (
@@ -315,10 +337,7 @@ function EmbedWidget({ widget, onLinkClick }) {
             ) : (
               <span className="song-cover song-cover-placeholder">♪</span>
             )}
-            <span className="card-label">
-              {label}
-              {widget.description && <span className="card-sublabel">{widget.description}</span>}
-            </span>
+            <CardLabel label={label} sublabel={widget.description} />
             <span className="platform-play">Play</span>
           </button>
         )}
@@ -349,10 +368,7 @@ function EmbedWidget({ widget, onLinkClick }) {
           <span className="embed-play-badge" aria-hidden="true">▶</span>
         </button>
         <div className="embed-caption">
-          <span className="card-label">
-            {label}
-            {widget.description && <span className="card-sublabel">{widget.description}</span>}
-          </span>
+          <CardLabel label={label} sublabel={widget.description} />
           <a
             className="embed-external"
             href={widget.url}
@@ -381,10 +397,7 @@ function EmbedWidget({ widget, onLinkClick }) {
       ) : (
         <span className="card-icon"><PLATFORM_ICON_COMPONENTS.other size={26} /></span>
       )}
-      <span className="card-label">
-        {label}
-        {widget.description && <span className="card-sublabel">{widget.description}</span>}
-      </span>
+      <CardLabel label={label} sublabel={widget.description} />
     </a>
   )
 }
@@ -414,8 +427,12 @@ function ReleaseArt({ release }) {
 function ReleaseInfo({ release, band }) {
   return (
     <header className="release-header">
-      <h1 className="release-title">{release.title}</h1>
-      {release.artist && <p className="release-artist">{release.artist}</p>}
+      <Typography variant="h2" className="release-title">{release.title}</Typography>
+      {release.artist && (
+        <Typography variant="subtitle2" component="p" color="text.secondary" className="release-artist">
+          {release.artist}
+        </Typography>
+      )}
       {band?.slug && (
         <a className="release-band-link" href={`/${band.slug}`}>
           More from {band.name || 'this band'} →
@@ -439,7 +456,7 @@ const noopClick = () => {}
 function Sections({ sections, onLinkClick }) {
   return sections.map((section) => (
     <section key={section.id} className="stack-section">
-      {section.title && <h2 className="section-title">{section.title}</h2>}
+      {section.title && <SectionTitle>{section.title}</SectionTitle>}
       {section.widgets.map((widget) => {
         const Widget = WIDGETS[widget.type]
         return Widget ? <Widget key={widget.id} widget={widget} onLinkClick={onLinkClick} /> : null

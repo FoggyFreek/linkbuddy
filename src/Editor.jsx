@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import Typography from '@mui/material/Typography'
 import {
   unfurlUrl,
   createReleasePage,
@@ -11,6 +12,7 @@ import {
 import WidgetStack from './WidgetStack.jsx'
 import StatsPanel from './StatsPanel.jsx'
 import ShareButton from './ShareButton.jsx'
+import ColorModeToggle from './ColorModeToggle.jsx'
 import { useEditorSession } from './hooks/useEditorSession.js'
 import { useLayoutEditor } from './hooks/useLayoutEditor.js'
 import { WidgetEditor } from './widgets/WidgetEditors.jsx'
@@ -164,10 +166,15 @@ export default function Editor() {
     <div className="editor">
       <header className="editor-header">
         <div>
-          <h1>{pageLabel(page)} — {page.pageType === 'release' ? 'release page' : 'link page'}</h1>
-          <span className="save-state">{saveLabel}</span>
+          <Typography variant="h2" component="h1">
+            {pageLabel(page)} — {page.pageType === 'release' ? 'release page' : 'link page'}
+          </Typography>
+          <Typography className="save-state" variant="caption" color="text.secondary" component="span">
+            {saveLabel}
+          </Typography>
         </div>
         <div className="editor-actions">
+          <ColorModeToggle />
           {publishedAt && (
             <ShareButton
               variant="inline"

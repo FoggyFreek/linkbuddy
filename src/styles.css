@@ -1,37 +1,35 @@
 /* Mockup-derived look: soft gray canvas, centered 600px column of white
-   rounded cards. One stylesheet, no framework. */
+   rounded cards. Colours and the type scale come from the MUI theme
+   (src/theme.js); this stylesheet maps the theme's generated variables onto the
+   semantic names the layout uses, so every rule below tracks the active
+   light/dark colour scheme without being rewritten. */
 
 :root {
-  --bg: #eceef2;
-  --card: #ffffff;
-  --text: #17181c;
-  --text-dim: #5c6066;
+  /* Semantic aliases over MUI's per-scheme palette variables. Custom-property
+     substitution is lazy — the inner var() is resolved wherever the alias is
+     *used*, so a single declaration here yields the right value under
+     :root/[data-theme="light"] and under [data-theme="dark"] alike. */
+  --bg: var(--mui-palette-background-default);
+  --card: var(--mui-palette-background-paper);
+  --text: var(--mui-palette-text-primary);
+  --text-dim: var(--mui-palette-text-secondary);
+  --accent: var(--mui-palette-primary-main);
+  --accent-contrast: var(--mui-palette-primary-contrastText);
+  --green: var(--mui-palette-success-main);
+  --card-border: var(--mui-palette-surface-border);
+  --surface-2: var(--mui-palette-surface-s2);
+  --surface-3: var(--mui-palette-surface-s3);
+  --field: var(--mui-palette-surface-field);
+  --line: var(--mui-palette-divider);
+  --hover: var(--mui-palette-action-hover);
   --radius: 18px;
   --shadow: 0 1px 3px rgb(20 22 26 / 0.08);
-  --accent: #17181c;
-  --green: #3ec93e;
-  /* Named surfaces (light defaults). Declared here, before the dark block, so
-     the dark overrides win by source order — a data-theme="dark" element can
-     sit on <html> (public page) or on a nested div (editor preview), so this
-     must not rely on :root-only specificity to beat them. */
-  --card-border: #ecedf1;
-  --surface-2: #f0f1f4;
-  --surface-3: #e4e6ea;
 }
 
-/* Band-selectable dark theme. Set as data-theme="dark" on <html> for the
-   public page and on the preview box in the editor, so the same variables and
-   scoped overrides drive both. Anything not listed inherits the light values. */
+/* The one colour that isn't a flat palette entry: cards carry a softer drop
+   shadow on the dark canvas, where the light shadow would vanish. */
 [data-theme='dark'] {
-  --bg: #26374d;
-  --card: #2f4257;
-  --text: #f2f5f9;
-  --text-dim: #9fb1c2;
   --shadow: 0 1px 3px rgb(0 0 0 / 0.35);
-  --accent: #f2f5f9;
-  --card-border: rgb(255 255 255 / 0.05);
-  --surface-2: #35485e;
-  --surface-3: #3f5468;
 }
 
 /* Dark-only surface tweaks. Cards gain a hairline outline (they read as
@@ -49,13 +47,8 @@
 
 * { box-sizing: border-box; }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+/* CssBaseline (src/main.jsx) sets the body background, text colour and font
+   family from the active MUI colour scheme; only box-sizing is added here. */
 
 a { color: inherit; text-decoration: none; }
 button { font: inherit; cursor: pointer; }
@@ -91,14 +84,15 @@ input, select { font: inherit; }
   background: #0c0d0f;
 }
 
-/* No logo set → the band name text carries the header on its own. */
-.band-name { font-size: 34px; margin: 14px 0 6px; font-weight: 600; }
+/* No logo set → the band name text carries the header on its own. Size/weight
+   come from the MUI h1 variant; only layout spacing lives here. Margin rules are
+   tag-qualified so they outweigh MUI's `.MuiTypography-root { margin: 0 }`
+   regardless of stylesheet injection order. */
+h1.band-name { margin: 14px 0 6px; }
 
-.band-bio {
-  font-size: 19px;
+p.band-bio {
   margin: 0 auto 18px;
   max-width: 440px;
-  line-height: 1.35;
 }
 
 .band-socials { display: flex; justify-content: center; gap: 22px; }
@@ -146,9 +140,9 @@ input, select { font: inherit; }
 }
 
 .release-header { text-align: center; margin-bottom: 4px; }
-.release-title { font-size: 22px; margin: 0 0 4px; font-weight: 700; }
-.release-artist { font-size: 18px; color: var(--text-dim); margin: 0 0 10px; }
-.release-band-link { display: inline-block; margin-top: 12px; font-size: 14px; color: var(--text-dim); text-decoration: underline; }
+h2.release-title { margin: 0 0 4px; }
+p.release-artist { margin: 0 0 10px; }
+.release-band-link { display: inline-block; margin-top: 12px; font-size: 0.875rem; text-decoration: underline; }
 
 /* Wide desktop view: artwork pane on the left (cover floating on a blurred,
    stretched copy of itself), content pane on the right. */
@@ -195,7 +189,6 @@ input, select { font: inherit; }
     overflow-y: auto;
   }
   .release-header { text-align: left; margin-bottom: 8px; }
-  .release-title { font-size: 20px; }
   .release-socials { justify-content: flex-start; }
   /* Pin the privacy footer to the foot of the content pane, left-aligned to
      match the rest of the desktop column. */
@@ -247,7 +240,7 @@ input, select { font: inherit; }
 .platform-preview:hover { color: var(--text); }
 .platform-card { display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 6px 0; }
 .platform-logo { display: inline-flex; color: var(--text); flex: 0 0 auto; }
-.platform-name { font-size: 17px; font-weight: 500; min-width: 0; }
+.platform-name { min-width: 0; }
 .platform-play {
   margin-left: auto;
   border: 1.5px solid var(--text);
@@ -259,7 +252,8 @@ input, select { font: inherit; }
 }
 .platform-card:hover .platform-play { background: var(--text); color: var(--card); }
 
-.section-title { text-align: center; font-size: 19px; font-weight: 700; margin: 8px 0 0; }
+.section-title { text-align: center; }
+h2.section-title { margin: 8px 0 0; }
 
 .card {
   background: var(--card);
@@ -271,15 +265,13 @@ input, select { font: inherit; }
 .card-label {
   flex: 1;
   text-align: center;
-  font-size: 17px;
-  font-weight: 500;
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
-.card-sublabel { font-size: 13px; color: var(--text-dim); font-weight: 400; }
+.card-sublabel { display: block; }
 
 .card-icon { display: inline-flex; color: var(--text); flex: 0 0 auto; }
 
@@ -382,7 +374,8 @@ input, select { font: inherit; }
 
 /* merch */
 .merch-card { padding: 16px 0 14px; }
-.merch-title { text-align: center; font-size: 18px; margin: 0 16px 12px; }
+.merch-title { text-align: center; }
+h3.merch-title { margin: 0 16px 12px; }
 .merch-scroll {
   display: flex;
   gap: 12px;
@@ -498,10 +491,8 @@ input, select { font: inherit; }
   max-width: 640px;
   margin: 0 auto;
   padding: 40px 20px 60px;
-  line-height: 1.55;
 }
-.privacy-page h1 { font-size: 28px; }
-.privacy-page h2 { font-size: 19px; margin-top: 28px; }
+/* Headings and prose come from MUI Typography variants (see Privacy.jsx). */
 
 /* ---------- editor ---------- */
 
@@ -520,24 +511,24 @@ input, select { font: inherit; }
 .editor-actions { display: flex; gap: 8px; }
 
 .btn {
-  border: 1px solid #d5d8de;
+  border: 1px solid var(--line);
   background: var(--card);
   border-radius: 10px;
   padding: 8px 14px;
 }
-.btn:hover { background: #f4f5f7; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-primary:hover { background: #33353b; }
+.btn:hover { background: var(--hover); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.btn-primary:hover { filter: brightness(0.9); }
 
 .page-switcher { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .page-chip {
-  border: 1px solid #d5d8de;
+  border: 1px solid var(--line);
   background: var(--card);
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 14px;
 }
-.page-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.page-chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
 .page-chip-new { border-style: dashed; color: var(--text-dim); }
 .page-chip-new:disabled { opacity: 0.4; cursor: default; }
 
@@ -548,7 +539,7 @@ input, select { font: inherit; }
 .field-hint { font-size: 13px; color: var(--text-dim); margin: 2px 0; }
 .form-error { color: #b3261e; font-size: 14px; }
 
-.editor-tabs { display: flex; gap: 4px; margin: 20px 0 12px; border-bottom: 1px solid #d5d8de; }
+.editor-tabs { display: flex; gap: 4px; margin: 20px 0 12px; border-bottom: 1px solid var(--line); }
 .editor-tabs button {
   border: none;
   background: none;
@@ -578,13 +569,14 @@ input, select { font: inherit; }
   border-radius: 8px;
   padding: 6px 8px;
   font-weight: 600;
-  background: #f7f8fa;
+  background: var(--field);
+  color: inherit;
 }
-.section-title-input:focus { outline: none; border-color: #b9bdc6; background: #fff; }
+.section-title-input:focus { outline: none; border-color: var(--line); background: var(--card); }
 
 .row-actions { display: flex; gap: 4px; }
 .row-actions button {
-  border: 1px solid #d5d8de;
+  border: 1px solid var(--line);
   background: var(--card);
   border-radius: 8px;
   width: 30px;
@@ -595,7 +587,7 @@ input, select { font: inherit; }
 
 .editor-widgets { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 
-.editor-widget { border: 1px solid #ecedf1; border-radius: 10px; padding: 8px 10px; }
+.editor-widget { border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 10px; }
 .editor-widget-row { display: flex; align-items: center; gap: 8px; }
 .widget-summary {
   flex: 1;
@@ -608,10 +600,12 @@ input, select { font: inherit; }
 
 .widget-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .widget-fields input, .widget-fields select {
-  border: 1px solid #d5d8de;
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 7px 10px;
   width: 100%;
+  background: var(--field);
+  color: inherit;
 }
 .inline-field { display: flex; align-items: center; gap: 8px; font-size: 14px; }
 .inline-field input[type='number'] { width: 80px; }
@@ -629,7 +623,7 @@ input, select { font: inherit; }
   color: var(--text-dim);
 }
 .add-widget-row button {
-  border: 1px dashed #b9bdc6;
+  border: 1px dashed var(--line);
   background: none;
   border-radius: 999px;
   padding: 4px 12px;
@@ -641,7 +635,7 @@ input, select { font: inherit; }
 .preview-frame { display: flex; flex-direction: column; gap: 8px; }
 .preview-note { text-align: center; font-size: 13px; color: var(--text-dim); }
 .preview-frame .public-page {
-  border: 1px solid #d5d8de;
+  border: 1px solid var(--line);
   border-radius: 24px;
   background: var(--bg);
 }
@@ -652,13 +646,13 @@ input, select { font: inherit; }
 
 .stats-toolbar { display: flex; gap: 6px; }
 .stats-toolbar button {
-  border: 1px solid #d5d8de;
+  border: 1px solid var(--line);
   background: var(--card);
   border-radius: 999px;
   padding: 5px 12px;
   font-size: 13px;
 }
-.stats-toolbar button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.stats-toolbar button.active { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
 .stats-toolbar button:disabled { opacity: 0.4; cursor: default; }
 
 .stats-tiles { display: flex; gap: 12px; }
@@ -687,7 +681,7 @@ input, select { font: inherit; }
 .bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .bar-list li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .bar-label { flex: 0 0 118px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar-track { flex: 1; background: #f0f1f4; border-radius: 999px; height: 8px; overflow: hidden; }
+.bar-track { flex: 1; background: var(--surface-2); border-radius: 999px; height: 8px; overflow: hidden; }
 .bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
 .bar-value { flex: 0 0 34px; text-align: right; color: var(--text-dim); }
 
@@ -696,9 +690,9 @@ input, select { font: inherit; }
 
 .conversion-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .conversion-table th, .conversion-table td { text-align: left; padding: 6px 8px; }
-.conversion-table th { color: var(--text-dim); font-weight: 500; border-bottom: 1px solid #ecedf1; }
+.conversion-table th { color: var(--text-dim); font-weight: 500; border-bottom: 1px solid var(--card-border); }
 .conversion-table td:not(:first-child), .conversion-table th:not(:first-child) { text-align: right; }
-.conversion-table tbody tr:nth-child(odd) { background: #f8f9fb; }
+.conversion-table tbody tr:nth-child(odd) { background: var(--surface-2); }
 
 .stats-footnote { font-size: 12px; color: var(--text-dim); }
 .stats-footnote a { text-decoration: underline; }

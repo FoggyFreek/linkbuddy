@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "migrate": "node server/migrate.js",
     "stats:purge": "node server/purgeStats.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:browser": "vitest run --config vitest.browser.config.js"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -29,9 +30,13 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/browser": "^4.1.10",
+    "@vitest/browser-playwright": "^4.1.10",
     "concurrently": "^9.1.2",
+    "playwright": "^1.61.1",
     "supertest": "^7.2.2",
     "vite": "^8.0.4",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "vitest-browser-react": "^2.2.0"
   }
 }
