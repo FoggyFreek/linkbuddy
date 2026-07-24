@@ -102,6 +102,37 @@ describe('Screen renders (mock data → layout validation + screenshots)', () =>
     await shoot('public-release-dark')
   })
 
+  it('public band page — gigs accordion expanded', async () => {
+    await page.viewport(480, 1000)
+    state.publicPage = bandPage('light')
+    const screen = await mount(<PublicPage slug="neon-harbour" />)
+
+    await expect.element(screen.getByRole('button', { name: /Upcoming Gigs/ })).toBeInTheDocument()
+    await screen.getByRole('button', { name: /Upcoming Gigs/ }).click()
+    // The gig rows are revealed once the Accordion expands.
+    await expect.element(screen.getByText('Harbour Festival')).toBeInTheDocument()
+    await expect.element(screen.getByText('Pier Stage, Rotterdam')).toBeInTheDocument()
+    await shoot('public-band-gigs-expanded')
+  })
+
+  it('public band page — share menu open (portal inherits the page scheme)', async () => {
+    await page.viewport(480, 900)
+    state.publicPage = bandPage('dark')
+    const screen = await mount(<PublicPage slug="neon-harbour" />)
+
+    await expect.element(screen.getByRole('heading', { level: 1, name: 'Neon Harbour' })).toBeInTheDocument()
+    await screen.getByRole('button', { name: 'Share this page' }).click()
+    await expect.element(screen.getByRole('menuitem', { name: 'Copy link' })).toBeInTheDocument()
+    // The menu portals into the ColorSchemeScope, so it resolves to the dark
+    // paper colour instead of escaping to the document (light) scheme.
+    await vi.waitFor(() => {
+      const menuPaper = document.querySelector('.MuiMenu-paper')
+      expect(menuPaper).toBeTruthy()
+      expect(getComputedStyle(menuPaper).backgroundColor).toBe('rgb(47, 66, 87)')
+    })
+    await shoot('public-band-share-menu')
+  })
+
   it('privacy notice', async () => {
     await page.viewport(820, 900)
     const screen = await mount(<Privacy />)
