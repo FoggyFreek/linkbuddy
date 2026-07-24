@@ -4,11 +4,15 @@
    semantic names the layout uses, so every rule below tracks the active
    light/dark colour scheme without being rewritten. */
 
-:root {
-  /* Semantic aliases over MUI's per-scheme palette variables. Custom-property
-     substitution is lazy — the inner var() is resolved wherever the alias is
-     *used*, so a single declaration here yields the right value under
-     :root/[data-theme="light"] and under [data-theme="dark"] alike. */
+:root,
+[data-theme] {
+  /* Semantic aliases over MUI's per-scheme palette variables. The inner var()
+     is resolved on the element where the alias is *declared* (and then
+     inherited as a fixed value), so the aliases must be re-declared on every
+     element that carries a data-theme attribute — not only :root. That lets a
+     nested [data-theme="dark"] container (e.g. the editor preview frame)
+     recompute them against its own scheme, exactly as the public page does when
+     it sets data-theme on <html>. */
   --bg: var(--mui-palette-background-default);
   --card: var(--mui-palette-background-paper);
   --text: var(--mui-palette-text-primary);
@@ -24,6 +28,15 @@
   --hover: var(--mui-palette-action-hover);
   --radius: 18px;
   --shadow: 0 1px 3px rgb(20 22 26 / 0.08);
+}
+
+/* A themed container re-establishes the inherited text colour from its own
+   scheme. CssBaseline sets `color` on <body> (resolved against the root scheme),
+   and that inherits as a fixed value — so a nested [data-theme] container (the
+   editor preview) must restate it, matching the public page where the attribute
+   sits on <html>. */
+[data-theme] {
+  color: var(--text);
 }
 
 /* The one colour that isn't a flat palette entry: cards carry a softer drop
