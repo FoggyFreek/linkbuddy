@@ -98,7 +98,7 @@ export default function ShareButton({ url, title, onShare = () => {}, variant = 
     zIndex: 10,
     color: 'text.primary',
     bgcolor: 'background.paper',
-    boxShadow: 'var(--shadow)',
+    boxShadow: '0 1px 3px rgb(20 22 26 / 0.2)',
     '&:hover': { bgcolor: 'action.hover' },
   }
 

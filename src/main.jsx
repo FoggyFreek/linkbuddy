@@ -4,7 +4,6 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import App from './App.jsx'
 import theme from './theme.js'
-import './styles.css'
 
 // One theme for the whole app. ThemeProvider owns the `data-theme` attribute and
 // the light/dark colour schemes; CssBaseline paints the page background/text from

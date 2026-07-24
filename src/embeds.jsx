@@ -2,19 +2,21 @@
 // load — visitors see a facade (thumbnail + play) and the player only loads
 // after they click (see PRIVACY.md). Inline embeds (Spotify, SoundCloud)
 // expand in place; video embeds (YouTube) open in a lightbox overlay.
+import Box from '@mui/material/Box'
 import Dialog from '@mui/material/Dialog'
 import IconButton from '@mui/material/IconButton'
 import CloseIcon from '@mui/icons-material/Close'
 
 export function InlineEmbed({ embed, title }) {
   return (
-    <iframe
-      className="inline-embed"
+    <Box
+      component="iframe"
       src={embed.src}
       height={embed.height || 152}
       title={title || 'Audio player'}
       allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
       loading="lazy"
+      sx={{ width: '100%', border: 0, borderRadius: '12px', display: 'block' }}
     />
   )
 }
@@ -36,14 +38,16 @@ export function VideoOverlay({ src, onClose }) {
         <CloseIcon />
       </IconButton>
       {src && (
-        <div className="video-frame">
-          <iframe
+        <Box sx={{ aspectRatio: '16 / 9', width: '100%' }}>
+          <Box
+            component="iframe"
             src={src}
             title="Video player"
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
+            sx={{ width: '100%', height: '100%', border: 0, display: 'block' }}
           />
-        </div>
+        </Box>
       )}
     </Dialog>
   )

@@ -1,3 +1,3 @@
-// Load the app's real stylesheet so browser tests exercise the same CSS-variable
-// bridge the app ships with.
-import '../../src/styles.css'
+// The frontend has no stylesheet — all styling comes from the MUI theme and the
+// `sx` prop — so browser tests need no CSS setup. This file is kept as the
+// configured setupFiles entry point in case shared test bootstrapping is needed.

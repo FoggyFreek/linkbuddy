@@ -34,9 +34,9 @@ const typography = {
 }
 
 // Named surfaces beyond MUI's own palette. `surface.*` carry the pill / scroll /
-// hairline tones the cards rely on; declaring them in the palette means MUI emits
-// them as `--mui-palette-surface-*` variables, per colour scheme, for the CSS to
-// consume through its own semantic aliases (see styles.css).
+// hairline tones the cards rely on. Components reference them through the `sx`
+// prop (e.g. bgcolor: 'surface.s2') and theme.vars.palette.surface.*, and MUI
+// emits them as `--mui-palette-surface-*` variables per colour scheme.
 const lightPalette = {
   mode: 'light',
   background: { default: '#eceef2', paper: '#ffffff' },
@@ -66,11 +66,48 @@ const baseTheme = createTheme({
   shape: { borderRadius: 18 },
   typography,
   components: {
-    // Cards, buttons and menus should read the system font, not MUI's Roboto,
-    // and match the page's rounded, low-shadow surfaces.
     MuiCssBaseline: {
       styleOverrides: {
         body: { WebkitFontSmoothing: 'antialiased' },
+        // Any element that forces a colour scheme on a subtree (the editor
+        // preview, and the public page on <html>) restates the inherited text
+        // colour from that scheme. CssBaseline sets `color` on <body> against the
+        // root scheme, and it inherits as a fixed value — so plain inherited text
+        // (Typography without an explicit colour) inside a nested [data-theme]
+        // container would otherwise keep the root's colour. MUI components that
+        // set their own colour are unaffected. This global rule keeps forcing
+        // robust without every container having to remember to set `color`.
+        '[data-theme]': { color: 'var(--mui-palette-text-primary)' },
+      },
+    },
+    // The card surface the whole design is built on: rounded, a hairline-soft
+    // drop shadow on light, and — where that shadow all but disappears — a
+    // hairline outline plus a deeper shadow on dark. `applyStyles('dark', …)`
+    // is the recommended way to express per-scheme styles (over palette.mode).
+    MuiCard: {
+      defaultProps: { elevation: 0 },
+      styleOverrides: {
+        root: ({ theme }) => ({
+          backgroundImage: 'none',
+          boxShadow: '0 1px 3px rgb(20 22 26 / 0.08)',
+          ...theme.applyStyles('dark', {
+            border: `1px solid ${theme.vars.palette.surface.border}`,
+            boxShadow: '0 1px 3px rgb(0 0 0 / 0.35)',
+          }),
+        }),
+      },
+    },
+    MuiButton: {
+      defaultProps: { disableElevation: true },
+      styleOverrides: {
+        root: { borderRadius: 12 },
+      },
+    },
+    // Pills (extra song links) and chips (editor page switcher) share the
+    // rounded look; keep their label casing as authored.
+    MuiChip: {
+      styleOverrides: {
+        label: { textTransform: 'none' },
       },
     },
   },

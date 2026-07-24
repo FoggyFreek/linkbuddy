@@ -91,7 +91,7 @@ describe('PublicPage rendering (real component, mocked API)', () => {
     await expect.element(screen.getByText('The Testers')).toBeInTheDocument()
 
     // The song card's background resolves --card -> --mui-palette-background-paper.
-    const card = document.querySelector('.card')
+    const card = document.querySelector('.MuiCard-root')
     expect(card).toBeTruthy()
     expect(getComputedStyle(card).backgroundColor).toBe('rgb(255, 255, 255)')
     expect(document.documentElement.dataset.theme).toBe('light')
@@ -109,7 +109,7 @@ describe('PublicPage rendering (real component, mocked API)', () => {
 
     // The same CSS-variable bridge now yields the dark paper colour (#2f4257),
     // confirming the MUI colour scheme drives the plain-CSS cards.
-    const card = document.querySelector('.card')
+    const card = document.querySelector('.MuiCard-root')
     await vi.waitFor(() => {
       expect(getComputedStyle(card).backgroundColor).toBe('rgb(47, 66, 87)')
     })

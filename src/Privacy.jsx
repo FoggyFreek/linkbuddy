@@ -1,3 +1,4 @@
+import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 
 // Visitor-facing privacy notice. Keep in sync with PRIVACY.md (the operator
@@ -7,7 +8,7 @@ import Typography from '@mui/material/Typography'
 // of the app.
 export default function Privacy() {
   return (
-    <div className="privacy-page">
+    <Box sx={{ maxWidth: 640, mx: 'auto', px: '20px', pt: '40px', pb: '60px' }}>
       <Typography variant="h2" component="h1" gutterBottom>Privacy notice</Typography>
       <Typography variant="body1" sx={{ mb: 2 }}>
         This is a band&apos;s public link page. You can visit it without an account, and it sets
@@ -56,6 +57,6 @@ export default function Privacy() {
         For questions about this page&apos;s data, contact the band that operates it; for questions
         about the platform, contact the site operator.
       </Typography>
-    </div>
+    </Box>
   )
 }
