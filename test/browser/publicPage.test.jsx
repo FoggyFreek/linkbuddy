@@ -90,11 +90,15 @@ describe('PublicPage rendering (real component, mocked API)', () => {
     const screen = await renderPage()
     await expect.element(screen.getByText('The Testers')).toBeInTheDocument()
 
-    // The song card's background resolves --card -> --mui-palette-background-paper.
+    // The page renders inside a ColorSchemeScope that carries the scheme — the
+    // document itself is left untouched. The scope paints the light canvas
+    // (#eceef2) and the song card resolves to the light paper (#ffffff).
     const card = document.querySelector('.MuiCard-root')
     expect(card).toBeTruthy()
+    const scope = card.closest('[data-theme]')
+    expect(scope.getAttribute('data-theme')).toBe('light')
+    expect(getComputedStyle(scope).backgroundColor).toBe('rgb(236, 238, 242)')
     expect(getComputedStyle(card).backgroundColor).toBe('rgb(255, 255, 255)')
-    expect(document.documentElement.dataset.theme).toBe('light')
   })
 
   it('switches every surface to the dark scheme for a dark-theme band', async () => {
@@ -102,18 +106,18 @@ describe('PublicPage rendering (real component, mocked API)', () => {
     const screen = await renderPage()
     await expect.element(screen.getByText('The Testers')).toBeInTheDocument()
 
-    // PublicPage forces the band's chosen scheme onto <html>.
-    await vi.waitFor(() => {
-      expect(document.documentElement.dataset.theme).toBe('dark')
-    })
-
-    // The same CSS-variable bridge now yields the dark paper colour (#2f4257),
-    // confirming the MUI colour scheme drives the plain-CSS cards.
+    // The band's scheme lives on the scope wrapper, NOT on <html> — the editor's
+    // own scheme owns the document, so the two never collide.
     const card = document.querySelector('.MuiCard-root')
+    const scope = card.closest('[data-theme]')
+    expect(scope.getAttribute('data-theme')).toBe('dark')
+    expect(document.documentElement.dataset.theme).not.toBe('dark')
+
+    // The CSS-variable bridge yields the dark paper colour (#2f4257) for the
+    // card and the dark canvas (#26374d) for the scope's own background.
     await vi.waitFor(() => {
       expect(getComputedStyle(card).backgroundColor).toBe('rgb(47, 66, 87)')
     })
-    // And the page background is the dark canvas (#26374d), set by CssBaseline.
-    expect(getComputedStyle(document.body).backgroundColor).toBe('rgb(38, 55, 77)')
+    expect(getComputedStyle(scope).backgroundColor).toBe('rgb(38, 55, 77)')
   })
 })

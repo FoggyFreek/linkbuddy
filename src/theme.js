@@ -6,10 +6,15 @@ import { createTheme, responsiveFontSizes } from '@mui/material/styles'
 // set of CSS variables.
 //
 // `colorSchemeSelector: 'data-theme'` makes MUI emit its palette variables under
-// `:root, [data-theme="light"]` (the default) and `[data-theme="dark"]`. That is
-// the exact attribute the public page already toggles for a band's chosen theme
-// and the editor preview sets on its frame, so a single mechanism now drives
-// both the theme variables and MUI's own components.
+// `:root, [data-theme="light"]` (the default) and `[data-theme="dark"]`. Two
+// independent things key off that one selector, and MUI owns both:
+//   - the editor's own light/dark/system choice, which `useColorScheme` writes
+//     onto <html data-theme> for the whole application;
+//   - a page's chosen scheme, which `ColorSchemeScope` sets on a wrapping
+//     element so its subtree (the public page, or a preview nested in the
+//     editor) resolves to that scheme, overriding the document's.
+// Because the variables cascade, a scoped subtree simply re-resolves them — no
+// manual attribute juggling or per-container text-colour restatement is needed.
 
 // Shared type scale (px → rem against the 16px root). The variants map onto the
 // roles the design already used: h1 the band name, h2 a release title, h3 a
@@ -76,15 +81,6 @@ const baseTheme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: { WebkitFontSmoothing: 'antialiased' },
-        // Any element that forces a colour scheme on a subtree (the editor
-        // preview, and the public page on <html>) restates the inherited text
-        // colour from that scheme. CssBaseline sets `color` on <body> against the
-        // root scheme, and it inherits as a fixed value — so plain inherited text
-        // (Typography without an explicit colour) inside a nested [data-theme]
-        // container would otherwise keep the root's colour. MUI components that
-        // set their own colour are unaffected. This global rule keeps forcing
-        // robust without every container having to remember to set `color`.
-        '[data-theme]': { color: 'var(--mui-palette-text-primary)' },
       },
     },
     // The card surface the whole design is built on: rounded, a hairline-soft
