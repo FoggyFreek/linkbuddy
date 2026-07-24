@@ -5,8 +5,11 @@ import { createTheme, responsiveFontSizes } from '@mui/material/styles'
 // design responds to MUI's light/dark colour schemes rather than a hand-rolled
 // set of CSS variables.
 //
-// `colorSchemeSelector: 'data-theme'` makes MUI emit its palette variables under
-// `:root, [data-theme="light"]` (the default) and `[data-theme="dark"]`. Two
+// `colorSchemeSelector: "[data-theme='%s']"` makes MUI emit its palette
+// variables under `:root, [data-theme="light"]` (the default) and
+// `[data-theme="dark"]` — `%s` is substituted with each scheme name. (MUI also
+// accepts the shorthand `'data-theme'`, which it expands to the same selector;
+// the explicit `%s` form is spelled out here to match MUI's documented API.) Two
 // independent things key off that one selector, and MUI owns both:
 //   - the editor's own light/dark/system choice, which `useColorScheme` writes
 //     onto <html data-theme> for the whole application;
@@ -63,7 +66,7 @@ const darkPalette = {
 }
 
 const baseTheme = createTheme({
-  cssVariables: { colorSchemeSelector: 'data-theme' },
+  cssVariables: { colorSchemeSelector: "[data-theme='%s']" },
   colorSchemes: {
     light: { palette: lightPalette },
     dark: { palette: darkPalette },

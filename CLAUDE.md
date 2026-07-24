@@ -49,10 +49,12 @@ colour, type, spacing, and per-scheme styling flow from the theme.
     `Box`), changing the editor scheme never affects a preview and vice-versa.
   - **Portals in a scope:** MUI surfaces that portal to `document.body` (Menu,
     Popover, Select, Tooltip, Dialog) would escape the scope. `ColorSchemeScope`
-    exposes its node via `usePortalContainer()`; a descendant passes it as the
-    portal `container` so the portal mounts inside the scope and inherits its
-    scheme (see `ShareButton`'s menu). Outside a scope the hook returns `null` →
-    MUI's default (`document.body`, the app scheme).
+    exposes its node via `usePortalContainer()`, with `useScopedPortalProps()` as
+    a convenience that returns `{ container }` to spread straight onto the surface
+    (see `ShareButton`'s menu) — new scoped Menu/Popover/Select/Tooltip/Dialog
+    surfaces should spread it so the portal mounts inside the scope and inherits
+    its scheme. Outside a scope the hook yields `null`/`{}` → MUI's default
+    (`document.body`, the app scheme).
   - `index.html` contains an inline colour-scheme init script (the CSR
     equivalent of `<InitColorSchemeScript>`, which is SSR-only / returns null on
     the client). It restores the stored **editor** mode (`mui-mode`) onto
