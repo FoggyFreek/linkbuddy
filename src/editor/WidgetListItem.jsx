@@ -22,7 +22,7 @@ export default function WidgetListItem({
   onUnfurl,
 }) {
   return (
-    <Box component="li" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '10px', p: '8px 10px' }}>
+    <Box component="li" sx={(theme) => ({ border: '1px solid', borderColor: 'divider', borderRadius: `${theme.shape.item}px`, p: '8px 10px' })}>
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <Button
           onClick={onToggle}

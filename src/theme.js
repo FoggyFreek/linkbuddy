@@ -63,7 +63,14 @@ const baseTheme = createTheme({
     light: { palette: lightPalette },
     dark: { palette: darkPalette },
   },
-  shape: { borderRadius: 18 },
+  // Semantic corner radii beyond the base card radius. `borderRadius` is the
+  // card/panel default MUI applies to surfaces; `pill` fully rounds add-buttons,
+  // range toggles and stat bars; `preview` frames the editor's public-page
+  // preview; `item` rounds the smaller nested rows (a widget in the section
+  // editor). Reference them as `theme.shape.*` — in `sx`, string-suffix with
+  // `px` (e.g. borderRadius: `${theme.shape.preview}px`), since the numeric
+  // `borderRadius` shorthand multiplies by the base radius.
+  shape: { borderRadius: 18, pill: 999, preview: 24, item: 10 },
   typography,
   components: {
     MuiCssBaseline: {
@@ -96,12 +103,44 @@ const baseTheme = createTheme({
           }),
         }),
       },
+      // The editor's standard content card: the section editor, the stats
+      // blocks, and the new-release form all use the same inset. (The public
+      // page's cards keep their own bespoke paddings.)
+      variants: [
+        { props: { variant: 'panel' }, style: { padding: '14px 16px' } },
+      ],
     },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: { borderRadius: 12 },
       },
+      // Dashed, pill-shaped "add" affordance (add a widget of a type). A named
+      // variant so the look lives in one place instead of repeating
+      // borderRadius/borderStyle at each call site; it restates the outlined
+      // button's border/hover/disabled states since a custom variant doesn't
+      // inherit them.
+      variants: [
+        {
+          props: { variant: 'pill' },
+          style: ({ theme }) => ({
+            borderRadius: theme.shape.pill,
+            border: '1px dashed',
+            borderColor: theme.vars.palette.divider,
+            color: theme.vars.palette.text.primary,
+            '&:hover': {
+              border: '1px dashed',
+              borderColor: theme.vars.palette.text.primary,
+              backgroundColor: theme.vars.palette.action.hover,
+            },
+            '&.Mui-disabled': {
+              border: '1px dashed',
+              borderColor: theme.vars.palette.divider,
+              color: theme.vars.palette.text.disabled,
+            },
+          }),
+        },
+      ],
     },
     // Pills (extra song links) and chips (editor page switcher) share the
     // rounded look; keep their label casing as authored.

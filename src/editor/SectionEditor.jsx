@@ -39,7 +39,7 @@ export default function SectionEditor({
   const updateWidgets = (widgets) => onUpdate({ widgets })
 
   return (
-    <Card sx={{ p: '14px 16px' }}>
+    <Card variant="panel">
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
         <TextField
           size="small"
@@ -72,7 +72,7 @@ export default function SectionEditor({
       <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', mt: 1.5 }}>
         <Typography variant="body2" color="text.secondary">Add:</Typography>
         {ADD_TYPES.map((t) => (
-          <Button key={t.type} size="small" variant="outlined" onClick={() => onAddWidget(t.type)} disabled={!canAdd(t.needs)} sx={{ borderRadius: 999, borderStyle: 'dashed' }}>
+          <Button key={t.type} size="small" variant="pill" onClick={() => onAddWidget(t.type)} disabled={!canAdd(t.needs)}>
             {t.label}
           </Button>
         ))}

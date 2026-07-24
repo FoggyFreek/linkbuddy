@@ -13,7 +13,7 @@ export default function PagePreview({ preview }) {
       <Typography variant="caption" color="text.secondary" align="center">This is exactly what visitors see.</Typography>
       <Box
         data-theme={preview.band?.theme === 'dark' ? 'dark' : 'light'}
-        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '24px', bgcolor: 'background.default', color: 'text.primary', p: '40px 16px 24px' }}
+        sx={(theme) => ({ border: '1px solid', borderColor: 'divider', borderRadius: `${theme.shape.preview}px`, bgcolor: 'background.default', color: 'text.primary', p: '40px 16px 24px' })}
       >
         <WidgetStack page={preview} />
       </Box>

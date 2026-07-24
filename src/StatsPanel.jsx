@@ -62,7 +62,7 @@ function formatTarget(key) {
 
 function StatsBlock({ title, children }) {
   return (
-    <Card sx={{ p: '14px 16px' }}>
+    <Card variant="panel">
       <Typography variant="h6" sx={{ mb: '10px' }}>{title}</Typography>
       {children}
     </Card>
@@ -82,7 +82,7 @@ function BarList({ title, rows, total, valueKey = 'views', formatKey = (key) => 
               <LinearProgress
                 variant="determinate"
                 value={total ? Math.min(Math.max((row[valueKey] / total) * 100, 2), 100) : 0}
-                sx={{ height: 8, borderRadius: 999, bgcolor: 'surface.s2', '& .MuiLinearProgress-bar': { bgcolor: 'text.primary', borderRadius: 999 } }}
+                sx={(theme) => ({ height: 8, borderRadius: theme.shape.pill, bgcolor: 'surface.s2', '& .MuiLinearProgress-bar': { bgcolor: 'text.primary', borderRadius: theme.shape.pill } })}
               />
               <Typography variant="caption" color="text.secondary" align="right">{row[valueKey]}</Typography>
             </Box>
@@ -142,7 +142,7 @@ export default function StatsPanel({ session, pageId }) {
             key={range}
             value={range}
             disabled={range > stats.retentionDays}
-            sx={{ borderRadius: 999, textTransform: 'none' }}
+            sx={(theme) => ({ borderRadius: theme.shape.pill, textTransform: 'none' })}
             title={range > stats.retentionDays ? 'Available on the gold plan' : undefined}
           >
             {range} days
