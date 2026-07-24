@@ -1,46 +1,31 @@
 /* Mockup-derived look: soft gray canvas, centered 600px column of white
    rounded cards. Colours and the type scale come from the MUI theme
-   (src/theme.js); this stylesheet maps the theme's generated variables onto the
-   semantic names the layout uses, so every rule below tracks the active
-   light/dark colour scheme without being rewritten. */
+   (src/theme.js): the rules below consume MUI's generated CSS variables
+   (--mui-palette-*, equivalent to theme.vars.palette.*) directly, so every
+   surface tracks the active light/dark colour scheme — including when a scheme
+   is forced on a subtree via the data-theme attribute (the editor preview). */
 
 :root,
 [data-theme] {
-  /* Semantic aliases over MUI's per-scheme palette variables. The inner var()
-     is resolved on the element where the alias is *declared* (and then
-     inherited as a fixed value), so the aliases must be re-declared on every
-     element that carries a data-theme attribute — not only :root. That lets a
-     nested [data-theme="dark"] container (e.g. the editor preview frame)
-     recompute them against its own scheme, exactly as the public page does when
-     it sets data-theme on <html>. */
-  --bg: var(--mui-palette-background-default);
-  --card: var(--mui-palette-background-paper);
-  --text: var(--mui-palette-text-primary);
-  --text-dim: var(--mui-palette-text-secondary);
-  --accent: var(--mui-palette-primary-main);
-  --accent-contrast: var(--mui-palette-primary-contrastText);
-  --green: var(--mui-palette-success-main);
-  --card-border: var(--mui-palette-surface-border);
-  --surface-2: var(--mui-palette-surface-s2);
-  --surface-3: var(--mui-palette-surface-s3);
-  --field: var(--mui-palette-surface-field);
-  --line: var(--mui-palette-divider);
-  --hover: var(--mui-palette-action-hover);
+  /* The two design tokens that aren't MUI palette entries. Both are plain
+     literals (not var() references), so re-declaring them per themed container
+     lets a forced-dark subtree pick up the darker shadow the same way MUI's own
+     variables switch. `--shadow` is overridden for the dark scheme below. */
   --radius: 18px;
   --shadow: 0 1px 3px rgb(20 22 26 / 0.08);
 }
 
-/* A themed container re-establishes the inherited text colour from its own
-   scheme. CssBaseline sets `color` on <body> (resolved against the root scheme),
-   and that inherits as a fixed value — so a nested [data-theme] container (the
-   editor preview) must restate it, matching the public page where the attribute
-   sits on <html>. */
+/* A themed container restates the inherited text colour from its own scheme.
+   CssBaseline sets `color` on <body> resolved against the root scheme, and that
+   inherits as a fixed value — so a nested [data-theme] container (the editor
+   preview) must restate it, matching the public page where the attribute sits on
+   <html>. MUI's own components set their own colour and don't need this. */
 [data-theme] {
-  color: var(--text);
+  color: var(--mui-palette-text-primary);
 }
 
-/* The one colour that isn't a flat palette entry: cards carry a softer drop
-   shadow on the dark canvas, where the light shadow would vanish. */
+/* Cards carry a softer drop shadow on the dark canvas, where the light shadow
+   would vanish. */
 [data-theme='dark'] {
   --shadow: 0 1px 3px rgb(0 0 0 / 0.35);
 }
@@ -49,12 +34,12 @@
    flat panels on the dark canvas, where the light theme's drop shadow all but
    disappears), and the single band logo gets a ring + soft glow so a mark
    authored for a light background still separates from the dark page. */
-[data-theme='dark'] .card { border: 1px solid var(--card-border); }
+[data-theme='dark'] .card { border: 1px solid var(--mui-palette-surface-border); }
 [data-theme='dark'] .band-avatar,
 [data-theme='dark'] .release-cover {
-  box-shadow: 0 0 0 1px var(--card-border), 0 10px 30px rgb(0 0 0 / 0.35);
+  box-shadow: 0 0 0 1px var(--mui-palette-surface-border), 0 10px 30px rgb(0 0 0 / 0.35);
 }
-/* Soften the Play button outline on dark too — the white (var(--text)) border
+/* Soften the Play button outline on dark too — the white text-colour border
    reads as harsh against the navy; keep a faint outline instead. */
 [data-theme='dark'] .platform-play { border-color: rgb(255 255 255 / 0.16); }
 
@@ -72,7 +57,7 @@ input, select { font: inherit; }
   margin: 20vh auto;
   padding: 0 24px;
   text-align: center;
-  color: var(--text-dim);
+  color: var(--mui-palette-text-secondary);
 }
 
 /* ---------- public stack ---------- */
@@ -109,7 +94,7 @@ p.band-bio {
 }
 
 .band-socials { display: flex; justify-content: center; gap: 22px; }
-.social-link { color: var(--text); display: inline-flex; }
+.social-link { color: var(--mui-palette-text-primary); display: inline-flex; }
 .social-link:hover { opacity: 0.7; }
 
 .stack-section { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
@@ -214,13 +199,13 @@ p.release-artist { margin: 0 0 10px; }
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  border: 1.5px solid var(--card-border);
+  border: 1.5px solid var(--mui-palette-surface-border);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
+  color: var(--mui-palette-text-primary);
 }
-.release-social:hover { background: var(--surface-2); }
+.release-social:hover { background: var(--mui-palette-surface-s2); }
 
 /* platform buttons — the whole list sits in one rounded card; each row is
    borderless inside it (logo + name left, Play button right). */
@@ -228,8 +213,8 @@ p.release-artist { margin: 0 0 10px; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  background: var(--card);
-  border: 1px solid var(--card-border);
+  background: var(--mui-palette-background-paper);
+  border: 1px solid var(--mui-palette-surface-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 8px 18px;
@@ -247,29 +232,29 @@ p.release-artist { margin: 0 0 10px; }
   border: none;
   background: none;
   font-size: 18px;
-  color: var(--text-dim);
+  color: var(--mui-palette-text-secondary);
   padding: 6px;
 }
-.platform-preview:hover { color: var(--text); }
+.platform-preview:hover { color: var(--mui-palette-text-primary); }
 .platform-card { display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 6px 0; }
-.platform-logo { display: inline-flex; color: var(--text); flex: 0 0 auto; }
+.platform-logo { display: inline-flex; color: var(--mui-palette-text-primary); flex: 0 0 auto; }
 .platform-name { min-width: 0; }
 .platform-play {
   margin-left: auto;
-  border: 1.5px solid var(--text);
+  border: 1.5px solid var(--mui-palette-text-primary);
   border-radius: 12px;
   padding: 14px 34px;
   font-size: 15px;
   font-weight: 600;
   flex: 0 0 auto;
 }
-.platform-card:hover .platform-play { background: var(--text); color: var(--card); }
+.platform-card:hover .platform-play { background: var(--mui-palette-text-primary); color: var(--mui-palette-background-paper); }
 
 .section-title { text-align: center; }
 h2.section-title { margin: 8px 0 0; }
 
 .card {
-  background: var(--card);
+  background: var(--mui-palette-background-paper);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 12px 16px;
@@ -286,7 +271,7 @@ h2.section-title { margin: 8px 0 0; }
 
 .card-sublabel { display: block; }
 
-.card-icon { display: inline-flex; color: var(--text); flex: 0 0 auto; }
+.card-icon { display: inline-flex; color: var(--mui-palette-text-primary); flex: 0 0 auto; }
 
 /* song */
 .song-card { padding: 10px 14px; }
@@ -302,8 +287,8 @@ h2.section-title { margin: 8px 0 0; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-3);
-  color: var(--text-dim);
+  background: var(--mui-palette-surface-s3);
+  color: var(--mui-palette-text-secondary);
   font-size: 24px;
 }
 .song-main .card-label { padding-right: 56px; }
@@ -315,21 +300,21 @@ h2.section-title { margin: 8px 0 0; }
   padding: 10px 4px 4px;
 }
 .pill {
-  background: var(--surface-2);
+  background: var(--mui-palette-surface-s2);
   border-radius: 999px;
   padding: 4px 12px;
   font-size: 13px;
 }
-.pill:hover { background: var(--surface-3); }
+.pill:hover { background: var(--mui-palette-surface-s3); }
 .song-platform-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
+  color: var(--mui-palette-text-primary);
   padding: 7px;
   border-radius: 10px;
 }
-.song-platform-icon:hover { background: var(--surface-2); }
+.song-platform-icon:hover { background: var(--mui-palette-surface-s2); }
 
 /* link */
 .link-card { display: flex; align-items: center; gap: 12px; min-height: 64px; }
@@ -348,15 +333,15 @@ h2.section-title { margin: 8px 0 0; }
 }
 .gigs-summary::-webkit-details-marker { display: none; }
 .gigs-summary .card-label { padding-right: 26px; }
-.gigs-chevron { color: var(--text-dim); }
-.gigs-empty { padding: 0 16px 16px; color: var(--text-dim); text-align: center; }
+.gigs-chevron { color: var(--mui-palette-text-secondary); }
+.gigs-empty { padding: 0 16px 16px; color: var(--mui-palette-text-secondary); text-align: center; }
 .gigs-list { list-style: none; margin: 0; padding: 0 16px 12px; }
 .gig-row {
   display: flex;
   align-items: baseline;
   gap: 14px;
   padding: 10px 0;
-  border-top: 1px solid var(--surface-2);
+  border-top: 1px solid var(--mui-palette-surface-s2);
 }
 .gig-date {
   flex: 0 0 44px;
@@ -370,7 +355,7 @@ h2.section-title { margin: 8px 0 0; }
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: var(--mui-palette-text-secondary);
 }
 .gig-day {
   font-size: 24px;
@@ -383,7 +368,7 @@ h2.section-title { margin: 8px 0 0; }
   min-width: 0;
 }
 .gig-title { font-weight: 700; }
-.gig-venue { font-size: 14px; color: var(--text-dim); }
+.gig-venue { font-size: 14px; color: var(--mui-palette-text-secondary); }
 
 /* merch */
 .merch-card { padding: 16px 0 14px; }
@@ -400,15 +385,15 @@ h3.merch-title { margin: 0 16px 12px; }
   flex: 0 0 150px;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--card-border);
+  border: 1px solid var(--mui-palette-surface-border);
   border-radius: 10px;
   overflow: hidden;
-  background: var(--card);
+  background: var(--mui-palette-background-paper);
 }
 .merch-image {
   position: relative;
   height: 140px;
-  background: var(--surface-2);
+  background: var(--mui-palette-surface-s2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -421,14 +406,14 @@ h3.merch-title { margin: 0 16px 12px; }
   top: 10px;
   right: -26px;
   transform: rotate(45deg);
-  background: var(--green);
+  background: var(--mui-palette-success-main);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
   padding: 3px 28px;
 }
 .merch-name { padding: 8px 10px 0; font-size: 14px; font-weight: 500; }
-.merch-price { padding: 2px 10px 10px; font-size: 14px; color: var(--text-dim); }
+.merch-price { padding: 2px 10px 10px; font-size: 14px; color: var(--mui-palette-text-secondary); }
 
 /* embeds — click-to-play facades, inline players, video overlay */
 .inline-embed { width: 100%; border: 0; border-radius: 12px; display: block; }
@@ -447,7 +432,7 @@ h3.merch-title { margin: 0 16px 12px; }
 .embed-external {
   align-self: center;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--mui-palette-text-secondary);
   text-decoration: underline;
 }
 
@@ -494,7 +479,7 @@ h3.merch-title { margin: 0 16px 12px; }
   justify-content: center;
   gap: 12px;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--mui-palette-text-secondary);
 }
 .page-footer a { text-decoration: underline; }
 
@@ -519,56 +504,56 @@ h3.merch-title { margin: 0 16px 12px; }
   flex-wrap: wrap;
 }
 .editor-header h1 { font-size: 22px; margin: 0; }
-.save-state { font-size: 13px; color: var(--text-dim); }
+.save-state { font-size: 13px; color: var(--mui-palette-text-secondary); }
 
 .editor-actions { display: flex; gap: 8px; }
 
 .btn {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: 1px solid var(--mui-palette-divider);
+  background: var(--mui-palette-background-paper);
   border-radius: 10px;
   padding: 8px 14px;
 }
-.btn:hover { background: var(--hover); }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+.btn:hover { background: var(--mui-palette-action-hover); }
+.btn-primary { background: var(--mui-palette-primary-main); border-color: var(--mui-palette-primary-main); color: var(--mui-palette-primary-contrastText); }
 .btn-primary:hover { filter: brightness(0.9); }
 
 .page-switcher { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .page-chip {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: 1px solid var(--mui-palette-divider);
+  background: var(--mui-palette-background-paper);
   border-radius: 999px;
   padding: 6px 14px;
   font-size: 14px;
 }
-.page-chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
-.page-chip-new { border-style: dashed; color: var(--text-dim); }
+.page-chip.active { background: var(--mui-palette-primary-main); border-color: var(--mui-palette-primary-main); color: var(--mui-palette-primary-contrastText); }
+.page-chip-new { border-style: dashed; color: var(--mui-palette-text-secondary); }
 .page-chip-new:disabled { opacity: 0.4; cursor: default; }
 
 .new-release-form { margin-top: 12px; }
 .new-release-form h3 { margin: 0 0 4px; }
 .new-release-form .editor-actions { margin-top: 12px; justify-content: flex-end; }
-.slug-field span { color: var(--text-dim); white-space: nowrap; }
-.field-hint { font-size: 13px; color: var(--text-dim); margin: 2px 0; }
+.slug-field span { color: var(--mui-palette-text-secondary); white-space: nowrap; }
+.field-hint { font-size: 13px; color: var(--mui-palette-text-secondary); margin: 2px 0; }
 .form-error { color: #b3261e; font-size: 14px; }
 
-.editor-tabs { display: flex; gap: 4px; margin: 20px 0 12px; border-bottom: 1px solid var(--line); }
+.editor-tabs { display: flex; gap: 4px; margin: 20px 0 12px; border-bottom: 1px solid var(--mui-palette-divider); }
 .editor-tabs button {
   border: none;
   background: none;
   padding: 8px 14px;
   border-bottom: 2px solid transparent;
-  color: var(--text-dim);
+  color: var(--mui-palette-text-secondary);
 }
-.editor-tabs button.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.editor-tabs button.active { color: var(--mui-palette-text-primary); border-bottom-color: var(--mui-palette-primary-main); font-weight: 600; }
 
-.published-note { font-size: 13px; color: var(--text-dim); }
+.published-note { font-size: 13px; color: var(--mui-palette-text-secondary); }
 .published-note a { text-decoration: underline; }
 
 .editor-sections { display: flex; flex-direction: column; gap: 16px; }
 
 .editor-section {
-  background: var(--card);
+  background: var(--mui-palette-background-paper);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 14px 16px;
@@ -582,15 +567,15 @@ h3.merch-title { margin: 0 16px 12px; }
   border-radius: 8px;
   padding: 6px 8px;
   font-weight: 600;
-  background: var(--field);
+  background: var(--mui-palette-surface-field);
   color: inherit;
 }
-.section-title-input:focus { outline: none; border-color: var(--line); background: var(--card); }
+.section-title-input:focus { outline: none; border-color: var(--mui-palette-divider); background: var(--mui-palette-background-paper); }
 
 .row-actions { display: flex; gap: 4px; }
 .row-actions button {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: 1px solid var(--mui-palette-divider);
+  background: var(--mui-palette-background-paper);
   border-radius: 8px;
   width: 30px;
   height: 30px;
@@ -600,7 +585,7 @@ h3.merch-title { margin: 0 16px 12px; }
 
 .editor-widgets { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 
-.editor-widget { border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 10px; }
+.editor-widget { border: 1px solid var(--mui-palette-surface-border); border-radius: 10px; padding: 8px 10px; }
 .editor-widget-row { display: flex; align-items: center; gap: 8px; }
 .widget-summary {
   flex: 1;
@@ -613,11 +598,11 @@ h3.merch-title { margin: 0 16px 12px; }
 
 .widget-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .widget-fields input, .widget-fields select {
-  border: 1px solid var(--line);
+  border: 1px solid var(--mui-palette-divider);
   border-radius: 8px;
   padding: 7px 10px;
   width: 100%;
-  background: var(--field);
+  background: var(--mui-palette-surface-field);
   color: inherit;
 }
 .inline-field { display: flex; align-items: center; gap: 8px; font-size: 14px; }
@@ -633,10 +618,10 @@ h3.merch-title { margin: 0 16px 12px; }
   align-items: center;
   margin-top: 12px;
   font-size: 14px;
-  color: var(--text-dim);
+  color: var(--mui-palette-text-secondary);
 }
 .add-widget-row button {
-  border: 1px dashed var(--line);
+  border: 1px dashed var(--mui-palette-divider);
   background: none;
   border-radius: 999px;
   padding: 4px 12px;
@@ -646,11 +631,11 @@ h3.merch-title { margin: 0 16px 12px; }
 .add-section { align-self: center; }
 
 .preview-frame { display: flex; flex-direction: column; gap: 8px; }
-.preview-note { text-align: center; font-size: 13px; color: var(--text-dim); }
+.preview-note { text-align: center; font-size: 13px; color: var(--mui-palette-text-secondary); }
 .preview-frame .public-page {
-  border: 1px solid var(--line);
+  border: 1px solid var(--mui-palette-divider);
   border-radius: 24px;
-  background: var(--bg);
+  background: var(--mui-palette-background-default);
 }
 
 /* ---------- stats ---------- */
@@ -659,18 +644,18 @@ h3.merch-title { margin: 0 16px 12px; }
 
 .stats-toolbar { display: flex; gap: 6px; }
 .stats-toolbar button {
-  border: 1px solid var(--line);
-  background: var(--card);
+  border: 1px solid var(--mui-palette-divider);
+  background: var(--mui-palette-background-paper);
   border-radius: 999px;
   padding: 5px 12px;
   font-size: 13px;
 }
-.stats-toolbar button.active { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
+.stats-toolbar button.active { background: var(--mui-palette-primary-main); color: var(--mui-palette-primary-contrastText); border-color: var(--mui-palette-primary-main); }
 .stats-toolbar button:disabled { opacity: 0.4; cursor: default; }
 
 .stats-tiles { display: flex; gap: 12px; }
 .stat-tile {
-  background: var(--card);
+  background: var(--mui-palette-background-paper);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 16px 22px;
@@ -678,34 +663,34 @@ h3.merch-title { margin: 0 16px 12px; }
   flex-direction: column;
 }
 .stat-value { font-size: 28px; font-weight: 700; }
-.stat-label { font-size: 13px; color: var(--text-dim); }
+.stat-label { font-size: 13px; color: var(--mui-palette-text-secondary); }
 
 .stats-block {
-  background: var(--card);
+  background: var(--mui-palette-background-paper);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 14px 16px;
 }
 .stats-block h3 { margin: 0 0 10px; font-size: 15px; }
-.stats-empty { color: var(--text-dim); font-size: 14px; }
+.stats-empty { color: var(--mui-palette-text-secondary); font-size: 14px; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 
 .bar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .bar-list li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .bar-label { flex: 0 0 118px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar-track { flex: 1; background: var(--surface-2); border-radius: 999px; height: 8px; overflow: hidden; }
-.bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
-.bar-value { flex: 0 0 34px; text-align: right; color: var(--text-dim); }
+.bar-track { flex: 1; background: var(--mui-palette-surface-s2); border-radius: 999px; height: 8px; overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--mui-palette-primary-main); border-radius: 999px; }
+.bar-value { flex: 0 0 34px; text-align: right; color: var(--mui-palette-text-secondary); }
 
 .day-chart { display: flex; align-items: flex-end; gap: 2px; height: 90px; }
-.day-bar { flex: 1; min-height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
+.day-bar { flex: 1; min-height: 2px; background: var(--mui-palette-primary-main); border-radius: 2px 2px 0 0; }
 
 .conversion-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .conversion-table th, .conversion-table td { text-align: left; padding: 6px 8px; }
-.conversion-table th { color: var(--text-dim); font-weight: 500; border-bottom: 1px solid var(--card-border); }
+.conversion-table th { color: var(--mui-palette-text-secondary); font-weight: 500; border-bottom: 1px solid var(--mui-palette-surface-border); }
 .conversion-table td:not(:first-child), .conversion-table th:not(:first-child) { text-align: right; }
-.conversion-table tbody tr:nth-child(odd) { background: var(--surface-2); }
+.conversion-table tbody tr:nth-child(odd) { background: var(--mui-palette-surface-s2); }
 
-.stats-footnote { font-size: 12px; color: var(--text-dim); }
+.stats-footnote { font-size: 12px; color: var(--mui-palette-text-secondary); }
 .stats-footnote a { text-decoration: underline; }
