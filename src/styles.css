@@ -348,12 +348,36 @@ input, select { font: inherit; }
 .gigs-list { list-style: none; margin: 0; padding: 0 16px 12px; }
 .gig-row {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 14px;
   padding: 10px 0;
   border-top: 1px solid var(--surface-2);
 }
-.gig-date { font-size: 13px; color: var(--text-dim); }
-.gig-title { font-weight: 600; }
+.gig-date {
+  flex: 0 0 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.gig-month {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.gig-day {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.gig-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.gig-title { font-weight: 700; }
 .gig-venue { font-size: 14px; color: var(--text-dim); }
 
 /* merch */

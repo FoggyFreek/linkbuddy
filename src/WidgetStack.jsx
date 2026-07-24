@@ -33,7 +33,10 @@ function formatEur(cents) {
 
 function formatGigDate(iso) {
   const date = new Date(`${iso}T12:00:00`)
-  return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  return {
+    month: date.toLocaleDateString(undefined, { month: 'short' }).toUpperCase(),
+    day: date.toLocaleDateString(undefined, { day: 'numeric' }),
+  }
 }
 
 // The band's social icons, shared by the band header (plain icons) and the
@@ -146,15 +149,23 @@ function GigsWidget({ widget }) {
         <p className="gigs-empty">No upcoming gigs announced — check back soon.</p>
       ) : (
         <ul className="gigs-list">
-          {widget.gigs.map((gig) => (
-            <li key={gig.id} className="gig-row">
-              <span className="gig-date">{formatGigDate(gig.date)}</span>
-              <span className="gig-title">{gig.title}</span>
-              {(gig.venue || gig.city) && (
-                <span className="gig-venue">{[gig.venue, gig.city].filter(Boolean).join(', ')}</span>
-              )}
-            </li>
-          ))}
+          {widget.gigs.map((gig) => {
+            const { month, day } = formatGigDate(gig.date)
+            return (
+              <li key={gig.id} className="gig-row">
+                <span className="gig-date">
+                  <span className="gig-month">{month}</span>
+                  <span className="gig-day">{day}</span>
+                </span>
+                <span className="gig-info">
+                  <span className="gig-title">{gig.title}</span>
+                  {(gig.venue || gig.city) && (
+                    <span className="gig-venue">{[gig.venue, gig.city].filter(Boolean).join(', ')}</span>
+                  )}
+                </span>
+              </li>
+            )
+          })}
         </ul>
       )}
     </details>
