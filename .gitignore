@@ -2,3 +2,6 @@ node_modules
 dist
 .env
 coverage
+
+# Generated screen-render screenshots (regenerate with: npm run test:browser -- screens)
+test/browser/__screens__/
