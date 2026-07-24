@@ -13,6 +13,17 @@ export function usePortalContainer() {
   return useContext(PortalContainerContext)
 }
 
+// Convenience for portal-based MUI surfaces (Menu, Popover, Select, Autocomplete,
+// Tooltip, Dialog…) rendered inside a scope: spread the result onto the component
+// so it portals into the scope instead of escaping to `document.body`. Returns
+// `{ container }` inside a scope, or `{}` outside one (MUI's default container).
+// Prefer this over reading `usePortalContainer()` at each call site so new scoped
+// surfaces inherit the scheme without repeating the `container || undefined` dance.
+export function useScopedPortalProps() {
+  const container = useContext(PortalContainerContext)
+  return container ? { container } : {}
+}
+
 // Scopes a MUI colour scheme (`mode`: 'light' | 'dark') to a subtree, using the
 // theme's colour-scheme selector. The theme emits its palette variables under
 // `[data-theme="light"|"dark"]`, so setting that attribute here makes every MUI
