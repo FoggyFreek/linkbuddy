@@ -26,8 +26,8 @@ export default function LayoutBuilder({
           key={section.id}
           section={section}
           content={content}
-          isFirst={sectionIndex === 0}
-          isLast={sectionIndex === sections.length - 1}
+          index={sectionIndex}
+          count={sections.length}
           openWidget={openWidget}
           setOpenWidget={setOpenWidget}
           canAdd={canAdd}

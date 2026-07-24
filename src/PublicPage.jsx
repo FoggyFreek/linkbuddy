@@ -5,19 +5,10 @@ import Link from '@mui/material/Link'
 import { getPublicPage, sendView, sendClick } from './api.js'
 import WidgetStack from './WidgetStack.jsx'
 import ShareButton from './ShareButton.jsx'
+import CenteredStatus from './CenteredStatus.jsx'
 
 function utmSourceFromLocation() {
   return new URLSearchParams(window.location.search).get('utm_source')
-}
-
-// Centred page-status message (loading / not-found / error), matching the
-// muted, vertically-offset placeholder the whole app uses.
-function PageStatus({ children, busy }) {
-  return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', my: '20vh', px: 3, textAlign: 'center', color: 'text.secondary' }} aria-busy={busy || undefined}>
-      {children}
-    </Box>
-  )
 }
 
 // The visitor-facing page. Sets no cookies and stores nothing on the device;
@@ -68,9 +59,9 @@ export default function PublicPage({ slug }) {
     [slug],
   )
 
-  if (status === 'loading') return <PageStatus busy />
-  if (status === 'notfound') return <PageStatus>This page doesn&apos;t exist (or isn&apos;t published yet).</PageStatus>
-  if (status === 'error') return <PageStatus>Something went wrong — try again later.</PageStatus>
+  if (status === 'loading') return <CenteredStatus busy />
+  if (status === 'notfound') return <CenteredStatus>This page doesn&apos;t exist (or isn&apos;t published yet).</CenteredStatus>
+  if (status === 'error') return <CenteredStatus>Something went wrong — try again later.</CenteredStatus>
 
   const shareTitle = page.release?.title
     ? `${page.release.title} — ${page.release.artist || ''}`.trim().replace(/—$/, '').trim()

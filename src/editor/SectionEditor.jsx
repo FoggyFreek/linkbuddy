@@ -3,10 +3,7 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import TextField from '@mui/material/TextField'
-import IconButton from '@mui/material/IconButton'
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import CloseIcon from '@mui/icons-material/Close'
+import ItemOrderActions from './ItemOrderActions.jsx'
 import WidgetListItem from './WidgetListItem.jsx'
 import { moveItem } from '../editorUtils.js'
 
@@ -28,8 +25,8 @@ const ADD_TYPES = [
 export default function SectionEditor({
   section,
   content,
-  isFirst,
-  isLast,
+  index,
+  count,
   openWidget,
   setOpenWidget,
   canAdd,
@@ -51,9 +48,7 @@ export default function SectionEditor({
           value={section.title || ''}
           onChange={(e) => onUpdate({ title: e.target.value || null })}
         />
-        <IconButton size="small" onClick={() => onMove(-1)} disabled={isFirst} aria-label="Move section up"><KeyboardArrowUpIcon fontSize="small" /></IconButton>
-        <IconButton size="small" onClick={() => onMove(1)} disabled={isLast} aria-label="Move section down"><KeyboardArrowDownIcon fontSize="small" /></IconButton>
-        <IconButton size="small" onClick={onRemove} aria-label="Delete section"><CloseIcon fontSize="small" /></IconButton>
+        <ItemOrderActions index={index} count={count} itemLabel="section" onMove={onMove} onDelete={onRemove} />
       </Stack>
 
       <Stack component="ul" spacing={1} sx={{ listStyle: 'none', m: '12px 0 0', p: 0 }}>
@@ -63,8 +58,8 @@ export default function SectionEditor({
             widget={widget}
             content={content}
             open={openWidget === widget.id}
-            isFirst={widgetIndex === 0}
-            isLast={widgetIndex === section.widgets.length - 1}
+            index={widgetIndex}
+            count={section.widgets.length}
             onToggle={() => setOpenWidget(openWidget === widget.id ? null : widget.id)}
             onMove={(delta) => updateWidgets(moveItem(section.widgets, widgetIndex, delta))}
             onDelete={() => updateWidgets(section.widgets.filter((w) => w.id !== widget.id))}

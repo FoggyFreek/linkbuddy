@@ -39,8 +39,8 @@ async function renderSection(props = {}) {
       <SectionEditor
         section={section}
         content={content}
-        isFirst
-        isLast={false}
+        index={0}
+        count={2}
         openWidget={null}
         canAdd={canAdd}
         {...handlers}

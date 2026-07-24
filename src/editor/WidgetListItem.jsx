@@ -1,10 +1,7 @@
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Button from '@mui/material/Button'
-import IconButton from '@mui/material/IconButton'
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
-import CloseIcon from '@mui/icons-material/Close'
+import ItemOrderActions from './ItemOrderActions.jsx'
 import { WidgetEditor } from '../widgets/WidgetEditors.jsx'
 import { widgetSummary } from '../widgets/widgetModel.js'
 
@@ -16,8 +13,8 @@ export default function WidgetListItem({
   widget,
   content,
   open,
-  isFirst,
-  isLast,
+  index,
+  count,
   onToggle,
   onMove,
   onDelete,
@@ -33,9 +30,7 @@ export default function WidgetListItem({
         >
           {widgetSummary(widget, content)}
         </Button>
-        <IconButton size="small" onClick={() => onMove(-1)} disabled={isFirst} aria-label="Move widget up"><KeyboardArrowUpIcon fontSize="small" /></IconButton>
-        <IconButton size="small" onClick={() => onMove(1)} disabled={isLast} aria-label="Move widget down"><KeyboardArrowDownIcon fontSize="small" /></IconButton>
-        <IconButton size="small" onClick={onDelete} aria-label="Delete widget"><CloseIcon fontSize="small" /></IconButton>
+        <ItemOrderActions index={index} count={count} itemLabel="widget" onMove={onMove} onDelete={onDelete} />
       </Stack>
       {open && (
         <Box sx={{ mt: 1.25 }}>

@@ -13,6 +13,7 @@ import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import { getStats } from './api.js'
+import CenteredStatus from './CenteredStatus.jsx'
 import { PLATFORM_LABELS } from '../shared/platforms.js'
 
 // Statistics live in a rolling window (30 days, 90 on gold) — ranges beyond
@@ -57,14 +58,6 @@ function formatTarget(key) {
     default:
       return key
   }
-}
-
-function StatusBox({ children, busy }) {
-  return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', my: '20vh', px: 3, textAlign: 'center', color: 'text.secondary' }} aria-busy={busy || undefined}>
-      {children}
-    </Box>
-  )
 }
 
 function StatsBlock({ title, children }) {
@@ -122,8 +115,8 @@ export default function StatsPanel({ session, pageId }) {
     }
   }, [session, pageId, days])
 
-  if (error) return <StatusBox>{error}</StatusBox>
-  if (!stats) return <StatusBox busy />
+  if (error) return <CenteredStatus>{error}</CenteredStatus>
+  if (!stats) return <CenteredStatus busy />
 
   const maxDay = Math.max(...stats.byDay.map((d) => d.views), 1)
   const hasConversion = stats.conversionBySource.some((r) => r.clicks > 0)

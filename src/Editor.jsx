@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Link from '@mui/material/Link'
+import CenteredStatus from './CenteredStatus.jsx'
 import {
   unfurlUrl,
   createReleasePage,
@@ -25,14 +26,6 @@ import { moveItem, pageLabel, saveErrorState, toListEntry } from './editorUtils.
 
 function newId() {
   return crypto.randomUUID()
-}
-
-function StatusBox({ children, busy }) {
-  return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', my: '20vh', px: 3, textAlign: 'center', color: 'text.secondary' }} aria-busy={busy || undefined}>
-      {children}
-    </Box>
-  )
 }
 
 // The editor page: a stack of sections, each a stack of widgets that link to
@@ -62,8 +55,8 @@ export default function Editor() {
 
   const { session, pages, setPages, fatal, setFatal } = useEditorSession(sessionRef, adoptPage)
 
-  if (fatal) return <StatusBox>{fatal}</StatusBox>
-  if (!page || !layout) return <StatusBox busy />
+  if (fatal) return <CenteredStatus>{fatal}</CenteredStatus>
+  if (!page || !layout) return <CenteredStatus busy />
 
   const content = page.content || {}
   const mainSlug = pages.find((p) => p.pageType === 'main')?.slug || page.slug
