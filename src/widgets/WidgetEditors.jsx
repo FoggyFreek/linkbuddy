@@ -1,22 +1,43 @@
 // Per-widget-type editing controls, plus the WidgetEditor dispatcher that
 // renders the right one. Each editor is a controlled component: it receives the
 // widget and calls `onChange` with the next widget. `onUnfurl(url)` fetches
-// link metadata (used by the link and embed editors).
+// link metadata (used by the link and embed editors). Built from MUI form
+// components (TextField, Select, Checkbox, Button).
 import { useState } from 'react'
+import Box from '@mui/material/Box'
+import Stack from '@mui/material/Stack'
+import TextField from '@mui/material/TextField'
+import MenuItem from '@mui/material/MenuItem'
+import Button from '@mui/material/Button'
+import Checkbox from '@mui/material/Checkbox'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Typography from '@mui/material/Typography'
 import { LINK_ICON_KEYS } from '../../shared/linkIcons.js'
 
 const ICON_OPTIONS = LINK_ICON_KEYS
 
-export function SongSelect({ value, songs, onChange }) {
+const Hint = ({ children }) => (
+  <Typography variant="caption" color="text.secondary">{children}</Typography>
+)
+
+export function SongSelect({ value, songs, onChange, label = 'Song', ...rest }) {
   return (
-    <select value={value} onChange={(e) => onChange(Number(e.target.value))}>
+    <TextField
+      select
+      size="small"
+      fullWidth
+      label={label}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      {...rest}
+    >
       {songs.map((song) => (
-        <option key={song.id} value={song.id}>
+        <MenuItem key={song.id} value={song.id}>
           {song.title}
           {song.artist ? ` — ${song.artist}` : ''}
-        </option>
+        </MenuItem>
       ))}
-    </select>
+    </TextField>
   )
 }
 
@@ -26,37 +47,40 @@ function SongWidgetEditor({ widget, songs, onChange }) {
 
 function PlatformsWidgetEditor({ widget, songs, onChange }) {
   return (
-    <div className="widget-fields">
-      <input
-        placeholder="Title (optional)"
+    <Stack spacing={1}>
+      <TextField
+        size="small"
+        fullWidth
+        label="Title (optional)"
         value={widget.title || ''}
         onChange={(e) => onChange({ ...widget, title: e.target.value || null })}
       />
       <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId })} />
-      <p className="field-hint">One button per streaming link of this song, platform detected automatically.</p>
-    </div>
+      <Hint>One button per streaming link of this song, platform detected automatically.</Hint>
+    </Stack>
   )
 }
 
 function GigsWidgetEditor({ widget, onChange }) {
   return (
-    <div className="widget-fields">
-      <input
-        placeholder="Title (Upcoming Gigs)"
+    <Stack spacing={1}>
+      <TextField
+        size="small"
+        fullWidth
+        label="Title (Upcoming Gigs)"
         value={widget.title || ''}
         onChange={(e) => onChange({ ...widget, title: e.target.value })}
       />
-      <label className="inline-field">
-        Max gigs
-        <input
-          type="number"
-          min="1"
-          max="50"
-          value={widget.limit}
-          onChange={(e) => onChange({ ...widget, limit: Number(e.target.value) || 10 })}
-        />
-      </label>
-    </div>
+      <TextField
+        type="number"
+        size="small"
+        label="Max gigs"
+        value={widget.limit}
+        onChange={(e) => onChange({ ...widget, limit: Number(e.target.value) || 10 })}
+        slotProps={{ htmlInput: { min: 1, max: 50 } }}
+        sx={{ width: 120 }}
+      />
+    </Stack>
   )
 }
 
@@ -75,46 +99,53 @@ function MerchWidgetEditor({ widget, products, onChange }) {
     })
   }
   return (
-    <div className="widget-fields">
-      <input
-        placeholder="Title (e.g. Album CDs and LPs)"
+    <Stack spacing={1}>
+      <TextField
+        size="small"
+        fullWidth
+        label="Title (e.g. Album CDs and LPs)"
         value={widget.title || ''}
         onChange={(e) => onChange({ ...widget, title: e.target.value })}
       />
-      <input
-        placeholder="Shop URL the items link to (optional)"
+      <TextField
+        size="small"
+        fullWidth
+        label="Shop URL the items link to (optional)"
         value={widget.shopUrl || ''}
         onChange={(e) => onChange({ ...widget, shopUrl: e.target.value || null })}
       />
-      <ul className="merch-editor-list">
+      <Stack component="ul" spacing={0.5} sx={{ listStyle: 'none', m: 0, p: 0 }}>
         {products.map((product) => {
           const item = included.get(product.id)
           return (
-            <li key={product.id}>
-              <label className="inline-field">
-                <input type="checkbox" checked={!!item} onChange={() => toggle(product.id)} />
-                {product.name}
-              </label>
+            <Box component="li" key={product.id}>
+              <FormControlLabel
+                control={<Checkbox size="small" checked={!!item} onChange={() => toggle(product.id)} />}
+                label={product.name}
+              />
               {item && (
-                <div className="merch-item-fields">
-                  <input
-                    placeholder="Image URL (optional)"
+                <Stack direction="row" spacing={1} sx={{ ml: '24px', mt: 0.5, mb: 0.5 }}>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Image URL (optional)"
                     value={item.imageUrl || ''}
                     onChange={(e) => updateItem(product.id, { imageUrl: e.target.value || null })}
                   />
-                  <input
-                    placeholder="Badge (e.g. NEW)"
-                    maxLength={20}
+                  <TextField
+                    size="small"
+                    label="Badge (e.g. NEW)"
                     value={item.badge || ''}
                     onChange={(e) => updateItem(product.id, { badge: e.target.value || null })}
+                    slotProps={{ htmlInput: { maxLength: 20 } }}
                   />
-                </div>
+                </Stack>
               )}
-            </li>
+            </Box>
           )
         })}
-      </ul>
-    </div>
+      </Stack>
+    </Stack>
   )
 }
 
@@ -139,42 +170,23 @@ function LinkWidgetEditor({ widget, onChange, onUnfurl }) {
     }
   }
   return (
-    <div className="widget-fields">
-      <input
-        placeholder="Label"
-        value={widget.label || ''}
-        onChange={(e) => onChange({ ...widget, label: e.target.value })}
-      />
-      <input
-        placeholder="https://…"
-        value={widget.url || ''}
-        onChange={(e) => onChange({ ...widget, url: e.target.value })}
-      />
-      <input
-        placeholder="Sublabel (optional)"
-        value={widget.sublabel || ''}
-        onChange={(e) => onChange({ ...widget, sublabel: e.target.value || null })}
-      />
-      <input
-        placeholder="Thumbnail image URL (optional)"
-        value={widget.imageUrl || ''}
-        onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })}
-      />
-      <label className="inline-field">
-        Icon
-        <select value={widget.icon} onChange={(e) => onChange({ ...widget, icon: e.target.value })}>
-          {ICON_OPTIONS.map((icon) => (
-            <option key={icon} value={icon}>{icon}</option>
-          ))}
-        </select>
-      </label>
-      <div className="unfurl-row">
-        <button className="btn" onClick={fill} disabled={fetching || !widget.url}>
+    <Stack spacing={1}>
+      <TextField size="small" fullWidth label="Label" value={widget.label || ''} onChange={(e) => onChange({ ...widget, label: e.target.value })} />
+      <TextField size="small" fullWidth label="https://…" value={widget.url || ''} onChange={(e) => onChange({ ...widget, url: e.target.value })} />
+      <TextField size="small" fullWidth label="Sublabel (optional)" value={widget.sublabel || ''} onChange={(e) => onChange({ ...widget, sublabel: e.target.value || null })} />
+      <TextField size="small" fullWidth label="Thumbnail image URL (optional)" value={widget.imageUrl || ''} onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })} />
+      <TextField select size="small" label="Icon" value={widget.icon} onChange={(e) => onChange({ ...widget, icon: e.target.value })} sx={{ width: 200 }}>
+        {ICON_OPTIONS.map((icon) => (
+          <MenuItem key={icon} value={icon}>{icon}</MenuItem>
+        ))}
+      </TextField>
+      <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+        <Button variant="outlined" onClick={fill} disabled={fetching || !widget.url}>
           {fetching ? 'Fetching…' : 'Fetch image & info from link'}
-        </button>
-        {fetchError && <span className="form-error">{fetchError}</span>}
-      </div>
-    </div>
+        </Button>
+        {fetchError && <Typography variant="caption" color="error">{fetchError}</Typography>}
+      </Stack>
+    </Stack>
   )
 }
 
@@ -203,38 +215,26 @@ function EmbedWidgetEditor({ widget, onChange, onUnfurl }) {
     }
   }
   return (
-    <div className="widget-fields">
-      <input
-        placeholder="Paste a Spotify, YouTube, SoundCloud or any other URL"
+    <Stack spacing={1}>
+      <TextField
+        size="small"
+        fullWidth
+        label="Paste a Spotify, YouTube, SoundCloud or any other URL"
         value={widget.url || ''}
         onChange={(e) => onChange({ ...widget, url: e.target.value })}
       />
-      <div className="unfurl-row">
-        <button className="btn" onClick={load} disabled={fetching || !widget.url}>
+      <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+        <Button variant="outlined" onClick={load} disabled={fetching || !widget.url}>
           {fetching ? 'Fetching…' : 'Load info from link'}
-        </button>
-        {provider && <span className="field-hint">Renders as: {provider}</span>}
-        {fetchError && <span className="form-error">{fetchError}</span>}
-      </div>
-      <input
-        placeholder="Title"
-        value={widget.title || ''}
-        onChange={(e) => onChange({ ...widget, title: e.target.value || null })}
-      />
-      <input
-        placeholder="Description (optional)"
-        value={widget.description || ''}
-        onChange={(e) => onChange({ ...widget, description: e.target.value || null })}
-      />
-      <input
-        placeholder="Image URL (auto-filled from the link)"
-        value={widget.imageUrl || ''}
-        onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })}
-      />
-      <p className="field-hint">
-        Spotify/SoundCloud play inline, YouTube opens in an overlay — always click-to-play.
-      </p>
-    </div>
+        </Button>
+        {provider && <Hint>Renders as: {provider}</Hint>}
+        {fetchError && <Typography variant="caption" color="error">{fetchError}</Typography>}
+      </Stack>
+      <TextField size="small" fullWidth label="Title" value={widget.title || ''} onChange={(e) => onChange({ ...widget, title: e.target.value || null })} />
+      <TextField size="small" fullWidth label="Description (optional)" value={widget.description || ''} onChange={(e) => onChange({ ...widget, description: e.target.value || null })} />
+      <TextField size="small" fullWidth label="Image URL (auto-filled from the link)" value={widget.imageUrl || ''} onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })} />
+      <Hint>Spotify/SoundCloud play inline, YouTube opens in an overlay — always click-to-play.</Hint>
+    </Stack>
   )
 }
 

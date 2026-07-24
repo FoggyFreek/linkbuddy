@@ -1,4 +1,17 @@
 import { useEffect, useState } from 'react'
+import Box from '@mui/material/Box'
+import Card from '@mui/material/Card'
+import Stack from '@mui/material/Stack'
+import Typography from '@mui/material/Typography'
+import Link from '@mui/material/Link'
+import LinearProgress from '@mui/material/LinearProgress'
+import ToggleButton from '@mui/material/ToggleButton'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
 import { getStats } from './api.js'
 import { PLATFORM_LABELS } from '../shared/platforms.js'
 
@@ -46,29 +59,44 @@ function formatTarget(key) {
   }
 }
 
+function StatusBox({ children, busy }) {
+  return (
+    <Box sx={{ maxWidth: 600, mx: 'auto', my: '20vh', px: 3, textAlign: 'center', color: 'text.secondary' }} aria-busy={busy || undefined}>
+      {children}
+    </Box>
+  )
+}
+
+function StatsBlock({ title, children }) {
+  return (
+    <Card sx={{ p: '14px 16px' }}>
+      <Typography variant="h6" sx={{ mb: '10px' }}>{title}</Typography>
+      {children}
+    </Card>
+  )
+}
+
 function BarList({ title, rows, total, valueKey = 'views', formatKey = (key) => key }) {
   return (
-    <div className="stats-block">
-      <h3>{title}</h3>
+    <StatsBlock title={title}>
       {rows.length === 0 ? (
-        <p className="stats-empty">No data yet</p>
+        <Typography variant="body2" color="text.secondary">No data yet</Typography>
       ) : (
-        <ul className="bar-list">
+        <Stack spacing={0.75}>
           {rows.map((row) => (
-            <li key={row.key}>
-              <span className="bar-label" title={formatKey(row.key)}>{formatKey(row.key)}</span>
-              <span className="bar-track">
-                <span
-                  className="bar-fill"
-                  style={{ width: `${total ? Math.max((row[valueKey] / total) * 100, 2) : 0}%` }}
-                />
-              </span>
-              <span className="bar-value">{row[valueKey]}</span>
-            </li>
+            <Box key={row.key} sx={{ display: 'grid', gridTemplateColumns: '118px 1fr 34px', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" noWrap title={formatKey(row.key)}>{formatKey(row.key)}</Typography>
+              <LinearProgress
+                variant="determinate"
+                value={total ? Math.min(Math.max((row[valueKey] / total) * 100, 2), 100) : 0}
+                sx={{ height: 8, borderRadius: 999, bgcolor: 'surface.s2', '& .MuiLinearProgress-bar': { bgcolor: 'text.primary', borderRadius: 999 } }}
+              />
+              <Typography variant="caption" color="text.secondary" align="right">{row[valueKey]}</Typography>
+            </Box>
           ))}
-        </ul>
+        </Stack>
       )}
-    </div>
+    </StatsBlock>
   )
 }
 
@@ -94,103 +122,103 @@ export default function StatsPanel({ session, pageId }) {
     }
   }, [session, pageId, days])
 
-  if (error) return <div className="page-status">{error}</div>
-  if (!stats) return <div className="page-status" aria-busy="true" />
+  if (error) return <StatusBox>{error}</StatusBox>
+  if (!stats) return <StatusBox busy />
 
   const maxDay = Math.max(...stats.byDay.map((d) => d.views), 1)
   const hasConversion = stats.conversionBySource.some((r) => r.clicks > 0)
 
+  const tiles = [
+    { value: stats.totalViews, label: 'Views' },
+    { value: stats.uniqueVisits, label: 'Est. unique visits' },
+    { value: stats.totalClicks, label: 'Link clicks' },
+    { value: stats.clickThroughRate == null ? '—' : `${stats.clickThroughRate}%`, label: 'Click-through rate' },
+  ]
+
   return (
-    <div className="stats-panel">
-      <div className="stats-toolbar">
+    <Stack spacing={2.5}>
+      <ToggleButtonGroup
+        value={days}
+        exclusive
+        size="small"
+        onChange={(e, value) => value && setDays(value)}
+        sx={{ alignSelf: 'flex-start', flexWrap: 'wrap' }}
+      >
         {RANGES.map((range) => (
-          <button
+          <ToggleButton
             key={range}
-            className={days === range ? 'active' : ''}
-            onClick={() => setDays(range)}
+            value={range}
             disabled={range > stats.retentionDays}
+            sx={{ borderRadius: 999, textTransform: 'none' }}
             title={range > stats.retentionDays ? 'Available on the gold plan' : undefined}
           >
             {range} days
-          </button>
+          </ToggleButton>
         ))}
-      </div>
-      {!stats.enabled && <p className="stats-empty">Statistics collection is disabled on this server.</p>}
-      <div className="stats-tiles">
-        <div className="stat-tile">
-          <span className="stat-value">{stats.totalViews}</span>
-          <span className="stat-label">Views</span>
-        </div>
-        <div className="stat-tile">
-          <span className="stat-value">{stats.uniqueVisits}</span>
-          <span className="stat-label">Est. unique visits</span>
-        </div>
-        <div className="stat-tile">
-          <span className="stat-value">{stats.totalClicks}</span>
-          <span className="stat-label">Link clicks</span>
-        </div>
-        <div className="stat-tile">
-          <span className="stat-value">{stats.clickThroughRate == null ? '—' : `${stats.clickThroughRate}%`}</span>
-          <span className="stat-label">Click-through rate</span>
-        </div>
-      </div>
+      </ToggleButtonGroup>
+
+      {!stats.enabled && <Typography variant="body2" color="text.secondary">Statistics collection is disabled on this server.</Typography>}
+
+      <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
+        {tiles.map((tile) => (
+          <Card key={tile.label} sx={{ p: '16px 22px', display: 'flex', flexDirection: 'column' }}>
+            <Typography sx={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>{tile.value}</Typography>
+            <Typography variant="caption" color="text.secondary">{tile.label}</Typography>
+          </Card>
+        ))}
+      </Stack>
+
       {stats.byDay.length > 0 && (
-        <div className="stats-block">
-          <h3>Views per day</h3>
-          <div className="day-chart">
+        <StatsBlock title="Views per day">
+          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: 90 }}>
             {stats.byDay.map((d) => (
-              <span
+              <Box
                 key={d.day}
-                className="day-bar"
-                style={{ height: `${(d.views / maxDay) * 100}%` }}
                 title={`${d.day}: ${d.views}`}
+                sx={{ flex: 1, minHeight: 2, height: `${(d.views / maxDay) * 100}%`, bgcolor: 'text.primary', borderRadius: '2px 2px 0 0' }}
               />
             ))}
-          </div>
-        </div>
+          </Box>
+        </StatsBlock>
       )}
-      <div className="stats-grid">
-        <BarList
-          title="Clicks by platform / target"
-          rows={stats.byTarget}
-          total={stats.totalClicks}
-          valueKey="clicks"
-          formatKey={formatTarget}
-        />
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 1.5 }}>
+        <BarList title="Clicks by platform / target" rows={stats.byTarget} total={stats.totalClicks} valueKey="clicks" formatKey={formatTarget} />
         <BarList title="Devices" rows={stats.byDevice} total={stats.totalViews} />
         <BarList title="Countries" rows={stats.byCountry} total={stats.totalViews} />
-      </div>
-      <div className="stats-block">
-        <h3>Conversion by source</h3>
+      </Box>
+
+      <StatsBlock title="Conversion by source">
         {!hasConversion && stats.totalViews === 0 ? (
-          <p className="stats-empty">No data yet</p>
+          <Typography variant="body2" color="text.secondary">No data yet</Typography>
         ) : (
-          <table className="conversion-table">
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th>Views</th>
-                <th>Clicks</th>
-                <th>CTR</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table size="small" sx={{ '& td, & th': { px: 1, py: 0.75 }, '& td:not(:first-of-type), & th:not(:first-of-type)': { textAlign: 'right' } }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>Source</TableCell>
+                <TableCell>Views</TableCell>
+                <TableCell>Clicks</TableCell>
+                <TableCell>CTR</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {stats.conversionBySource.map((row) => (
-                <tr key={row.key}>
-                  <td>{row.key}</td>
-                  <td>{row.views}</td>
-                  <td>{row.clicks}</td>
-                  <td>{row.ctr == null ? '—' : `${row.ctr}%`}</td>
-                </tr>
+                <TableRow key={row.key} sx={{ '&:nth-of-type(odd)': { bgcolor: 'surface.s2' } }}>
+                  <TableCell>{row.key}</TableCell>
+                  <TableCell>{row.views}</TableCell>
+                  <TableCell>{row.clicks}</TableCell>
+                  <TableCell>{row.ctr == null ? '—' : `${row.ctr}%`}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
-      </div>
-      <p className="stats-footnote">
+      </StatsBlock>
+
+      <Typography variant="caption" color="text.secondary">
         Anonymous and cookieless: device class, source, country and clicked platform only — no IPs,
-        no personal data (see <a href="/privacy">privacy notice</a>).
-      </p>
-    </div>
+        no personal data (see <Link href="/privacy" sx={{ color: 'inherit', textDecoration: 'underline' }}>privacy notice</Link>).
+      </Typography>
+    </Stack>
   )
 }
