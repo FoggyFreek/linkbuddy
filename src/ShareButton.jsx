@@ -13,6 +13,7 @@ import XIcon from '@mui/icons-material/X'
 import TelegramIcon from '@mui/icons-material/Telegram'
 import EmailIcon from '@mui/icons-material/Email'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import { usePortalContainer } from './ColorSchemeScope.jsx'
 
 // The social/chat channels a page URL can be shared to. Each opens the
 // platform's share intent in a new tab; `text` rides along where supported.
@@ -56,6 +57,11 @@ const CHANNELS = [
 export default function ShareButton({ url, title, onShare = () => {}, variant = 'floating' }) {
   const [anchorEl, setAnchorEl] = useState(null)
   const [copied, setCopied] = useState(false)
+  // On the public page ShareButton sits inside a ColorSchemeScope; render the
+  // menu into that scope so it inherits the band's colour scheme instead of
+  // portaling out to the document scheme. In the editor header there's no scope,
+  // so this is null and the menu uses MUI's default container (the app scheme).
+  const container = usePortalContainer()
 
   const close = () => setAnchorEl(null)
 
@@ -116,6 +122,7 @@ export default function ShareButton({ url, title, onShare = () => {}, variant = 
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={close}
+        container={container || undefined}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >

@@ -30,22 +30,32 @@ colour, type, spacing, and per-scheme styling flow from the theme.
   defaults (`MuiCard`, `MuiButton`, `MuiChip`) under `components`.
 - **Colour schemes / dark mode:** driven by MUI colour schemes, not
   `palette.mode`. `colorSchemeSelector: 'data-theme'` makes MUI emit its
-  variables under `:root, [data-theme="light"]` and `[data-theme="dark"]`.
-  - The **public page** forces the band's chosen scheme by setting
-    `document.documentElement.dataset.theme` (`PublicPage`), so `CssBaseline`
-    paints the body and all MUI vars resolve to that scheme.
-  - The **editor preview** forces a scheme on a *nested* container (a `Box` with
-    `data-theme=…`). MUI components read `theme.vars`, so their surfaces
-    recompute automatically; a theme global rule
-    (`components.MuiCssBaseline.styleOverrides['[data-theme]'] = { color: 'var(--mui-palette-text-primary)' }`)
-    restates the **inherited text colour** so plain Typography text follows the
-    forced scheme too. Keep that rule — without it, nested dark previews get
-    dark text.
-  - The editor offers a live light/dark/system switch via `useColorScheme`
-    (`ColorModeToggle`); guard `mode === undefined` on first render.
+  variables under `:root, [data-theme="light"]` and `[data-theme="dark"]`. Two
+  independent concerns key off that one selector, and MUI owns both — there is no
+  manual `data-theme` bookkeeping:
+  - **Editor scheme** = the application scheme. The editor's live
+    light/dark/system switch is `useColorScheme` (`ColorModeToggle`); MUI writes
+    the result to `<html data-theme>` for the whole app. Guard
+    `mode === undefined` on first render.
+  - **Page scheme** = page content (`band.theme`). Both the **public page** and
+    the **editor preview** wrap their content in **`ColorSchemeScope`** (`src/
+    ColorSchemeScope.jsx`), which sets `data-theme` on a wrapping `Box` and paints
+    its own `background.default` / `text.primary` / `color-scheme`. MUI's vars
+    cascade, so everything inside re-resolves to that scheme regardless of the
+    document's. The scope is the *single* implementation shared by preview and
+    production, so they can't diverge; because it sets `color` itself, no global
+    `[data-theme]` text-colour rule is needed (it was removed).
+  - Because the two schemes live in different places (`<html>` vs. a scoped
+    `Box`), changing the editor scheme never affects a preview and vice-versa.
+  - **Portals in a scope:** MUI surfaces that portal to `document.body` (Menu,
+    Popover, Select, Tooltip, Dialog) would escape the scope. `ColorSchemeScope`
+    exposes its node via `usePortalContainer()`; a descendant passes it as the
+    portal `container` so the portal mounts inside the scope and inherits its
+    scheme (see `ShareButton`'s menu). Outside a scope the hook returns `null` →
+    MUI's default (`document.body`, the app scheme).
   - `index.html` contains an inline colour-scheme init script (the CSR
     equivalent of `<InitColorSchemeScript>`, which is SSR-only / returns null on
-    the client). It restores the stored mode (`mui-mode`) onto
+    the client). It restores the stored **editor** mode (`mui-mode`) onto
     `<html data-theme>` before the bundle loads, preventing a flash. Keep its
     keys/attribute in sync with the theme.
 - **Per-scheme styles in `sx`:** use `theme.applyStyles('dark', { … })` (the MUI
@@ -74,9 +84,11 @@ colour, type, spacing, and per-scheme styling flow from the theme.
 - Browser tests render **real** components (e.g. `PublicPage` with a mocked
   `api.js`) and assert MUI structure + computed styles — query `.MuiCard-root`,
   `.MuiTypography-h1`, etc., not old CSS classes.
-- `test/browser/nestedTheme.test.jsx` guards the forced-scheme-on-a-nested-
-  container case (the editor preview): if you change how theme forcing works,
-  keep it green.
+- `test/browser/colorSchemeScope.test.jsx` guards `ColorSchemeScope`: scheme
+  independence from the document, two disagreeing scopes at once, and portal
+  inheritance. `test/browser/nestedTheme.test.jsx` guards the lower-level MUI
+  behaviour it relies on (forced scheme on a nested container). Keep both green
+  if you touch theme scoping.
 - Playwright launches the pre-installed Chromium via `executablePath`
   (`/opt/pw-browsers/chromium-1194/…`) because the bundled browser revision
   differs — see `vitest.browser.config.js`. Do not run `playwright install`.

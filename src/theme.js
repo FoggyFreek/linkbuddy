@@ -6,10 +6,15 @@ import { createTheme, responsiveFontSizes } from '@mui/material/styles'
 // set of CSS variables.
 //
 // `colorSchemeSelector: 'data-theme'` makes MUI emit its palette variables under
-// `:root, [data-theme="light"]` (the default) and `[data-theme="dark"]`. That is
-// the exact attribute the public page already toggles for a band's chosen theme
-// and the editor preview sets on its frame, so a single mechanism now drives
-// both the theme variables and MUI's own components.
+// `:root, [data-theme="light"]` (the default) and `[data-theme="dark"]`. Two
+// independent things key off that one selector, and MUI owns both:
+//   - the editor's own light/dark/system choice, which `useColorScheme` writes
+//     onto <html data-theme> for the whole application;
+//   - a page's chosen scheme, which `ColorSchemeScope` sets on a wrapping
+//     element so its subtree (the public page, or a preview nested in the
+//     editor) resolves to that scheme, overriding the document's.
+// Because the variables cascade, a scoped subtree simply re-resolves them — no
+// manual attribute juggling or per-container text-colour restatement is needed.
 
 // Shared type scale (px → rem against the 16px root). The variants map onto the
 // roles the design already used: h1 the band name, h2 a release title, h3 a
@@ -63,21 +68,19 @@ const baseTheme = createTheme({
     light: { palette: lightPalette },
     dark: { palette: darkPalette },
   },
-  shape: { borderRadius: 18 },
+  // Semantic corner radii beyond the base card radius. `borderRadius` is the
+  // card/panel default MUI applies to surfaces; `pill` fully rounds add-buttons,
+  // range toggles and stat bars; `preview` frames the editor's public-page
+  // preview; `item` rounds the smaller nested rows (a widget in the section
+  // editor). Reference them as `theme.shape.*` — in `sx`, string-suffix with
+  // `px` (e.g. borderRadius: `${theme.shape.preview}px`), since the numeric
+  // `borderRadius` shorthand multiplies by the base radius.
+  shape: { borderRadius: 18, pill: 999, preview: 24, item: 10 },
   typography,
   components: {
     MuiCssBaseline: {
       styleOverrides: {
         body: { WebkitFontSmoothing: 'antialiased' },
-        // Any element that forces a colour scheme on a subtree (the editor
-        // preview, and the public page on <html>) restates the inherited text
-        // colour from that scheme. CssBaseline sets `color` on <body> against the
-        // root scheme, and it inherits as a fixed value — so plain inherited text
-        // (Typography without an explicit colour) inside a nested [data-theme]
-        // container would otherwise keep the root's colour. MUI components that
-        // set their own colour are unaffected. This global rule keeps forcing
-        // robust without every container having to remember to set `color`.
-        '[data-theme]': { color: 'var(--mui-palette-text-primary)' },
       },
     },
     // The card surface the whole design is built on: rounded, a hairline-soft
@@ -96,12 +99,44 @@ const baseTheme = createTheme({
           }),
         }),
       },
+      // The editor's standard content card: the section editor, the stats
+      // blocks, and the new-release form all use the same inset. (The public
+      // page's cards keep their own bespoke paddings.)
+      variants: [
+        { props: { variant: 'panel' }, style: { padding: '14px 16px' } },
+      ],
     },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: { borderRadius: 12 },
       },
+      // Dashed, pill-shaped "add" affordance (add a widget of a type). A named
+      // variant so the look lives in one place instead of repeating
+      // borderRadius/borderStyle at each call site; it restates the outlined
+      // button's border/hover/disabled states since a custom variant doesn't
+      // inherit them.
+      variants: [
+        {
+          props: { variant: 'pill' },
+          style: ({ theme }) => ({
+            borderRadius: theme.shape.pill,
+            border: '1px dashed',
+            borderColor: theme.vars.palette.divider,
+            color: theme.vars.palette.text.primary,
+            '&:hover': {
+              border: '1px dashed',
+              borderColor: theme.vars.palette.text.primary,
+              backgroundColor: theme.vars.palette.action.hover,
+            },
+            '&.Mui-disabled': {
+              border: '1px dashed',
+              borderColor: theme.vars.palette.divider,
+              color: theme.vars.palette.text.disabled,
+            },
+          }),
+        },
+      ],
     },
     // Pills (extra song links) and chips (editor page switcher) share the
     // rounded look; keep their label casing as authored.

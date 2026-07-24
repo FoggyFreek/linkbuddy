@@ -29,6 +29,15 @@ export function saveErrorState(err) {
   return err?.status === 401 ? 'expired' : 'error'
 }
 
+// The visitor-facing label for a page: the band name for the main link page,
+// the release title otherwise, each falling back to the slug. Shared by the
+// header, the page switcher, and the share sheet so they can't disagree.
+export function pageLabel(page, content) {
+  return page.pageType === 'main'
+    ? content.band?.name || page.slug
+    : page.release?.title || page.slug
+}
+
 // The compact page-switcher shape the server returns from list endpoints.
 // Kept here so client-side inserts (a freshly created release) match what a
 // reload from the server would produce.

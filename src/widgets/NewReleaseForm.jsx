@@ -34,7 +34,7 @@ export default function NewReleaseForm({ songs, mainSlug, onCreate, onCancel }) 
   }
 
   return (
-    <Card sx={{ p: '14px 16px', mt: 1.5 }}>
+    <Card variant="panel" sx={{ mt: 1.5 }}>
       <Typography variant="h5" component="h3" gutterBottom>New release page</Typography>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
         A landing page for a song or album launch: one button per streaming platform, plus anything

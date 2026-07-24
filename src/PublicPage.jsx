@@ -5,19 +5,11 @@ import Link from '@mui/material/Link'
 import { getPublicPage, sendView, sendClick } from './api.js'
 import WidgetStack from './WidgetStack.jsx'
 import ShareButton from './ShareButton.jsx'
+import CenteredStatus from './CenteredStatus.jsx'
+import ColorSchemeScope from './ColorSchemeScope.jsx'
 
 function utmSourceFromLocation() {
   return new URLSearchParams(window.location.search).get('utm_source')
-}
-
-// Centred page-status message (loading / not-found / error), matching the
-// muted, vertically-offset placeholder the whole app uses.
-function PageStatus({ children, busy }) {
-  return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', my: '20vh', px: 3, textAlign: 'center', color: 'text.secondary' }} aria-busy={busy || undefined}>
-      {children}
-    </Box>
-  )
 }
 
 // The visitor-facing page. Sets no cookies and stores nothing on the device;
@@ -49,18 +41,6 @@ export default function PublicPage({ slug }) {
     }
   }, [slug])
 
-  // Paint the whole viewport in the band's chosen theme (light default). Setting
-  // data-theme on <html> lets MUI's colour-scheme variables — and CssBaseline's
-  // body background — resolve to the band's scheme. Scoped to the public route:
-  // cleaned up on unmount so the editor/privacy chrome never inherits it.
-  useEffect(() => {
-    const theme = page?.band?.theme === 'dark' ? 'dark' : 'light'
-    document.documentElement.dataset.theme = theme
-    return () => {
-      delete document.documentElement.dataset.theme
-    }
-  }, [page])
-
   const onLinkClick = useCallback(
     (target) => {
       sendClick(slug, target, { referrer: document.referrer, utmSource: utmSourceFromLocation() })
@@ -68,9 +48,9 @@ export default function PublicPage({ slug }) {
     [slug],
   )
 
-  if (status === 'loading') return <PageStatus busy />
-  if (status === 'notfound') return <PageStatus>This page doesn&apos;t exist (or isn&apos;t published yet).</PageStatus>
-  if (status === 'error') return <PageStatus>Something went wrong — try again later.</PageStatus>
+  if (status === 'loading') return <CenteredStatus busy />
+  if (status === 'notfound') return <CenteredStatus>This page doesn&apos;t exist (or isn&apos;t published yet).</CenteredStatus>
+  if (status === 'error') return <CenteredStatus>Something went wrong — try again later.</CenteredStatus>
 
   const shareTitle = page.release?.title
     ? `${page.release.title} — ${page.release.artist || ''}`.trim().replace(/—$/, '').trim()
@@ -89,8 +69,16 @@ export default function PublicPage({ slug }) {
     </Box>
   )
 
+  // Scope the whole viewport to the band's chosen scheme. Unlike the previous
+  // approach this sets no attribute on <html> — the scope paints its own
+  // background over the viewport, so the page reads as the band's theme while
+  // the document (and any editor session that happens to share this tab's stored
+  // mode) is left untouched.
   return (
-    <Box sx={{ px: 2, pt: 5, pb: 3 }}>
+    <ColorSchemeScope
+      mode={page.band?.theme === 'dark' ? 'dark' : 'light'}
+      sx={{ minHeight: '100dvh', px: 2, pt: 5, pb: 3 }}
+    >
       <ShareButton
         url={`${window.location.origin}/${slug}`}
         title={shareTitle}
@@ -99,6 +87,6 @@ export default function PublicPage({ slug }) {
       {/* WidgetStack places the footer for us — inside the content pane on the
           two-pane release layout, below the stack on the band page. */}
       <WidgetStack page={page} onLinkClick={onLinkClick} footer={footer} />
-    </Box>
+    </ColorSchemeScope>
   )
 }
