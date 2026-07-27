@@ -87,6 +87,20 @@ describe('validateLayout', () => {
     expect(validateLayout({ sections }).error).toMatch(/Too many sections/)
   })
 
+  it('keeps a known page background and falls back to none otherwise', () => {
+    expect(validateLayout({ background: 'glow', sections: [] }).layout.background).toBe('glow')
+    expect(validateLayout({ background: 'gradient-lines', sections: [] }).layout.background).toBe('gradient-lines')
+    expect(validateLayout({ background: 'sand', sections: [] }).layout.background).toBe('sand')
+    expect(validateLayout({ background: 'ribbons', sections: [] }).layout.background).toBe('ribbons')
+    expect(validateLayout({ background: 'orbit', sections: [] }).layout.background).toBe('orbit')
+    expect(validateLayout({ background: 'mosaic', sections: [] }).layout.background).toBe('mosaic')
+    expect(validateLayout({ background: 'bloom', sections: [] }).layout.background).toBe('bloom')
+    expect(validateLayout({ background: 'blobs', sections: [] }).layout.background).toBe('blobs')
+    expect(validateLayout({ background: 'confetti', sections: [] }).layout.background).toBe('confetti')
+    expect(validateLayout({ background: 'url(evil.svg)', sections: [] }).layout.background).toBe('none')
+    expect(validateLayout({ sections: [] }).layout.background).toBe('none')
+  })
+
   it('coerces gig limits into range and defaults bad icons', () => {
     const result = validateLayout({
       sections: [

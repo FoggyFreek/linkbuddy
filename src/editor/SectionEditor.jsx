@@ -9,12 +9,14 @@ import { moveItem } from '../editorUtils.js'
 
 // The widget types the "Add:" row offers, and the content each one needs before
 // it can be added (a song/platforms widget needs songs, merch needs products).
+// `releaseOnly` types are hidden on the main link page: platform buttons point
+// at one release's streaming links, so they only make sense on a release page.
 const ADD_TYPES = [
   { type: 'song', label: 'Song', needs: 'songs' },
-  { type: 'platforms', label: 'Platform buttons', needs: 'songs' },
+  { type: 'platforms', label: 'Platform buttons', needs: 'songs', releaseOnly: true },
   { type: 'gigs', label: 'Gigs' },
   { type: 'merch', label: 'Merch', needs: 'products' },
-  { type: 'link', label: 'Link' },
+  { type: 'link', label: 'Custom link' },
   { type: 'embed', label: 'Embed' },
 ]
 
@@ -30,6 +32,7 @@ export default function SectionEditor({
   openWidget,
   setOpenWidget,
   canAdd,
+  pageType,
   onUpdate,
   onMove,
   onRemove,
@@ -37,6 +40,7 @@ export default function SectionEditor({
   onUnfurl,
 }) {
   const updateWidgets = (widgets) => onUpdate({ widgets })
+  const addTypes = ADD_TYPES.filter((t) => !(t.releaseOnly && pageType === 'main'))
 
   return (
     <Card variant="panel">
@@ -71,7 +75,7 @@ export default function SectionEditor({
 
       <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', mt: 1.5 }}>
         <Typography variant="body2" color="text.secondary">Add:</Typography>
-        {ADD_TYPES.map((t) => (
+        {addTypes.map((t) => (
           <Button key={t.type} size="small" variant="pill" onClick={() => onAddWidget(t.type)} disabled={!canAdd(t.needs)}>
             {t.label}
           </Button>

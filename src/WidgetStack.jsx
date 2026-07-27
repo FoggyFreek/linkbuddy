@@ -22,7 +22,7 @@ import Accordion from '@mui/material/Accordion'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import { InlineEmbed, VideoOverlay } from './embeds.jsx'
+import { EmbedOverlay } from './embeds.jsx'
 import {
   InstagramIcon,
   FacebookIcon,
@@ -109,7 +109,7 @@ function SocialLinks({ band, onLinkClick, variant = 'plain' }) {
     <Stack
       direction="row"
       spacing={circle ? 2 : 2.75}
-      sx={{ justifyContent: 'center', ...(circle ? { mt: '30px', '@container (min-width:840px)': { justifyContent: 'flex-start' } } : {}) }}
+      sx={{ justifyContent: 'center', ...(circle ? { mt: '30px' } : {}) }}
     >
       {items.map((s) => (
         <IconButton
@@ -120,16 +120,66 @@ function SocialLinks({ band, onLinkClick, variant = 'plain' }) {
           rel="noopener noreferrer"
           aria-label={s.key}
           onClick={() => onLinkClick(`social:${s.key}`)}
-          sx={
+          sx={[
+            // A small lift on hover; `transform` only, so nothing reflows.
+            {
+              transition: (theme) =>
+                theme.transitions.create(['transform', 'opacity', 'background-color'], {
+                  duration: theme.transitions.duration.shorter,
+                }),
+              '&:hover': { transform: 'translateY(-2px)' },
+              '@media (prefers-reduced-motion: reduce)': {
+                transition: 'none',
+                '&:hover': { transform: 'none' },
+              },
+            },
             circle
               ? { width: 46, height: 46, color: 'text.primary', border: '1.5px solid', borderColor: 'surface.border', '&:hover': { bgcolor: 'surface.s2' } }
-              : { color: 'text.primary', '&:hover': { opacity: 0.7 } }
-          }
+              : { color: 'text.primary', '&:hover': { opacity: 0.7 } },
+          ]}
         >
-          <s.Icon size={circle ? 20 : 30} />
+          {/* `mono` keeps every social mark on the button's `text.primary`
+              ink, so the row flips with the page's colour scheme. Icons
+              without a brand colour ignore the prop. */}
+          <s.Icon size={circle ? 20 : 30} mono />
         </IconButton>
       ))}
     </Stack>
+  )
+}
+
+// The page's title slot: the band's logo when one is set, otherwise the name in
+// type. Both logos are rendered and toggled with `theme.applyStyles('dark', …)`
+// so the right one shows for the *page's* scheme (the ColorSchemeScope's
+// `data-theme`), with no JS scheme read. The pairing is inverted: `logoDarkUrl`
+// (dark ink) is the one that reads on a light page and `logoUrl` on a dark one.
+// A band that only uploaded one logo gets that one in both schemes.
+// `display: none` also takes the hidden copy out of the accessibility tree, so
+// the heading keeps exactly one accessible name.
+function BandTitle({ band }) {
+  const onLight = band.logoDarkUrl || band.logoUrl
+  const onDark = band.logoUrl || band.logoDarkUrl
+  if (!onLight) return <Typography variant="h1" sx={{ mt: '14px', mb: '6px' }}>{band.name}</Typography>
+
+  const alt = band.name || 'Band logo'
+  const img = { display: 'inline-block', maxWidth: '100%', maxHeight: 83, width: 'auto', objectFit: 'contain' }
+  return (
+    <Box component="h1" sx={{ m: 0, mt: '14px', mb: '6px' }}>
+      <Box
+        component="img"
+        src={onLight}
+        alt={alt}
+        sx={(theme) => ({ ...img, ...(onLight === onDark ? {} : theme.applyStyles('dark', { display: 'none' })) })}
+      />
+      {onLight !== onDark && (
+        <Box
+          component="img"
+          src={onDark}
+          alt={alt}
+          sx={(theme) => ({ ...img, display: 'none', ...theme.applyStyles('dark', { display: 'inline-block' }) })}
+        />
+      )}
+    </Box>
   )
 }
 
@@ -137,17 +187,17 @@ function BandHeader({ band, onLinkClick }) {
   if (!band) return null
   return (
     <Box component="header" sx={{ textAlign: 'center', mb: '18px' }}>
-      {band.logoUrl && (
+      {band.avatarUrl && (
         <Avatar
-          src={band.logoUrl}
-          alt={band.name || 'Band logo'}
+          src={band.avatarUrl}
+          alt={band.name ? `${band.name} profile picture` : 'Profile picture'}
           sx={(theme) => ({
             width: 128, height: 128, mx: 'auto', bgcolor: '#0c0d0f',
             ...theme.applyStyles('dark', { boxShadow: `0 0 0 1px ${theme.vars.palette.surface.border}, 0 10px 30px rgb(0 0 0 / 0.35)` }),
           })}
         />
       )}
-      <Typography variant="h1" sx={{ mt: '14px', mb: '6px' }}>{band.name}</Typography>
+      <BandTitle band={band} />
       {band.bio && (
         <Typography variant="subtitle1" component="p" sx={{ maxWidth: 440, mx: 'auto', mb: '18px' }}>{band.bio}</Typography>
       )}
@@ -228,6 +278,9 @@ function SongWidget({ widget, onLinkClick }) {
 function GigsWidget({ widget }) {
   return (
     <Accordion
+      // Open on arrival — the gig list is the point of the widget; visitors can
+      // still collapse it. Uncontrolled, so `defaultExpanded` only seeds it.
+      defaultExpanded
       disableGutters
       elevation={0}
       sx={(theme) => ({
@@ -246,7 +299,17 @@ function GigsWidget({ widget }) {
         sx={{ px: '16px', '& .MuiAccordionSummary-content': { alignItems: 'center', gap: '12px', my: '18px' } }}
       >
         <Box component="span" sx={{ display: 'inline-flex', color: 'text.primary', flexShrink: 0 }}><CalendarIcon size={26} /></Box>
-        <Typography variant="body1" component="span" sx={{ flex: 1 }}>{widget.title}</Typography>
+        <Typography variant="body1" component="span" sx={{ flex: 1 }}>
+          {widget.title}
+          {/* Summarize the list in the header — "Upcoming shows (3 gigs)" — so a
+              collapsed widget still says whether there's anything to see. The
+              empty case has its own message inside, so no "(0 gigs)". */}
+          {widget.gigs.length > 0 && (
+            <Box component="span" sx={{ color: 'text.secondary' }}>
+              {` (${widget.gigs.length} ${widget.gigs.length === 1 ? 'gig' : 'gigs'})`}
+            </Box>
+          )}
+        </Typography>
       </AccordionSummary>
       <AccordionDetails sx={{ pt: 0, px: '16px', pb: '12px' }}>
         {widget.gigs.length === 0 ? (
@@ -381,44 +444,40 @@ function PlatformsWidget({ widget, onLinkClick }) {
   )
 }
 
-// Rich embed card for a pasted URL. Inline platforms show a facade that swaps to
-// the player; video platforms open the overlay; anything else is a rich Open
+// Rich embed card for a pasted URL. Embeddable platforms show a facade that
+// opens the player in a closable modal overlay; anything else is a rich Open
 // Graph link card.
 function EmbedWidget({ widget, onLinkClick }) {
-  const [inlineOpen, setInlineOpen] = useState(false)
-  const [overlaySrc, setOverlaySrc] = useState(null)
+  const [playing, setPlaying] = useState(null)
   const embed = widget.embed
   const label = widget.title || widget.url
 
-  const externalLinkSx = { alignSelf: 'center', fontSize: 12, color: 'text.secondary', textDecoration: 'underline' }
+  const openPlayer = () => {
+    onLinkClick(`embed:${embed.type}`)
+    setPlaying(embed)
+  }
+  const player = (
+    <EmbedOverlay
+      embed={playing}
+      title={widget.title}
+      url={widget.url}
+      onOpenExternal={() => onLinkClick(`link:${label}`)}
+      onClose={() => setPlaying(null)}
+    />
+  )
 
   if (embed?.display === 'inline') {
     return (
       <Card sx={{ display: 'flex', flexDirection: 'column', gap: '8px', p: '10px 14px' }}>
-        {inlineOpen ? (
-          <InlineEmbed embed={embed} title={widget.title} />
-        ) : (
-          <ButtonBase
-            onClick={() => {
-              onLinkClick(`embed:${embed.type}`)
-              setInlineOpen(true)
-            }}
-            sx={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', justifyContent: 'flex-start', textAlign: 'inherit' }}
-          >
-            <Thumb src={widget.imageUrl} />
-            <CardLabel label={label} sublabel={widget.description} />
-            <Box component="span" className="play-pill" sx={playPillSx}>Play</Box>
-          </ButtonBase>
-        )}
-        <Link
-          href={widget.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => onLinkClick(`link:${label}`)}
-          sx={externalLinkSx}
+        <ButtonBase
+          onClick={openPlayer}
+          sx={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', justifyContent: 'flex-start', textAlign: 'inherit' }}
         >
-          Open in app ↗
-        </Link>
+          <Thumb src={widget.imageUrl} />
+          <CardLabel label={label} sublabel={widget.description} />
+          <Box component="span" className="play-pill" sx={playPillSx}>Play</Box>
+        </ButtonBase>
+        {player}
       </Card>
     )
   }
@@ -427,10 +486,7 @@ function EmbedWidget({ widget, onLinkClick }) {
     return (
       <Card sx={{ p: '0 0 10px', overflow: 'hidden' }}>
         <ButtonBase
-          onClick={() => {
-            onLinkClick(`embed:${embed.type}`)
-            setOverlaySrc(embed.src)
-          }}
+          onClick={openPlayer}
           sx={{ position: 'relative', display: 'block', width: '100%', aspectRatio: '16 / 9', bgcolor: '#0c0d0f', overflow: 'hidden' }}
         >
           {widget.imageUrl && <Box component="img" src={widget.imageUrl} alt="" sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
@@ -438,17 +494,8 @@ function EmbedWidget({ widget, onLinkClick }) {
         </ButtonBase>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px', p: '10px 14px 0' }}>
           <CardLabel label={label} sublabel={widget.description} />
-          <Link
-            href={widget.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => onLinkClick(`link:${label}`)}
-            sx={externalLinkSx}
-          >
-            Watch on the platform ↗
-          </Link>
         </Box>
-        <VideoOverlay src={overlaySrc} onClose={() => setOverlaySrc(null)} />
+        {player}
       </Card>
     )
   }
@@ -479,13 +526,13 @@ function EmbedWidget({ widget, onLinkClick }) {
 // hidden on narrow screens.
 function ReleaseArt({ release }) {
   const coverSx = (theme) => ({
-    width: 'var(--cover-w)', height: 'var(--cover-w)', borderRadius: '14px', objectFit: 'cover',
+    width: 'var(--cover-w)', height: 'var(--cover-w)', borderRadius: 0, objectFit: 'cover',
     boxShadow: '0 10px 30px rgb(20 22 26 / 0.18)', bgcolor: '#0c0d0f',
     ...theme.applyStyles('dark', { boxShadow: `0 0 0 1px ${theme.vars.palette.surface.border}, 0 10px 30px rgb(0 0 0 / 0.35)` }),
-    '@container (min-width:840px)': { position: 'relative', zIndex: 1, width: 'min(440px, 64cqw)', height: 'auto', aspectRatio: '1' },
+    '@container (min-width:840px)': { position: 'relative', zIndex: 1, width: 'min(660px, 96cqw)', height: 'auto', aspectRatio: '1' },
   })
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '18px', '@container (min-width:840px)': { position: 'relative', flex: '1 1 58%', mb: 0, p: '56px', overflow: 'hidden' } }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '18px', '@container (min-width:840px)': { position: 'relative', flex: '1 1 66%', mb: 0, p: '56px', overflow: 'hidden' } }}>
       {release.coverUrl && (
         <Box
           component="img"
@@ -504,17 +551,12 @@ function ReleaseArt({ release }) {
   )
 }
 
-// Release title, artist, and a small link back to the band's main page.
-function ReleaseInfo({ release, band }) {
+// Release title and artist.
+function ReleaseInfo({ release }) {
   return (
     <Box component="header" sx={{ textAlign: 'center', mb: '4px', '@container (min-width:840px)': { textAlign: 'left', mb: '8px' } }}>
       <Typography variant="h2" sx={{ mb: '4px' }}>{release.title}</Typography>
       {release.artist && <Typography variant="subtitle2" component="p" color="text.secondary" sx={{ mb: '10px' }}>{release.artist}</Typography>}
-      {band?.slug && (
-        <Link href={`/${band.slug}`} sx={{ display: 'inline-block', mt: '12px', fontSize: '0.875rem', color: 'text.secondary', textDecoration: 'underline' }}>
-          More from {band.name || 'this band'} →
-        </Link>
-      )}
     </Box>
   )
 }
@@ -543,8 +585,12 @@ function Section({ section, onLinkClick }) {
 }
 
 // `onLinkClick(target)` reports outbound clicks (public page wires it to the
-// click beacon; the editor preview leaves it unset).
-export default function WidgetStack({ page, onLinkClick = noopClick, footer = null }) {
+// click beacon; the editor preview leaves it unset). `corner` is an optional
+// node pinned to the band page's content card (the public page's share button);
+// the card is its positioned ancestor. `flush` runs the band card's bottom edge
+// off the bottom of the page (grows to fill a flex-column parent, square bottom
+// corners); the public page sets it, the framed editor preview doesn't.
+export default function WidgetStack({ page, onLinkClick = noopClick, footer = null, corner = null, flush = false }) {
   // Release pages use a two-pane layout: artwork on one side, content on the
   // other. The container-query context drives the side-by-side split only when
   // the page itself is wide — so the narrow editor preview and phones keep the
@@ -554,8 +600,8 @@ export default function WidgetStack({ page, onLinkClick = noopClick, footer = nu
       <Box sx={{ containerType: 'inline-size', '--cover-w': 'min(320px, 78vw)' }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', '@container (min-width:840px)': { flexDirection: 'row', alignItems: 'stretch', minHeight: '100vh', m: '-40px -16px -24px' } }}>
           <ReleaseArt release={page.release} />
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: 'var(--cover-w)', mx: 'auto', '@container (min-width:840px)': { flex: '0 0 clamp(360px, 36%, 480px)', maxWidth: 'none', mx: 0, p: '56px 44px', overflowY: 'auto' } }}>
-            <ReleaseInfo release={page.release} band={page.band} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: 'var(--cover-w)', mx: 'auto', '@container (min-width:840px)': { flex: '0 0 33%', maxWidth: 'none', mx: 0, p: '56px 44px', overflowY: 'auto' } }}>
+            <ReleaseInfo release={page.release} />
             {page.sections.map((section) => <Section key={section.id} section={section} onLinkClick={onLinkClick} />)}
             {/* The band header normally hosts the socials; the release header
                 replaces it, so they live at the foot of the content pane. */}
@@ -569,13 +615,30 @@ export default function WidgetStack({ page, onLinkClick = noopClick, footer = nu
     )
   }
 
+  // The band page is one centered card on the scope's canvas. Its `surface.s2`
+  // shell keeps the widget cards inside it — which use `background.paper` —
+  // reading as distinct surfaces in both schemes. Living here rather than in
+  // PublicPage means the editor preview shows the same card.
   return (
-    <>
+    <Card
+      sx={(theme) => ({
+        position: 'relative',
+        width: '100%', maxWidth: 612, mx: 'auto',
+        bgcolor: 'surface.s2',
+        borderRadius: `${theme.shape.preview}px`,
+        p: { xs: '20px 14px 26px', sm: '30px 28px 34px' },
+        ...(flush && {
+          flexGrow: 1,
+          borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
+        }),
+      })}
+    >
+      {corner}
       <Stack spacing={1.75} sx={{ maxWidth: 600, mx: 'auto' }}>
         <BandHeader band={page.band} onLinkClick={onLinkClick} />
         {page.sections.map((section) => <Section key={section.id} section={section} onLinkClick={onLinkClick} />)}
       </Stack>
       {footer}
-    </>
+    </Card>
   )
 }

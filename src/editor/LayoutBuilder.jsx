@@ -5,13 +5,15 @@ import SectionEditor from './SectionEditor.jsx'
 
 // The Build tab body: the ordered list of section cards plus the "Add section"
 // button. It maps each section to a SectionEditor and translates the section's
-// index/id into the position-independent callbacks Editor owns.
+// index/id into the position-independent callbacks Editor owns. (Page-level
+// styling — the background — lives in the Appearance tab, see AppearancePanel.)
 export default function LayoutBuilder({
   sections,
   content,
   openWidget,
   setOpenWidget,
   canAdd,
+  pageType,
   onUpdateSection,
   onMoveSection,
   onRemoveSection,
@@ -31,6 +33,7 @@ export default function LayoutBuilder({
           openWidget={openWidget}
           setOpenWidget={setOpenWidget}
           canAdd={canAdd}
+          pageType={pageType}
           onUpdate={(patch) => onUpdateSection(section.id, patch)}
           onMove={(delta) => onMoveSection(sectionIndex, delta)}
           onRemove={() => onRemoveSection(section.id)}

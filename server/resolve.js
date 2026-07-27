@@ -4,6 +4,7 @@
 // public page must never break because gigbuddy content moved on.
 import { detectPlatform } from './platforms.js'
 import { detectEmbed } from './embeds.js'
+import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../shared/pageBackgrounds.js'
 
 function resolveWidget(widget, content) {
   switch (widget.type) {
@@ -91,15 +92,26 @@ export function resolvePage(content, layout, release = null) {
     }
   }
   return {
-    band: content.band ? { ...content.band, theme: normalizeTheme(content.band.theme) } : null,
+    band: content.band
+      ? { ...content.band, theme: normalizeTheme(content.band.theme, release ? 'dark' : 'light') }
+      : null,
     release: resolvedRelease,
+    background: normalizeBackground(layout?.background),
     sections,
   }
 }
 
+// The stored backdrop key, re-checked at resolve time (layouts written before
+// backgrounds existed have none) so the page always gets a key it can paint.
+function normalizeBackground(background) {
+  return PAGE_BACKGROUND_KEYS.includes(background) ? background : DEFAULT_PAGE_BACKGROUND
+}
+
 // Band-level look, chosen in gigbuddy and shipped in the content snapshot.
-// Anything other than the explicit 'dark' opt-in renders the default light
-// theme, so a missing or unknown value never breaks the page.
-function normalizeTheme(theme) {
-  return theme === 'dark' ? 'dark' : 'light'
+// Either explicit opt-in is honoured; a missing or unknown value falls back to
+// `fallback` so the page never breaks. Release pages pass 'dark' — their
+// artwork-led layout is designed dark-first — while main pages stay light.
+function normalizeTheme(theme, fallback) {
+  if (theme === 'dark' || theme === 'light') return theme
+  return fallback
 }

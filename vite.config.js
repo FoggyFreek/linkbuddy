@@ -1,13 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Dev server on :5174 proxying /api to the linkpage API on :3010, mirroring
+// Dev server on :5175 proxying /api to the linkpage API on :3010, mirroring
 // the gigbuddy dev setup. `npm run build` emits dist/, which server/index.js
 // serves in production.
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5174,
+    port: 5175,
     proxy: {
       '/api': 'http://localhost:3010',
     },

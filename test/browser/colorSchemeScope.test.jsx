@@ -36,7 +36,7 @@ describe('ColorSchemeScope', () => {
     // The document root stays light; only the scope is dark.
     expect(document.documentElement.dataset.theme).not.toBe('dark')
     const scope = document.querySelector('[data-testid="scope"]')
-    expect(getComputedStyle(scope).backgroundColor).toBe('rgb(38, 55, 77)') // #26374d canvas
+    expect(getComputedStyle(scope).backgroundColor).toBe('rgb(22, 39, 61)') // #16273d page canvas
     const card = document.querySelector('[data-testid="card"]')
     expect(getComputedStyle(card).backgroundColor).toBe('rgb(47, 66, 87)') // #2f4257 paper
     // Inherited text follows the dark scheme with no global colour rule needed —

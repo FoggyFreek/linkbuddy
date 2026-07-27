@@ -327,7 +327,10 @@ export function createApp(pool) {
       }
       const songId = Number(req.body?.songId)
       const song = (main.content?.songs || []).find((s) => s.id === songId)
-      if (!song) return res.status(400).json({ error: 'Pick a song that has streaming links' })
+      if (!song) return res.status(400).json({ error: 'Pick a song from the list' })
+      if (!(song.links || []).length) {
+        return res.status(400).json({ error: `“${song.title}” has no streaming links — add them in GigBuddy first` })
+      }
 
       // Plan cap on smart link pages (silver 3, gold 30; the main page is free).
       const { maxReleasePages } = pageEntitlements(main.content)

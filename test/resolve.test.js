@@ -112,13 +112,35 @@ describe('resolvePage', () => {
 
   it('normalizes the band theme to a light/dark opt-in', () => {
     const layout = { sections: [] }
-    // Explicit dark opt-in is preserved.
+    // Either explicit choice is preserved.
     expect(resolvePage({ band: { name: 'A', theme: 'dark' } }, layout).band.theme).toBe('dark')
+    expect(resolvePage({ band: { name: 'A', theme: 'light' } }, layout).band.theme).toBe('light')
     // Missing or unknown values fall back to light so the page never breaks.
     expect(resolvePage({ band: { name: 'A' } }, layout).band.theme).toBe('light')
     expect(resolvePage({ band: { name: 'A', theme: 'neon' } }, layout).band.theme).toBe('light')
     // No band at all stays null.
     expect(resolvePage({}, layout).band).toBeNull()
+  })
+
+  it('defaults release pages to the dark theme', () => {
+    const layout = { sections: [] }
+    const release = { songId: 1, title: 'Single', artist: 'A' }
+    // Unset or unknown → dark on a release page (light on a main page above).
+    expect(resolvePage({ band: { name: 'A' } }, layout, release).band.theme).toBe('dark')
+    expect(resolvePage({ band: { name: 'A', theme: 'neon' } }, layout, release).band.theme).toBe('dark')
+    // An explicit band choice still wins, in both directions.
+    expect(resolvePage({ band: { name: 'A', theme: 'light' } }, layout, release).band.theme).toBe('light')
+    expect(resolvePage({ band: { name: 'A', theme: 'dark' } }, layout, release).band.theme).toBe('dark')
+  })
+
+  it('passes the layout background through, defaulting to none', () => {
+    const band = { name: 'A' }
+    expect(resolvePage({ band }, { background: 'blobs', sections: [] }).background).toBe('blobs')
+    // A layout stored before backgrounds existed, or carrying a key this build
+    // doesn't know, still resolves to something the page can paint.
+    expect(resolvePage({ band }, { sections: [] }).background).toBe('none')
+    expect(resolvePage({ band }, { background: 'lasers', sections: [] }).background).toBe('none')
+    expect(resolvePage({ band }, null).background).toBe('none')
   })
 
   it('survives an empty snapshot', () => {

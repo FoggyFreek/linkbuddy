@@ -7,6 +7,7 @@
 // restricted to http(s).
 import crypto from 'node:crypto'
 import { LINK_ICON_KEYS } from '../shared/linkIcons.js'
+import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../shared/pageBackgrounds.js'
 
 const MAX_SECTIONS = 20
 const MAX_WIDGETS_PER_SECTION = 30
@@ -16,6 +17,7 @@ const MAX_LABEL = 160
 const MAX_URL = 2000
 
 export const LINK_ICONS = new Set(LINK_ICON_KEYS)
+export const PAGE_BACKGROUNDS = new Set(PAGE_BACKGROUND_KEYS)
 
 function fail(message) {
   return { error: message }
@@ -137,5 +139,13 @@ export function validateLayout(raw) {
     }
     sections.push({ id: widgetId(rawSection.id), title: cleanString(rawSection.title, MAX_TITLE), widgets })
   }
-  return { layout: { sections } }
+  return { layout: { background: parseBackground(raw.background), sections } }
+}
+
+// The page's chosen backdrop artwork (see src/pageBackgrounds.js). Like the link
+// icons this is a closed key set, not free-form styling — an unknown or missing
+// value falls back to the plain themed canvas rather than failing the save, so a
+// layout written by an older/newer editor still stores.
+function parseBackground(raw) {
+  return PAGE_BACKGROUNDS.has(raw) ? raw : DEFAULT_PAGE_BACKGROUND
 }

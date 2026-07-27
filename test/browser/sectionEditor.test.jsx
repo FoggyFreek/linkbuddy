@@ -53,8 +53,8 @@ async function renderSection(props = {}) {
 describe('SectionEditor (extracted editor component)', () => {
   it('renders one row per widget with its summary label', async () => {
     const { screen } = await renderSection()
-    await expect.element(screen.getByRole('button', { name: 'Link · Site' })).toBeInTheDocument()
-    await expect.element(screen.getByRole('button', { name: 'Link · Shop' })).toBeInTheDocument()
+    await expect.element(screen.getByRole('button', { name: 'Custom link · Site' })).toBeInTheDocument()
+    await expect.element(screen.getByRole('button', { name: 'Custom link · Shop' })).toBeInTheDocument()
   })
 
   it('reorders widgets immutably when moving one down', async () => {
@@ -87,14 +87,14 @@ describe('SectionEditor (extracted editor component)', () => {
 
   it('adds a widget of the requested type via the palette', async () => {
     const { screen, handlers } = await renderSection()
-    await screen.getByRole('button', { name: 'Link', exact: true }).click()
+    await screen.getByRole('button', { name: 'Custom link', exact: true }).click()
     expect(handlers.onAddWidget).toHaveBeenCalledWith('link')
   })
 
   it('disables add buttons whose required content is missing', async () => {
     const { screen } = await renderSection()
-    // No products synced, so Merch is gated; Link is always available.
+    // No products synced, so Merch is gated; Custom link is always available.
     await expect.element(screen.getByRole('button', { name: 'Merch', exact: true })).toBeDisabled()
-    await expect.element(screen.getByRole('button', { name: 'Link', exact: true })).toBeEnabled()
+    await expect.element(screen.getByRole('button', { name: 'Custom link', exact: true })).toBeEnabled()
   })
 })

@@ -38,6 +38,18 @@ export function pageLabel(page, content) {
     : page.release?.title || page.slug
 }
 
+// The colour scheme this page's content will be rendered in — what the public
+// page and the Preview tab force via ColorSchemeScope. Mirrors the server's
+// `normalizeTheme` (server/resolve.js): the band's own choice when it made one,
+// otherwise dark for a release page's artwork-led layout and light for the main
+// page. Used by editor chrome that has to show page-scheme artwork (the
+// background swatches) before a preview has been loaded.
+export function pageSchemeMode(page, content) {
+  const theme = content?.band?.theme
+  if (theme === 'dark' || theme === 'light') return theme
+  return page.pageType === 'release' ? 'dark' : 'light'
+}
+
 // The compact page-switcher shape the server returns from list endpoints.
 // Kept here so client-side inserts (a freshly created release) match what a
 // reload from the server would produce.

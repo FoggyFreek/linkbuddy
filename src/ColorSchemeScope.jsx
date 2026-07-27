@@ -29,7 +29,7 @@ export function useScopedPortalProps() {
 // `[data-theme="light"|"dark"]`, so setting that attribute here makes every MUI
 // component and every `theme.vars` / palette-token `sx` reference *inside*
 // resolve to `mode` — regardless of the document's own scheme. The scope paints
-// its own surface (`background.default` / `text.primary`) and declares the
+// its own surface (`surface.canvas`, the page backdrop / `text.primary`) and declares the
 // native `color-scheme`, so it is fully self-contained: it looks the same
 // whether it's the whole public page or a framed preview nested in the editor.
 //
@@ -45,7 +45,7 @@ export default function ColorSchemeScope({ mode, sx, children, ...props }) {
       ref={setNode}
       data-theme={mode}
       sx={[
-        { colorScheme: mode, bgcolor: 'background.default', color: 'text.primary' },
+        { colorScheme: mode, bgcolor: 'surface.canvas', color: 'text.primary' },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
       {...props}

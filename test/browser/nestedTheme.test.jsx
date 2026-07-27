@@ -39,7 +39,7 @@ describe('Nested theme forcing (editor preview scenario)', () => {
 
     // Root stays light; the forced-light container matches it.
     expect(document.documentElement.dataset.theme).not.toBe('dark')
-    const card = document.querySelector('[data-testid="frame"] .MuiCard-root')
+    const card = document.querySelector('[data-testid="frame"] section .MuiCard-root')
     expect(getComputedStyle(card).backgroundColor).toBe('rgb(255, 255, 255)')
     const name = document.querySelector('[data-testid="frame"] .MuiTypography-h1')
     expect(getComputedStyle(name).color).toBe('rgb(23, 24, 28)')
@@ -54,7 +54,7 @@ describe('Nested theme forcing (editor preview scenario)', () => {
 
     // MUI Card reads var(--mui-palette-background-paper), which resolves to the
     // dark paper colour under the forced container.
-    const card = document.querySelector('[data-testid="frame"] .MuiCard-root')
+    const card = document.querySelector('[data-testid="frame"] section .MuiCard-root')
     expect(getComputedStyle(card).backgroundColor).toBe('rgb(47, 66, 87)')
 
     // Inherited text colour recomputes to the dark scheme's light text (#f2f5f9),

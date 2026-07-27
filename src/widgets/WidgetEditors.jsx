@@ -13,8 +13,16 @@ import Checkbox from '@mui/material/Checkbox'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Typography from '@mui/material/Typography'
 import { LINK_ICON_KEYS } from '../../shared/linkIcons.js'
+import { LINK_ICON_COMPONENTS } from '../icons.jsx'
 
 const ICON_OPTIONS = LINK_ICON_KEYS
+
+// The icon picker shows the glyph itself rather than its key. The SVGs are
+// aria-hidden, so each option carries the key as its accessible name.
+function IconOption({ icon }) {
+  const Icon = LINK_ICON_COMPONENTS[icon]
+  return <Box sx={{ display: 'flex', color: 'text.primary' }} aria-label={icon}><Icon size={20} /></Box>
+}
 
 const Hint = ({ children }) => (
   <Typography variant="caption" color="text.secondary">{children}</Typography>
@@ -175,9 +183,17 @@ function LinkWidgetEditor({ widget, onChange, onUnfurl }) {
       <TextField size="small" fullWidth label="https://…" value={widget.url || ''} onChange={(e) => onChange({ ...widget, url: e.target.value })} />
       <TextField size="small" fullWidth label="Sublabel (optional)" value={widget.sublabel || ''} onChange={(e) => onChange({ ...widget, sublabel: e.target.value || null })} />
       <TextField size="small" fullWidth label="Thumbnail image URL (optional)" value={widget.imageUrl || ''} onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })} />
-      <TextField select size="small" label="Icon" value={widget.icon} onChange={(e) => onChange({ ...widget, icon: e.target.value })} sx={{ width: 200 }}>
+      <TextField
+        select
+        size="small"
+        label="Icon"
+        value={widget.icon}
+        onChange={(e) => onChange({ ...widget, icon: e.target.value })}
+        sx={{ width: 110 }}
+        slotProps={{ select: { renderValue: (icon) => <IconOption icon={icon} /> } }}
+      >
         {ICON_OPTIONS.map((icon) => (
-          <MenuItem key={icon} value={icon}>{icon}</MenuItem>
+          <MenuItem key={icon} value={icon}><IconOption icon={icon} /></MenuItem>
         ))}
       </TextField>
       <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>

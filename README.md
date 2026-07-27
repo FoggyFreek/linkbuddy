@@ -71,7 +71,7 @@ into its own repository — nothing else needs to change.
 |---|---|---|
 | `song` | a song + its streaming links | first link is the card target, extra links render as pills |
 | `platforms` | one button per streaming link of a song | platform (Spotify, Apple Music, YouTube (Music), Deezer, TIDAL, Amazon, SoundCloud, Bandcamp) detected from the URL; the core of a release page. Embeddable platforms get a ▶ preview button (Spotify inline player, YouTube overlay) |
-| `embed` | any pasted URL | metadata (title/artwork/description) pulled via oEmbed (Spotify, YouTube, SoundCloud, Vimeo, TikTok) or Open Graph tags; renders as a click-to-play inline player (Spotify/SoundCloud), a lightbox video (YouTube, privacy-enhanced `youtube-nocookie.com`), or a rich link card |
+| `embed` | any pasted URL | metadata (title/artwork/description) pulled via oEmbed (Spotify, YouTube, SoundCloud, Vimeo, TikTok) or Open Graph tags; renders as a click-to-play card that opens the player in a closable modal overlay — an audio player (Spotify/SoundCloud) or a 16:9 video lightbox (YouTube, privacy-enhanced `youtube-nocookie.com`) — or as a rich link card |
 | `gigs` | announced upcoming gigs | expandable card; only gigs with status `announced` are ever exported |
 | `merch` | selected products | horizontal card carousel; optional per-item image URL + badge, optional shop URL (e.g. your Shopify store) the cards link to |
 | `link` | free-form link | label, optional sublabel/thumbnail, icon |
@@ -84,14 +84,14 @@ npm install
 cp .env.example .env       # fill in GIGBUDDY_SYNC_SECRET (same value as gigbuddy's LINKPAGE_SECRET)
 createdb gigbuddy_linkpage # its own database — never gigbuddy's
 npm run migrate
-npm run dev                # API on :3010 + Vite on :5174
+npm run dev                # API on :3010 + Vite on :5175
 ```
 
 On the GigBuddy side set in its environment:
 
 ```
 LINKPAGE_SECRET=<same shared secret>
-LINKPAGE_URL=http://localhost:5174
+LINKPAGE_URL=http://localhost:5175
 ```
 
 Then open GigBuddy → Profile → "Edit link page".
@@ -180,8 +180,9 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
   `Authorization: Bearer <shared secret>`; 404 for unknown slugs. The `band`
   object may carry an optional `theme: 'light' | 'dark'` (band-selectable in
   GigBuddy) that skins every one of the band's public pages, including the
-  smart-link release pages; anything but the explicit `'dark'` opt-in renders
-  the default light theme.
+  smart-link release pages. Either explicit value is honoured; when it's absent
+  or unrecognized the fallback depends on the page — release pages render dark
+  (their artwork-led layout is dark-first), main pages light.
 - `GET /api/public/linkpage/image?t=<token>` — streams band logo / song cover;
   the token is HMAC-signed by GigBuddy with the same secret and embedded in
   the export payload's image URLs.

@@ -45,6 +45,11 @@ const typography = {
 // hairline tones the cards rely on. Components reference them through the `sx`
 // prop (e.g. bgcolor: 'surface.s2') and theme.vars.palette.surface.*, and MUI
 // emits them as `--mui-palette-surface-*` variables per colour scheme.
+//
+// `surface.canvas` is the *page* backdrop — what `ColorSchemeScope` paints
+// behind the public page and its editor preview. It sits two tone steps (−8 per
+// channel each) below `background.default`, the application/editor backdrop, so
+// the page's content card reads as a lifted surface against it.
 const lightPalette = {
   mode: 'light',
   background: { default: '#eceef2', paper: '#ffffff' },
@@ -52,7 +57,7 @@ const lightPalette = {
   primary: { main: '#17181c', contrastText: '#ffffff' },
   success: { main: '#3ec93e', contrastText: '#ffffff' },
   divider: '#d5d8de',
-  surface: { s2: '#f0f1f4', s3: '#e4e6ea', border: '#ecedf1', field: '#f7f8fa' },
+  surface: { s2: '#f0f1f4', s3: '#e4e6ea', border: '#ecedf1', field: '#f7f8fa', canvas: '#dcdee2' },
 }
 
 const darkPalette = {
@@ -62,7 +67,7 @@ const darkPalette = {
   primary: { main: '#f2f5f9', contrastText: '#26374d' },
   success: { main: '#3ec93e', contrastText: '#ffffff' },
   divider: 'rgba(255, 255, 255, 0.14)',
-  surface: { s2: '#35485e', s3: '#3f5468', border: 'rgba(255, 255, 255, 0.05)', field: '#35485e' },
+  surface: { s2: '#35485e', s3: '#3f5468', border: 'rgba(255, 255, 255, 0.05)', field: '#35485e', canvas: '#16273d' },
 }
 
 const baseTheme = createTheme({

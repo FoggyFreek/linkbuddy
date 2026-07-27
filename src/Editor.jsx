@@ -17,12 +17,14 @@ import EditorHeader from './editor/EditorHeader.jsx'
 import PageSwitcher from './editor/PageSwitcher.jsx'
 import EditorTabs from './editor/EditorTabs.jsx'
 import LayoutBuilder from './editor/LayoutBuilder.jsx'
+import AppearancePanel from './editor/AppearancePanel.jsx'
 import PagePreview from './editor/PagePreview.jsx'
 import { useEditorSession } from './hooks/useEditorSession.js'
 import { useLayoutEditor } from './hooks/useLayoutEditor.js'
 import NewReleaseForm from './widgets/NewReleaseForm.jsx'
 import { makeWidget } from './widgets/widgetModel.js'
-import { moveItem, pageLabel, saveErrorState, toListEntry } from './editorUtils.js'
+import { moveItem, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from './editorUtils.js'
+import { DEFAULT_PAGE_BACKGROUND } from '../shared/pageBackgrounds.js'
 
 function newId() {
   return crypto.randomUUID()
@@ -110,6 +112,13 @@ export default function Editor() {
 
   const removeSection = (sectionId) => {
     applyLayout({ ...layout, sections: layout.sections.filter((s) => s.id !== sectionId) })
+  }
+
+  // The page's backdrop artwork. It lives on the layout rather than in band
+  // content, so it saves, publishes and previews through the same path as the
+  // sections — and each page (main, per release) can pick its own.
+  const setBackground = (background) => {
+    applyLayout({ ...layout, background })
   }
 
   const moveSection = (index, delta) => {
@@ -213,12 +222,21 @@ export default function Editor() {
           openWidget={openWidget}
           setOpenWidget={setOpenWidget}
           canAdd={canAdd}
+          pageType={page.pageType}
           onUpdateSection={updateSection}
           onMoveSection={moveSection}
           onRemoveSection={removeSection}
           onAddWidget={addWidget}
           onAddSection={addSection}
           onUnfurl={(url) => unfurlUrl(sessionRef.current, url)}
+        />
+      )}
+
+      {tab === 'appearance' && (
+        <AppearancePanel
+          background={layout.background || DEFAULT_PAGE_BACKGROUND}
+          schemeMode={pageSchemeMode(page, content)}
+          onSetBackground={setBackground}
         />
       )}
 

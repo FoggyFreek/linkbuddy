@@ -51,9 +51,11 @@ const CHANNELS = [
 ]
 
 // Share menu for a page URL. `variant="floating"` pins it to the top-right of
-// the viewport (public pages); `variant="inline"` renders a plain icon button
-// (editor header). `onShare(channel)` reports the chosen channel — the public
-// page wires it to the click beacon so shares show up in the statistics.
+// the viewport (release pages, which are full-bleed); `variant="corner"` pins it
+// to the top-right of its nearest positioned ancestor — the band page's content
+// card; `variant="inline"` renders a plain icon button (editor header).
+// `onShare(channel)` reports the chosen channel — the public page wires it to
+// the click beacon so shares show up in the statistics.
 export default function ShareButton({ url, title, onShare = () => {}, variant = 'floating' }) {
   const [anchorEl, setAnchorEl] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -97,8 +99,7 @@ export default function ShareButton({ url, title, onShare = () => {}, variant = 
     }
   }
 
-  const floatingSx = {
-    position: 'fixed',
+  const pinnedSx = {
     top: 12,
     right: 12,
     zIndex: 10,
@@ -107,14 +108,18 @@ export default function ShareButton({ url, title, onShare = () => {}, variant = 
     boxShadow: '0 1px 3px rgb(20 22 26 / 0.2)',
     '&:hover': { bgcolor: 'action.hover' },
   }
+  const variantSx = {
+    floating: { position: 'fixed', ...pinnedSx },
+    corner: { position: 'absolute', ...pinnedSx },
+  }[variant]
 
   return (
     <Fragment>
       <IconButton
         aria-label="Share this page"
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        sx={variant === 'floating' ? floatingSx : undefined}
-        size={variant === 'floating' ? 'medium' : 'small'}
+        sx={variantSx}
+        size={variantSx ? 'medium' : 'small'}
       >
         <ShareIcon fontSize="small" />
       </IconButton>

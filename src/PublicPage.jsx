@@ -7,6 +7,7 @@ import WidgetStack from './WidgetStack.jsx'
 import ShareButton from './ShareButton.jsx'
 import CenteredStatus from './CenteredStatus.jsx'
 import ColorSchemeScope from './ColorSchemeScope.jsx'
+import { pageBackgroundSx } from './pageBackgrounds.js'
 
 function utmSourceFromLocation() {
   return new URLSearchParams(window.location.search).get('utm_source')
@@ -69,24 +70,51 @@ export default function PublicPage({ slug }) {
     </Box>
   )
 
+  const share = (variant) => (
+    <ShareButton
+      url={`${window.location.origin}/${slug}`}
+      title={shareTitle}
+      variant={variant}
+      onShare={(channel) => onLinkClick(`share:${channel}`)}
+    />
+  )
+
+  // WidgetStack places the footer for us — inside the content pane on the
+  // two-pane release layout, below the stack on the band page — and hosts the
+  // share button in the top-right corner of the band page's content card.
+  // Release pages are deliberately full-bleed (artwork fills the viewport beside
+  // the content pane), so there they keep the viewport-pinned button.
   // Scope the whole viewport to the band's chosen scheme. Unlike the previous
   // approach this sets no attribute on <html> — the scope paints its own
   // background over the viewport, so the page reads as the band's theme while
   // the document (and any editor session that happens to share this tab's stored
   // mode) is left untouched.
+  // The chosen backdrop artwork (if any) paints over the scope's plain canvas —
+  // it's a background-image on this same element, so it costs the page no extra
+  // node and the content card simply sits on top of it.
   return (
     <ColorSchemeScope
       mode={page.band?.theme === 'dark' ? 'dark' : 'light'}
-      sx={{ minHeight: '100dvh', px: 2, pt: 5, pb: 3 }}
+      sx={[
+        {
+          minHeight: '100dvh', px: 2, pt: 5,
+          // The band card runs flush to the bottom edge, so no bottom padding and
+          // a flex column for it to grow into. Release pages are their own
+          // full-bleed layout and ignore both.
+          pb: page.release ? 3 : 0,
+          display: 'flex', flexDirection: 'column',
+        },
+        pageBackgroundSx(page.background),
+      ]}
     >
-      <ShareButton
-        url={`${window.location.origin}/${slug}`}
-        title={shareTitle}
-        onShare={(channel) => onLinkClick(`share:${channel}`)}
+      {page.release && share('floating')}
+      <WidgetStack
+        page={page}
+        onLinkClick={onLinkClick}
+        footer={footer}
+        corner={page.release ? null : share('corner')}
+        flush
       />
-      {/* WidgetStack places the footer for us — inside the content pane on the
-          two-pane release layout, below the stack on the band page. */}
-      <WidgetStack page={page} onLinkClick={onLinkClick} footer={footer} />
     </ColorSchemeScope>
   )
 }

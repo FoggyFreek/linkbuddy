@@ -1,103 +1,102 @@
 # CLAUDE.md
 
-Guidance for working in this repo. See `README.md` for the product/architecture
-overview; this file focuses on conventions that aren't obvious from the code.
+Orientation for working in this repo. `README.md` has the product/architecture
+story; this file is the short map plus the rules that aren't obvious from the
+code. Most modules carry a header comment explaining their own contract — read
+that before changing one.
 
 ## What this is
 
-A standalone GigBuddy "link page" app: a React (Vite) SPA front end plus an
-Express + Postgres API (`server/`). Path-based routing, no router:
-`/edit` (operator editor), `/privacy`, `/` (server root), everything else is a
-band/release slug rendered by `PublicPage`.
+A standalone GigBuddy "link page" app: React 19 + Vite SPA (`src/`) over an
+Express 5 + Postgres API (`server/`). No accounts and no router: GigBuddy is the
+identity provider (HMAC handoff token → editor session), and routing is
+path-based — `/edit` (editor), `/privacy`, `/` (server root), everything else is
+a band or release slug rendered by `PublicPage`.
 
 ## Commands
 
-- `npm run dev` — API (`:3010`) + Vite dev server (`:5174`) together.
-- `npm run build` — production client bundle to `dist/` (served by `server/index.js`).
-- `npm test` — Node/unit tests (Vitest, `test/**/*.test.js`). Backend + pure logic.
+- `npm run dev` — API (`:3010`) + Vite (`:5175`, proxies `/api`).
+- `npm run build` — client bundle to `dist/`, served by `server/index.js`.
+- `npm run migrate` — apply `server/migrations/*.sql` (run on deploy).
+- `npm test` — Node/unit tests (Vitest, `test/**/*.test.js`): backend + pure logic.
 - `npm run test:browser` — real-browser component tests (Vitest browser mode +
-  Playwright, `test/browser/**/*.test.jsx`). Runs in the pre-installed Chromium.
+  Playwright, `test/browser/**/*.test.jsx`).
+
+## Map
+
+**Server** — `app.js` (all routes: public page + view/click beacons, and the
+session-authenticated `/api/editor/*`), `pagesRepo.js`/`statsRepo.js` (SQL,
+executor-first), `layout.js` (validate + normalize submitted layouts),
+`resolve.js` (stored layout × content snapshot → public payload),
+`gigbuddy.js` (content export pull), `tokens.js` (HMAC handoff/session),
+`classify.js` (device/source/country, no IPs), `unfurl.js` + `safeFetch.js`
+(SSRF-hardened link enrichment), `entitlements.js` (plan gating).
+
+**Client** — `PublicPage.jsx` and `Editor.jsx` are the two roots. `Editor` keeps
+its state in `src/hooks/` (`useEditorSession` = handoff/session/page list,
+`useLayoutEditor` = draft layout + debounced autosave) and its UI in
+`src/editor/` (tabs: build, appearance, preview, stats). `WidgetStack.jsx`
+renders the resolved page for **both** the public page and the editor preview —
+keep it presentational so the two can't diverge. `widgets/widgetModel.js` is the
+pure client vocabulary for creating/labelling widgets.
+
+**`shared/`** — allow-lists that the server validates against and the client
+renders from: `linkIcons.js`, `platforms.js`, `pageBackgrounds.js`. When you add
+a background, icon or platform, edit the `shared/` list first; both sides import
+it, so they can't drift. The artwork/component maps live client-side
+(`src/icons.jsx`, `src/pageBackgrounds.js`).
+
+## Invariants
+
+- **Privacy (don't break).** Third-party embeds never load on page view:
+  visitors get a click-to-play facade, and the iframe mounts only after
+  interaction, inside a closable overlay that unmounts it on close
+  (`src/embeds.jsx`, `server/embeds.js`). The public page sets no cookies and
+  stores nothing on the device. See `PRIVACY.md`.
+- **Client input is untrusted.** `server/layout.js` whitelists field-by-field:
+  unknown widget types rejected, unknown fields dropped, strings capped, URLs
+  http(s) only. Iframe sources are recomputed server-side from stored URLs —
+  clients never dictate them.
+- **Slug namespaces.** Main page `/<mainSlug>`, releases `/<mainSlug>/<tail>`;
+  release creation is restricted to the caller's own prefix.
+- **Resolution is forgiving.** Widgets pointing at vanished content (deleted
+  song, archived product) are dropped silently — a public page must never break
+  because GigBuddy content moved on.
 
 ## Front end: MUI component-first, no stylesheet
 
-The UI is built entirely from **Material UI (MUI v9)** components styled with the
-**`sx` prop** and the theme. There is **no CSS file** — do not add one. All
-colour, type, spacing, and per-scheme styling flow from the theme.
+Everything is **MUI v9** components styled with the **`sx` prop** and the theme.
+There is **no CSS file** — do not add one.
 
-- **Theme:** `src/theme.js` is the single source of truth. It uses
-  `createTheme({ cssVariables: { colorSchemeSelector: 'data-theme' }, colorSchemes: { light, dark }, … })`,
-  a full `typography` scale wrapped in `responsiveFontSizes`, and component
-  defaults (`MuiCard`, `MuiButton`, `MuiChip`) under `components`.
-- **Colour schemes / dark mode:** driven by MUI colour schemes, not
-  `palette.mode`. `colorSchemeSelector: 'data-theme'` makes MUI emit its
-  variables under `:root, [data-theme="light"]` and `[data-theme="dark"]`. Two
-  independent concerns key off that one selector, and MUI owns both — there is no
-  manual `data-theme` bookkeeping:
-  - **Editor scheme** = the application scheme. The editor's live
-    light/dark/system switch is `useColorScheme` (`ColorModeToggle`); MUI writes
-    the result to `<html data-theme>` for the whole app. Guard
-    `mode === undefined` on first render.
-  - **Page scheme** = page content (`band.theme`). Both the **public page** and
-    the **editor preview** wrap their content in **`ColorSchemeScope`** (`src/
-    ColorSchemeScope.jsx`), which sets `data-theme` on a wrapping `Box` and paints
-    its own `background.default` / `text.primary` / `color-scheme`. MUI's vars
-    cascade, so everything inside re-resolves to that scheme regardless of the
-    document's. The scope is the *single* implementation shared by preview and
-    production, so they can't diverge; because it sets `color` itself, no global
-    `[data-theme]` text-colour rule is needed (it was removed).
-  - Because the two schemes live in different places (`<html>` vs. a scoped
-    `Box`), changing the editor scheme never affects a preview and vice-versa.
-  - **Portals in a scope:** MUI surfaces that portal to `document.body` (Menu,
-    Popover, Select, Tooltip, Dialog) would escape the scope. `ColorSchemeScope`
-    exposes its node via `usePortalContainer()`, with `useScopedPortalProps()` as
-    a convenience that returns `{ container }` to spread straight onto the surface
-    (see `ShareButton`'s menu) — new scoped Menu/Popover/Select/Tooltip/Dialog
-    surfaces should spread it so the portal mounts inside the scope and inherits
-    its scheme. Outside a scope the hook yields `null`/`{}` → MUI's default
-    (`document.body`, the app scheme).
-  - `index.html` contains an inline colour-scheme init script (the CSR
-    equivalent of `<InitColorSchemeScript>`, which is SSR-only / returns null on
-    the client). It restores the stored **editor** mode (`mui-mode`) onto
-    `<html data-theme>` before the bundle loads, preventing a flash. Keep its
-    keys/attribute in sync with the theme.
-- **Per-scheme styles in `sx`:** use `theme.applyStyles('dark', { … })` (the MUI
-  recommendation over reading `palette.mode`). Example: the dark card border in
-  `theme.js` and `WidgetStack`.
-- **Custom palette tokens:** `palette.surface.{s2,s3,border,field}` carry the
-  pill/scroll/hairline tones; reference them as `sx={{ bgcolor: 'surface.s2' }}`
-  / `theme.vars.palette.surface.*` (MUI emits `--mui-palette-surface-*`).
-
-### Component conventions
-
-- Clickable cards use `CardActionArea component="a"` (song, link, merch, embed
-  fallback). Collapsibles use `Accordion` (gigs). Pills are `Chip`, avatars
-  `Avatar`, form fields `TextField`/`Select`, tables `Table`.
-- **`Stack` only accepts `direction`, `spacing`, `useFlexGap`, `divider`.** Put
-  `justifyContent` / `alignItems` / `flexWrap` in `sx`, or they leak to the DOM
-  (React "unknown prop" warning).
-- The container-query release layout lives in `sx` via raw
-  `'@container (min-width:840px)': { … }` on a `containerType: 'inline-size'`
-  parent — retained from the original design.
-- `WidgetStack` renders both the public page and the editor preview, so preview
-  can't drift from what visitors see. Keep it presentational.
+- `src/theme.js` is the single source of truth: `cssVariables` with
+  `colorSchemeSelector: 'data-theme'`, both colour schemes, `responsiveFontSizes`,
+  and component defaults. Custom tokens `palette.surface.{s2,s3,border,field}`
+  (`sx={{ bgcolor: 'surface.s2' }}`).
+- Per-scheme styles use `theme.applyStyles('dark', { … })`, never `palette.mode`.
+- **Two independent schemes**, both owned by MUI, no manual `data-theme`
+  bookkeeping: the *editor* scheme on `<html>` (`useColorScheme` /
+  `ColorModeToggle`; guard `mode === undefined` on first render, and keep the
+  inline anti-flash script in `index.html` in sync with the theme's keys), and
+  the *page* scheme (`band.theme`) inside `ColorSchemeScope.jsx`, which the
+  public page and the editor preview both wrap their content in. Changing one
+  never affects the other.
+- **Portals must opt in:** Menu/Popover/Select/Tooltip/Dialog inside a scope
+  escape it unless you spread `useScopedPortalProps()` (see `ShareButton`).
+- **`Stack` only accepts `direction`, `spacing`, `useFlexGap`, `divider`** — put
+  `justifyContent`/`alignItems`/`flexWrap` in `sx` or they leak to the DOM.
+- Clickable cards are `CardActionArea component="a"`; collapsibles `Accordion`;
+  pills `Chip`. The release layout uses raw `'@container (min-width:840px)'` in
+  `sx` on a `containerType: 'inline-size'` parent.
 
 ## Testing notes
 
-- Browser tests render **real** components (e.g. `PublicPage` with a mocked
-  `api.js`) and assert MUI structure + computed styles — query `.MuiCard-root`,
-  `.MuiTypography-h1`, etc., not old CSS classes.
-- `test/browser/colorSchemeScope.test.jsx` guards `ColorSchemeScope`: scheme
-  independence from the document, two disagreeing scopes at once, and portal
-  inheritance. `test/browser/nestedTheme.test.jsx` guards the lower-level MUI
-  behaviour it relies on (forced scheme on a nested container). Keep both green
-  if you touch theme scoping.
-- Playwright launches the pre-installed Chromium via `executablePath`
-  (`/opt/pw-browsers/chromium-1194/…`) because the bundled browser revision
-  differs — see `vitest.browser.config.js`. Do not run `playwright install`.
-
-## Privacy contract (don't break)
-
-Third-party embeds (Spotify/YouTube/SoundCloud iframes) must **never** load on
-page load — visitors see a click-to-play facade and the player mounts only after
-interaction (`embeds.jsx`, `EmbedWidget`). The public page sets no cookies and
-stores nothing on the device. See `PRIVACY.md`.
+- Browser tests render **real** components (e.g. `PublicPage` with `api.js`
+  mocked) and assert MUI structure + computed styles — query `.MuiCard-root`,
+  `.MuiTypography-h1`, not CSS classes.
+- If you touch theme scoping, keep `colorSchemeScope.test.jsx` (scope
+  independence, two disagreeing scopes, portal inheritance) and
+  `nestedTheme.test.jsx` (the MUI behaviour it rests on) green.
+- `vitest.browser.config.js` uses a pre-installed Chromium at
+  `/opt/pw-browsers/chromium-1194/…` when that path exists, and otherwise lets
+  Playwright resolve its own browser — so a local `playwright install` is fine
+  on a dev machine, but don't run it in the sandbox.

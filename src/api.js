@@ -3,9 +3,12 @@
 // page stores nothing on the visitor's device).
 
 async function request(path, options = {}) {
+  // `headers` must be built AFTER spreading options: authed() supplies its own
+  // headers object, which would otherwise replace the Content-Type wholesale
+  // and leave JSON bodies unparsed by express.json().
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   })
   if (res.status === 204) return null
   const body = await res.json().catch(() => ({}))

@@ -6,6 +6,7 @@
   "description": "Standalone public link page (widget stack) for GigBuddy bands, with privacy-first visit statistics.",
   "scripts": {
     "dev": "concurrently -n api,web -c blue,green \"npm:server:dev\" \"npm:web:dev\"",
+    "dev:all": "npm run dev",
     "web:dev": "vite",
     "server": "node server/index.js",
     "server:dev": "node --watch server/index.js",
@@ -13,6 +14,7 @@
     "preview": "vite preview",
     "migrate": "node server/migrate.js",
     "stats:purge": "node server/purgeStats.js",
+    "export:dump": "node server/dumpExport.js",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.js"
   },

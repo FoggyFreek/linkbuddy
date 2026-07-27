@@ -47,7 +47,7 @@ export function widgetSummary(widget, content) {
     case 'merch':
       return `Merch · ${widget.title || `${widget.items.length} products`}`
     case 'link':
-      return `Link · ${widget.label || widget.url}`
+      return `Custom link · ${widget.label || widget.url}`
     case 'embed':
       return `Embed · ${widget.title || widget.url || 'new'}`
     default:

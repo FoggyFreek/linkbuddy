@@ -1,0 +1,170 @@
+{
+  "entitlements": {
+    "enabled": true,
+    "maxReleasePages": null,
+    "statsRetentionDays": 90
+  },
+  "band": {
+    "slug": "seed",
+    "name": "The Woods",
+    "bio": "The Woods is a modern blues-rock band from Groningen, known for their vibrant fusion of seventies-style roots rock, soul, and blues. Lead singer and guitarist Joris Bos has been writing music and touring since the age of 15. Their songs are defined by soulful vocals, melodic guitar solos, and roaring Hammond-driven keys.\n\nTheir EP Good to See You was widely praised, and the single Underneath the Sun has been streamed over 200,000 times, receiving substantial airplay on stations including NPO Soul & Jazz. Dutch guitar magazine Gitarist described Good to See You as a “mind-blowing EP.” In 2025, The Woods reached the finals of the Dutch Blues Challenge, further cementing their place in the modern blues scene.\n\nIt’s clear how much joy the band experiences on stage — these musicians genuinely love creating and performing together. Over the years, Joris has played in several bands, but bassist Martijn Drijfhout has remained his steadfast musical partner since 1999.\n\nThe Woods have released four EPs and albums: Stone Cold (2019), Hurricane (2021), Good to See You (2024), and Live at Vera (2025). Their music blends elements of soul, blues, rock, and funk, coming fully alive during their energetic live performances.",
+    "logoUrl": "http://localhost:5173/api/public/linkpage/image?t=eyJ0IjoiaW1nIiwiayI6InRlbmFudHMvMS9sb2dvLzVkMDM5YTRkLTE0NDctNDExMi04ZWFlLTMyNGYyOWI2ODZhNC5wbmciLCJleHAiOjE3ODc2OTc4MTJ9.MAZj8qaXLgZfp4umco5IAgnxMx-_vv8lpzlyGsekGPw",
+    "logoDarkUrl": "http://localhost:5173/api/public/linkpage/image?t=eyJ0IjoiaW1nIiwiayI6InRlbmFudHMvMS9sb2dvLWRhcmsvM2EyNDdhNTYtZWU2MS00YTE4LWE4ZTItYmQ1MDFkZGY3ZTQzLnBuZyIsImV4cCI6MTc4NzY5NzgxMn0.Ifsw840rP-hyFbXpGIVQGHHLqQKUiidpbk6mP7Dz78s",
+    "avatarUrl": "http://localhost:5173/api/public/linkpage/image?t=eyJ0IjoiaW1nIiwiayI6InRlbmFudHMvMS9hdmF0YXIvNThkYjhmYjEtMzExMS00YzlkLWE1Y2YtN2Q0NzVkMzAzMjZlLnBuZyIsImV4cCI6MTc4NzY5NzgxMn0._zxreKood1A_aAPVPhLQYfWuD7IV0EplFot9WbZSzaE",
+    "socials": {
+      "instagram": "thewoodsbandnl",
+      "facebook": "thewoodsbandnl",
+      "tiktok": "thewoodsband",
+      "youtube": "@thewoods1957",
+      "spotify": "06DpifCdtoyId3wTL5hRXv"
+    }
+  },
+  "links": [
+    {
+      "id": 1,
+      "label": "Google Drive, foto's bio, stageplan",
+      "url": "https://drive.google.com/drive/folders/1DQQr2rM7P3xGjRniuuN0wfl27GvjhAk3"
+    },
+    {
+      "id": 3,
+      "label": "Website",
+      "url": "http://thewoodsmusic.nl"
+    },
+    {
+      "id": 4,
+      "label": "Linktree",
+      "url": "https://linktr.ee/thewoodsbandnl/"
+    },
+    {
+      "id": 5,
+      "label": "OneDrive JeeBee map (rechten in Onedrive nodig)",
+      "url": "https://1drv.ms/f/c/16d46f2e2dc85259/IgBZUsgtLm_UIIAW5A8AAAAAAR9cMkUlFfvP_D5YxUOZwDQ?e=KHcqrq"
+    },
+    {
+      "id": 6,
+      "label": "Artists - Bandsintown",
+      "url": "https://artists.bandsintown.com/artists/15556138/"
+    }
+  ],
+  "songs": [
+    {
+      "id": 3,
+      "title": "Good to see you",
+      "artist": "The Woods",
+      "coverUrl": "http://localhost:5173/api/public/linkpage/image?t=eyJ0IjoiaW1nIiwiayI6InRlbmFudHMvMS9zb25nX2NvdmVycy8yM2Y1Y2RjYy1iMjk1LTQ2MTEtOGYwOC02YTQ1OGE0Njc1Yzkud2VicCIsImV4cCI6MTc4NzY5NzgxMn0.Cy35NrhxcDLd_xg5Xvxu4twLf6MPxv7ybaK_TJV9SeQ",
+      "links": [
+        {
+          "label": "Spotify",
+          "url": "https://open.spotify.com/track/3x3KkFAhrnJMecD4TS5LBM"
+        },
+        {
+          "label": "Apple Music",
+          "url": "https://music.apple.com/nl/album/underneath-the-sun-radio-edit-single/1772410168"
+        },
+        {
+          "label": "SoundCloud",
+          "url": "https://soundcloud.com/the-woods-nl/one-shot-live-7"
+        },
+        {
+          "label": "Deezer",
+          "url": "https://www.deezer.com/nl/album/666713941"
+        },
+        {
+          "label": "Tidal",
+          "url": "https://tidal.com/track/397603457/u"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "title": "Head over Heels",
+      "artist": "The Woods",
+      "coverUrl": "http://localhost:5173/api/public/linkpage/image?t=eyJ0IjoiaW1nIiwiayI6InRlbmFudHMvMS9zb25nX2NvdmVycy82ODRkMzkwNC0wNmQ4LTQ5ODYtOWUyNi1lZDEyOWExYzVhYTIud2VicCIsImV4cCI6MTc4NzY5NzgxMn0.g4KE1Zy-FkRtfC5NWdFAR-NsJLdHVE7gJDlXKAAgMiw",
+      "links": [
+        {
+          "label": "Spotify",
+          "url": "https://open.spotify.com/track/66Es17Zs9yCz2M1YBfx56y"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Underneath the Sun",
+      "artist": "The Woods",
+      "coverUrl": "http://localhost:5173/api/public/linkpage/image?t=eyJ0IjoiaW1nIiwiayI6InRlbmFudHMvMS9zb25nX2NvdmVycy9hYmQ5ZjFlZC0xMjAxLTRhZDAtYWY1MC05NzE3NDE5M2Y1MDcud2VicCIsImV4cCI6MTc4NzY5NzgxMn0.Qmu_OSU8MvVknrVj-VTniJbe59A8Xtm0QlmOHefgHSA",
+      "links": [
+        {
+          "label": "Spotify",
+          "url": "https://open.spotify.com/track/3x3KkFAhrnJMecD4TS5LBM"
+        }
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": 2,
+      "name": "CD 'Good to see you'",
+      "priceCents": 995
+    },
+    {
+      "id": 12,
+      "name": "LP Good to see you",
+      "priceCents": 1199
+    },
+    {
+      "id": 1,
+      "name": "Petjes",
+      "priceCents": 2500
+    }
+  ],
+  "gigs": [
+    {
+      "id": 5,
+      "date": "2026-08-23",
+      "startTime": "16:00:00",
+      "title": "SCHOKKER BLUES",
+      "venue": "Restaurant Schokland",
+      "city": "Schokland"
+    },
+    {
+      "id": 9,
+      "date": "2026-08-29",
+      "startTime": "19:00:00",
+      "title": "Woldmeer Laif ",
+      "venue": "Meerstad",
+      "city": "Groningen"
+    },
+    {
+      "id": 7,
+      "date": "2026-09-12",
+      "startTime": "18:00:00",
+      "title": "Peer&Blues",
+      "venue": "de Kersenhut",
+      "city": "Cothen"
+    },
+    {
+      "id": 10,
+      "date": "2026-10-04",
+      "startTime": "20:00:00",
+      "title": "Woods in Deutschland",
+      "venue": "Restaurant",
+      "city": "Duitsland"
+    },
+    {
+      "id": 11,
+      "date": "2026-10-09",
+      "startTime": "22:00:00",
+      "title": "Texel Blues",
+      "venue": "Cafe de Zwaan",
+      "city": "Den Burg"
+    },
+    {
+      "id": 6,
+      "date": "2026-11-28",
+      "startTime": "21:00:00",
+      "title": "Oostwold",
+      "venue": "Gaveburg",
+      "city": "Oostwold"
+    }
+  ]
+}

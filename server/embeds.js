@@ -3,10 +3,11 @@
 // server-side only — the resolver recomputes descriptors from stored URLs so
 // clients never dictate iframe sources.
 //
-// Presentation contract (`display`):
-//   'inline'  — compact audio players designed for feeds (Spotify, SoundCloud)
-//               expand in place in the widget stack.
-//   'overlay' — video players (YouTube) open in a lightbox overlay.
+// Presentation contract (`display`): every embed opens in a closable modal
+// overlay; `display` picks that overlay's shape.
+//   'inline'  — compact audio players designed for feeds (Spotify, SoundCloud);
+//               the modal sizes to the player's own `height`.
+//   'overlay' — video players (YouTube); a 16:9 lightbox.
 //
 // Privacy contract: embeds are ALWAYS click-to-play — the public page renders
 // a facade first and only mounts the third-party iframe after the visitor
