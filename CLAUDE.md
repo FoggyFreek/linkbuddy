@@ -71,15 +71,29 @@ There is **no CSS file** — do not add one.
 - `src/theme.js` is the single source of truth: `cssVariables` with
   `colorSchemeSelector: 'data-theme'`, both colour schemes, `responsiveFontSizes`,
   and component defaults. Custom tokens `palette.surface.{s2,s3,border,field}`
-  (`sx={{ bgcolor: 'surface.s2' }}`).
-- Per-scheme styles use `theme.applyStyles('dark', { … })`, never `palette.mode`.
+  (`sx={{ bgcolor: 'surface.s2' }}`) and `palette.chart.c1…c8`.
+- **Charts** (`@mui/x-charts`, community only) live in the stats tab, which
+  `Editor.jsx` lazy-loads so the public-page bundle doesn't carry the library.
+  Series colours come from `palette.chart.*` as `var(--mui-palette-chart-c1)` so
+  they follow the colour scheme; the slot *order* is colour-blind-validated, so
+  assign slots by category identity and never by rank. x-charts class names are
+  `MuiBarChart-{element,label}` / `MuiPieChart-{arc,arcLabel}` — the styled-slot
+  names (`MuiBarLabel-root`) are theme keys, not DOM classes.
+- Per-scheme styles use `theme.applyStyles('dark', { … })`, never `palette.mode`,
+  and never a hand-written `[data-theme='dark'] &` selector: MUI's own selector
+  matches on *any* dark ancestor, so inside a `ColorSchemeScope` the scope
+  overrides `applyStyles` with a static test against its own mode. That's what
+  keeps a light page (light logo, light background art) light inside a dark
+  editor or a visitor whose `<html>` is on dark.
 - **Two independent schemes**, both owned by MUI, no manual `data-theme`
   bookkeeping: the *editor* scheme on `<html>` (`useColorScheme` /
   `ColorModeToggle`; guard `mode === undefined` on first render, and keep the
   inline anti-flash script in `index.html` in sync with the theme's keys), and
-  the *page* scheme (`band.theme`) inside `ColorSchemeScope.jsx`, which the
-  public page and the editor preview both wrap their content in. Changing one
-  never affects the other.
+  the *page* scheme (an Appearance-tab light/dark toggle stored on the layout,
+  `layout.theme`; `null`/"auto" falls back to dark for release pages, light for
+  the main page — see `normalizeTheme` in `server/resolve.js`) inside
+  `ColorSchemeScope.jsx`, which the public page and the editor preview both
+  wrap their content in. Changing one never affects the other.
 - **Portals must opt in:** Menu/Popover/Select/Tooltip/Dialog inside a scope
   escape it unless you spread `useScopedPortalProps()` (see `ShareButton`).
 - **`Stack` only accepts `direction`, `spacing`, `useFlexGap`, `divider`** — put

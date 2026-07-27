@@ -2,11 +2,13 @@ import { describe, it, expect, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Typography from '@mui/material/Typography'
 import theme from '../../src/theme.js'
 import ColorSchemeScope from '../../src/ColorSchemeScope.jsx'
 import ShareButton from '../../src/ShareButton.jsx'
+import { pageBackgroundSx } from '../../src/pageBackgrounds.js'
 
 // ColorSchemeScope is the single mechanism behind the public page and the editor
 // preview. These tests pin the behaviour the refactor depends on: a subtree can
@@ -14,10 +16,10 @@ import ShareButton from '../../src/ShareButton.jsx'
 // once (a dark editor showing a light preview), and portaled surfaces opened
 // inside a scope inherit its scheme instead of escaping to the document.
 
-function renderApp(node) {
+function renderApp(node, docMode = 'light') {
   // defaultMode light => the document (root) scheme is light throughout.
   return render(
-    <ThemeProvider theme={theme} defaultMode="light">
+    <ThemeProvider theme={theme} defaultMode={docMode}>
       <CssBaseline enableColorScheme />
       {node}
     </ThemeProvider>,
@@ -73,5 +75,36 @@ describe('ColorSchemeScope', () => {
       expect(menuPaper).toBeTruthy()
       expect(getComputedStyle(menuPaper).backgroundColor).toBe('rgb(47, 66, 87)')
     })
+  })
+
+  // Last, because it puts the document itself on dark. `theme.applyStyles` is
+  // the second half of scoping: palette *variables* inherit from the nearest
+  // scope on their own, but applyStyles' selector (`*:where([data-theme="dark"])
+  // &`) matches on ANY dark ancestor — so a dark document used to reach inside a
+  // light scope, which is exactly how the light band logo went missing whenever
+  // the editor (or a visitor's stored mode, via the anti-flash script in
+  // index.html) had <html> on dark.
+  it('resolves applyStyles and page backgrounds against the scope, not an outer dark document', async () => {
+    const marker = (id) => (
+      <Box data-testid={id} sx={(t) => ({ color: 'rgb(1, 2, 3)', ...t.applyStyles('dark', { color: 'rgb(9, 9, 9)' }) })} />
+    )
+    const screen = await renderApp(
+      <>
+        <ColorSchemeScope mode="light" data-testid="l" sx={pageBackgroundSx('blobs')}>{marker('lm')}</ColorSchemeScope>
+        <ColorSchemeScope mode="dark" data-testid="d" sx={pageBackgroundSx('blobs')}>{marker('dm')}</ColorSchemeScope>
+      </>,
+      'dark',
+    )
+    await expect.element(screen.getByTestId('l')).toBeInTheDocument()
+    expect(document.documentElement.dataset.theme).toBe('dark')
+
+    const styleOf = (id) => getComputedStyle(document.querySelector(`[data-testid="${id}"]`))
+    // Inside the light scope the dark branch does not apply; inside the dark one it does.
+    expect(styleOf('lm').color).toBe('rgb(1, 2, 3)')
+    expect(styleOf('dm').color).toBe('rgb(9, 9, 9)')
+    // Same for the background artwork, which lands on the scope element itself.
+    expect(styleOf('l').backgroundColor).toBe('rgb(31, 75, 216)') // #1f4bd8, the light blobs canvas
+    expect(styleOf('d').backgroundColor).not.toBe(styleOf('l').backgroundColor)
+    expect(styleOf('d').backgroundImage).not.toBe(styleOf('l').backgroundImage)
   })
 })

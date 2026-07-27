@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Link from '@mui/material/Link'
@@ -12,7 +12,9 @@ import {
   publishPage,
   refreshContent,
 } from './api.js'
-import StatsPanel from './StatsPanel.jsx'
+// Split out: it pulls in the chart library, which no visitor of a public page
+// (same bundle entry) should have to download.
+const StatsPanel = lazy(() => import('./StatsPanel.jsx'))
 import EditorHeader from './editor/EditorHeader.jsx'
 import PageSwitcher from './editor/PageSwitcher.jsx'
 import EditorTabs from './editor/EditorTabs.jsx'
@@ -119,6 +121,21 @@ export default function Editor() {
   // sections — and each page (main, per release) can pick its own.
   const setBackground = (background) => {
     applyLayout({ ...layout, background })
+  }
+
+  // Whether to show the band's banner image (set in GigBuddy) above the link
+  // list, with the avatar overlapping its bottom edge. Lives on the layout for
+  // the same reason the background does — same save/publish/preview path.
+  const setShowBanner = (showBanner) => {
+    applyLayout({ ...layout, showBanner })
+  }
+
+  // The page's colour-scheme override: 'light'/'dark' opt-in, or `null` for
+  // "auto" (dark on a release page, light on the main page — see
+  // pageSchemeMode/server's normalizeTheme). Lives on the layout for the same
+  // save/publish/preview path as the background and banner.
+  const setTheme = (theme) => {
+    applyLayout({ ...layout, theme })
   }
 
   const moveSection = (index, delta) => {
@@ -235,14 +252,24 @@ export default function Editor() {
       {tab === 'appearance' && (
         <AppearancePanel
           background={layout.background || DEFAULT_PAGE_BACKGROUND}
-          schemeMode={pageSchemeMode(page, content)}
+          schemeMode={pageSchemeMode(page, layout)}
           onSetBackground={setBackground}
+          bannerUrl={content.band?.bannerUrl}
+          showBanner={!!layout.showBanner}
+          onSetShowBanner={setShowBanner}
+          theme={layout.theme ?? null}
+          autoTheme={page.pageType === 'release' ? 'dark' : 'light'}
+          onSetTheme={setTheme}
         />
       )}
 
       {tab === 'preview' && preview && <PagePreview preview={preview} />}
 
-      {tab === 'stats' && <StatsPanel session={session} pageId={page.id} />}
+      {tab === 'stats' && (
+        <Suspense fallback={<CenteredStatus busy />}>
+          <StatsPanel session={session} pageId={page.id} />
+        </Suspense>
+      )}
     </Box>
   )
 }

@@ -31,6 +31,26 @@ async function countBy(executor, pageId, since, table, column, limit) {
   return rows
 }
 
+// Merge the two daily series (views, clicks-per-target-kind) into one row per
+// day, ordered by day. A day can carry clicks without views (the view beacon was
+// blocked, or its row aged out first), so the union of both sides is used —
+// dropping such a day would silently lose the clicks it recorded.
+export function mergeDailyActivity(viewRows, clickRows) {
+  const byDay = new Map()
+  const row = (day) => {
+    const key = day instanceof Date ? day.toISOString().slice(0, 10) : day
+    if (!byDay.has(key)) byDay.set(key, { day: key, views: 0, clicks: {} })
+    return byDay.get(key)
+  }
+  for (const r of viewRows) row(r.day).views = r.views
+  for (const r of clickRows) {
+    const clicks = row(r.day).clicks
+    // 'platform:spotify' → 'platform'; a bare target ('shop') is its own kind.
+    clicks[r.kind] = (clicks[r.kind] || 0) + r.clicks
+  }
+  return [...byDay.values()].sort((a, b) => (a.day < b.day ? -1 : 1))
+}
+
 // Views, outbound clicks, and the conversion view: clicks per platform/target
 // and a per-source table combining views + clicks into a click-through rate —
 // the launch-campaign question ("which channel converts?") in one payload.
@@ -43,7 +63,8 @@ export async function aggregateStats(executor, pageId, since) {
     byCountry,
     byTarget,
     clicksBySource,
-    { rows: byDay },
+    { rows: viewsByDay },
+    { rows: clicksByDay },
   ] = await Promise.all([
     executor.query(
       `SELECT COUNT(*)::int AS views,
@@ -85,6 +106,19 @@ export async function aggregateStats(executor, pageId, since) {
         ORDER BY day`,
       [pageId, since],
     ),
+    // The daily chart stacks clicks by *kind* — the part of the target key
+    // before the colon ('platform', 'song', 'share', …) — so a day's bar shows
+    // what visitors did, not just how many arrived.
+    executor.query(
+      `SELECT occurred_at::date AS day,
+              split_part(target, ':', 1) AS kind,
+              COUNT(*)::int AS clicks
+         FROM page_clicks
+        WHERE page_id = $1 AND occurred_at >= $2
+        GROUP BY day, kind
+        ORDER BY day`,
+      [pageId, since],
+    ),
   ])
 
   const totalViews = totals[0].views
@@ -110,10 +144,7 @@ export async function aggregateStats(executor, pageId, since) {
     byCountry,
     byTarget: byTarget.map((r) => ({ key: r.key, clicks: r.views })),
     conversionBySource,
-    byDay: byDay.map((r) => ({
-      day: r.day instanceof Date ? r.day.toISOString().slice(0, 10) : r.day,
-      views: r.views,
-    })),
+    byDay: mergeDailyActivity(viewsByDay, clicksByDay),
   }
 }
 

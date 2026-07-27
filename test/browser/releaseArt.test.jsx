@@ -14,7 +14,7 @@ import WidgetStack from '../../src/WidgetStack.jsx'
 const COVER = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
 
 const page = {
-  band: { name: 'Neon Harbour', slug: 'neon-harbour', theme: 'light', socials: {} },
+  band: { name: 'Neon Harbour', slug: 'neon-harbour', socials: {} },
   release: { title: 'Midnight Signal', artist: 'Neon Harbour', coverUrl: COVER },
   sections: [
     { id: 's1', widgets: [{ id: 'w1', type: 'platforms', title: 'Listen', platforms: [{ id: 'spotify', url: '#' }] }] },

@@ -149,16 +149,16 @@ function SocialLinks({ band, onLinkClick, variant = 'plain' }) {
 }
 
 // The page's title slot: the band's logo when one is set, otherwise the name in
-// type. Both logos are rendered and toggled with `theme.applyStyles('dark', …)`
-// so the right one shows for the *page's* scheme (the ColorSchemeScope's
-// `data-theme`), with no JS scheme read. The pairing is inverted: `logoDarkUrl`
-// (dark ink) is the one that reads on a light page and `logoUrl` on a dark one.
-// A band that only uploaded one logo gets that one in both schemes.
-// `display: none` also takes the hidden copy out of the accessibility tree, so
-// the heading keeps exactly one accessible name.
+// type. Both logos are rendered and toggled with `theme.applyStyles('dark', …)`,
+// which resolves against the enclosing ColorSchemeScope's mode — so the right
+// one shows for the *page's* scheme even when the document disagrees (a light
+// page in a dark editor). `logoUrl` reads on a light page,
+// `logoDarkUrl` on a dark one. A band that only uploaded one logo gets that
+// one in both schemes. `display: none` also takes the hidden copy out of the
+// accessibility tree, so the heading keeps exactly one accessible name.
 function BandTitle({ band }) {
-  const onLight = band.logoDarkUrl || band.logoUrl
-  const onDark = band.logoUrl || band.logoDarkUrl
+  const onLight = band.logoUrl || band.logoDarkUrl
+  const onDark = band.logoDarkUrl || band.logoUrl
   if (!onLight) return <Typography variant="h1" sx={{ mt: '14px', mb: '6px' }}>{band.name}</Typography>
 
   const alt = band.name || 'Band logo'
@@ -183,7 +183,40 @@ function BandTitle({ band }) {
   )
 }
 
-function BandHeader({ band, onLinkClick }) {
+const AVATAR_SIZE = 128
+
+// The band card's own padding, in px, by breakpoint — `CARD_PAD_TOP`/`CARD_PAD_X`
+// mirror the `p` shorthand on the Card in WidgetStack so the banner's negative
+// margins (which bleed it edge-to-edge) stay exactly in sync with it.
+const CARD_PAD_TOP = { xs: 20, sm: 30 }
+const CARD_PAD_X = { xs: 14, sm: 28 }
+
+// The band's banner artwork (GigBuddy's `bannerUrl`), bled to the card's full
+// width and top edge via negative margins that cancel the card's own padding —
+// see CARD_PAD_TOP/CARD_PAD_X above. `overflow: hidden` on the card (set by the
+// caller) clips its square corners to the card's rounded shape. It's shown at
+// its full height (width fit to the card, height auto) rather than cropped —
+// its own bottom margin is zero, so the header that follows starts right at its
+// bottom edge, and the avatar pulls itself up over that edge with a negative
+// top margin.
+function BandBanner({ src }) {
+  return (
+    <Box
+      component="img"
+      src={src}
+      alt=""
+      sx={{
+        display: 'block',
+        width: { xs: `calc(100% + ${CARD_PAD_X.xs * 2}px)`, sm: `calc(100% + ${CARD_PAD_X.sm * 2}px)` },
+        height: 'auto',
+        mt: { xs: `-${CARD_PAD_TOP.xs}px`, sm: `-${CARD_PAD_TOP.sm}px` },
+        mx: { xs: `-${CARD_PAD_X.xs}px`, sm: `-${CARD_PAD_X.sm}px` },
+      }}
+    />
+  )
+}
+
+function BandHeader({ band, onLinkClick, bannerShown = false }) {
   if (!band) return null
   return (
     <Box component="header" sx={{ textAlign: 'center', mb: '18px' }}>
@@ -192,7 +225,15 @@ function BandHeader({ band, onLinkClick }) {
           src={band.avatarUrl}
           alt={band.name ? `${band.name} profile picture` : 'Profile picture'}
           sx={(theme) => ({
-            width: 128, height: 128, mx: 'auto', bgcolor: '#0c0d0f',
+            width: AVATAR_SIZE, height: AVATAR_SIZE, mx: 'auto', bgcolor: '#0c0d0f',
+            // Half the avatar overlaps the banner's bottom edge, half sits below
+            // it on the card — a ring in the card's own surface colour keeps it
+            // legible against whatever the banner image happens to be.
+            ...(bannerShown && {
+              mt: `-${AVATAR_SIZE / 2}px`,
+              border: '4px solid',
+              borderColor: 'surface.s2',
+            }),
             ...theme.applyStyles('dark', { boxShadow: `0 0 0 1px ${theme.vars.palette.surface.border}, 0 10px 30px rgb(0 0 0 / 0.35)` }),
           })}
         />
@@ -619,6 +660,7 @@ export default function WidgetStack({ page, onLinkClick = noopClick, footer = nu
   // shell keeps the widget cards inside it — which use `background.paper` —
   // reading as distinct surfaces in both schemes. Living here rather than in
   // PublicPage means the editor preview shows the same card.
+  const bannerShown = !!(page.showBanner && page.band?.bannerUrl)
   return (
     <Card
       sx={(theme) => ({
@@ -626,7 +668,9 @@ export default function WidgetStack({ page, onLinkClick = noopClick, footer = nu
         width: '100%', maxWidth: 612, mx: 'auto',
         bgcolor: 'surface.s2',
         borderRadius: `${theme.shape.preview}px`,
-        p: { xs: '20px 14px 26px', sm: '30px 28px 34px' },
+        p: { xs: `${CARD_PAD_TOP.xs}px ${CARD_PAD_X.xs}px 26px`, sm: `${CARD_PAD_TOP.sm}px ${CARD_PAD_X.sm}px 34px` },
+        // Clips the banner's square corners to the card's rounded shape.
+        ...(bannerShown && { overflow: 'hidden' }),
         ...(flush && {
           flexGrow: 1,
           borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
@@ -634,8 +678,9 @@ export default function WidgetStack({ page, onLinkClick = noopClick, footer = nu
       })}
     >
       {corner}
+      {bannerShown && <BandBanner src={page.band.bannerUrl} />}
       <Stack spacing={1.75} sx={{ maxWidth: 600, mx: 'auto' }}>
-        <BandHeader band={page.band} onLinkClick={onLinkClick} />
+        <BandHeader band={page.band} onLinkClick={onLinkClick} bannerShown={bannerShown} />
         {page.sections.map((section) => <Section key={section.id} section={section} onLinkClick={onLinkClick} />)}
       </Stack>
       {footer}

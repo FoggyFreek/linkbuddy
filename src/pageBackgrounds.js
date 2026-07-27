@@ -458,30 +458,28 @@ export const PAGE_BACKGROUND_OPTIONS = PAGE_BACKGROUND_KEYS.map((key) =>
     : { key, label: BACKGROUNDS[key].label, description: BACKGROUNDS[key].description },
 )
 
-// The dark colourway's selector. `theme.applyStyles('dark', …)` — used
-// everywhere else in the UI — scopes its styles to *descendants* of the element
-// carrying `data-theme="dark"`, and a background lands on that very element: the
-// ColorSchemeScope wrapping the page (or the swatch). So match the scheme element
-// itself as well as any descendant of one, which keeps the background usable on a
-// nested element too.
-const DARK_SELECTOR = "&[data-theme='dark'], [data-theme='dark'] &"
-
 // The `sx` that paints a background. Returns `null` for `none`/unknown keys, so
 // a caller can drop `pageBackgroundSx(key)` straight into an `sx` array and get
 // the theme's plain canvas when no background is set.
+//
+// It's an `sx` *function* so the colourway comes from `theme.applyStyles`, which
+// every call site evaluates on a ColorSchemeScope's own element — and the scope
+// resolves `applyStyles` against its own mode (see ColorSchemeScope.jsx). A
+// selector written here couldn't do that: `[data-theme='dark'] &` matches on any
+// dark ancestor, so a light page inside a dark editor would paint the dark art.
 export function pageBackgroundSx(key) {
   const image = IMAGES[key]
   if (!image) return null
   const bg = BACKGROUNDS[key]
-  return {
+  return (theme) => ({
     backgroundColor: bg.light.canvas,
     backgroundImage: image.light,
     backgroundSize: 'cover',
     backgroundPosition: 'center top',
     backgroundRepeat: 'no-repeat',
-    [DARK_SELECTOR]: {
+    ...theme.applyStyles('dark', {
       backgroundColor: bg.dark.canvas,
       backgroundImage: image.dark,
-    },
-  }
+    }),
+  })
 }

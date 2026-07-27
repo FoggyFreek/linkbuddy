@@ -50,6 +50,26 @@ const typography = {
 // behind the public page and its editor preview. It sits two tone steps (−8 per
 // channel each) below `background.default`, the application/editor backdrop, so
 // the page's content card reads as a lifted surface against it.
+// Categorical chart slots (`palette.chart.c1…c8`, emitted as
+// `--mui-palette-chart-c*`). The two columns are the same eight hues stepped for
+// their own surface — not an automatic flip — and the *order* is the
+// colour-blind-safety mechanism: neighbouring slots are the pairs a stacked bar
+// or a pie puts side by side, and this order clears the adjacent-pair gates
+// (CVD ΔE ≥ 8, normal-vision ΔE ≥ 15) against the card surfaces of both schemes.
+// Assign slots by category identity, never by rank, so a quiet day can't repaint
+// the series. Several slots sit under 3:1 against their surface, so every chart
+// using them ships readable relief: a legend, value labels, or the exact-count
+// table beside it.
+const chartLight = {
+  c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a', c4: '#eda100',
+  c5: '#e87ba4', c6: '#008300', c7: '#4a3aa7', c8: '#e34948',
+}
+
+const chartDark = {
+  c1: '#3987e5', c2: '#d95926', c3: '#199e70', c4: '#c98500',
+  c5: '#d55181', c6: '#008300', c7: '#9085e9', c8: '#e66767',
+}
+
 const lightPalette = {
   mode: 'light',
   background: { default: '#eceef2', paper: '#ffffff' },
@@ -58,6 +78,7 @@ const lightPalette = {
   success: { main: '#3ec93e', contrastText: '#ffffff' },
   divider: '#d5d8de',
   surface: { s2: '#f0f1f4', s3: '#e4e6ea', border: '#ecedf1', field: '#f7f8fa', canvas: '#dcdee2' },
+  chart: chartLight,
 }
 
 const darkPalette = {
@@ -68,6 +89,7 @@ const darkPalette = {
   success: { main: '#3ec93e', contrastText: '#ffffff' },
   divider: 'rgba(255, 255, 255, 0.14)',
   surface: { s2: '#35485e', s3: '#3f5468', border: 'rgba(255, 255, 255, 0.05)', field: '#35485e', canvas: '#16273d' },
+  chart: chartDark,
 }
 
 const baseTheme = createTheme({

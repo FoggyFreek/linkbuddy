@@ -1,5 +1,6 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useMemo, useState } from 'react'
 import Box from '@mui/material/Box'
+import { ThemeProvider } from '@mui/material/styles'
 
 // Portal container for a colour-scheme scope. MUI surfaces that portal to
 // `document.body` (Menu, Popover, Select, Tooltip, Dialog…) would otherwise
@@ -36,23 +37,44 @@ export function useScopedPortalProps() {
 // This is the single mechanism behind both the public page and the editor
 // preview, so the two can never diverge, and it replaces the previous imperative
 // `document.documentElement.dataset.theme` juggling — the editor's own scheme
-// (useColorScheme) and a page's appearance (band.theme) no longer touch the same
-// attribute and can't interfere with each other.
+// (useColorScheme) and a page's own scheme no longer touch the same attribute
+// and can't interfere with each other.
+//
+// Palette *variables* scope themselves correctly (CSS custom properties inherit
+// from the nearest element that redefines them), but conditional styles do not:
+// `theme.applyStyles('dark', …)` compiles to `*:where([data-theme="dark"]) &`,
+// which matches whenever *any* ancestor is dark — so an outer dark document (the
+// editor's own scheme, or the anti-flash script in index.html restoring a
+// visitor's stored mode) would win over an inner light scope and, say, hide the
+// light logo in favour of the dark one. Inside a scope the scheme is known
+// statically, so a nested ThemeProvider replaces `applyStyles` with a plain
+// mode test — no selector, nothing for an ancestor to override. It wraps the
+// scope's own Box too, so `sx` passed in here (the page background artwork) gets
+// the same treatment.
 export default function ColorSchemeScope({ mode, sx, children, ...props }) {
   const [node, setNode] = useState(null)
+  // A function theme keeps MUI's ThemeProvider on its plain (non-CSS-vars) path:
+  // it just merges into the outer theme, leaving the root provider's colour-scheme
+  // machinery — and `theme.vars`, which components read — untouched.
+  const scopedTheme = useMemo(
+    () => (outer) => ({ ...outer, applyStyles: (scheme, styles) => (scheme === mode ? styles : {}) }),
+    [mode],
+  )
   return (
-    <Box
-      ref={setNode}
-      data-theme={mode}
-      sx={[
-        { colorScheme: mode, bgcolor: 'surface.canvas', color: 'text.primary' },
-        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
-      ]}
-      {...props}
-    >
-      <PortalContainerContext.Provider value={node}>
-        {children}
-      </PortalContainerContext.Provider>
-    </Box>
+    <ThemeProvider theme={scopedTheme}>
+      <Box
+        ref={setNode}
+        data-theme={mode}
+        sx={[
+          { colorScheme: mode, bgcolor: 'surface.canvas', color: 'text.primary' },
+          ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+        ]}
+        {...props}
+      >
+        <PortalContainerContext.Provider value={node}>
+          {children}
+        </PortalContainerContext.Provider>
+      </Box>
+    </ThemeProvider>
   )
 }

@@ -139,7 +139,14 @@ export function validateLayout(raw) {
     }
     sections.push({ id: widgetId(rawSection.id), title: cleanString(rawSection.title, MAX_TITLE), widgets })
   }
-  return { layout: { background: parseBackground(raw.background), sections } }
+  return {
+    layout: {
+      background: parseBackground(raw.background),
+      showBanner: raw.showBanner === true,
+      theme: parseTheme(raw.theme),
+      sections,
+    },
+  }
 }
 
 // The page's chosen backdrop artwork (see src/pageBackgrounds.js). Like the link
@@ -148,4 +155,12 @@ export function validateLayout(raw) {
 // layout written by an older/newer editor still stores.
 function parseBackground(raw) {
   return PAGE_BACKGROUNDS.has(raw) ? raw : DEFAULT_PAGE_BACKGROUND
+}
+
+// The page's colour-scheme override: an explicit 'light'/'dark' opt-in, or
+// `null` for "auto" (resolve.js then falls back to dark for a release page,
+// light for the main page). Anything else collapses to `null` rather than
+// failing the save.
+function parseTheme(raw) {
+  return raw === 'light' || raw === 'dark' ? raw : null
 }

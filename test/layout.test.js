@@ -101,6 +101,20 @@ describe('validateLayout', () => {
     expect(validateLayout({ sections: [] }).layout.background).toBe('none')
   })
 
+  it('normalizes showBanner to a strict boolean, defaulting to false', () => {
+    expect(validateLayout({ showBanner: true, sections: [] }).layout.showBanner).toBe(true)
+    expect(validateLayout({ showBanner: false, sections: [] }).layout.showBanner).toBe(false)
+    expect(validateLayout({ showBanner: 'yes', sections: [] }).layout.showBanner).toBe(false)
+    expect(validateLayout({ sections: [] }).layout.showBanner).toBe(false)
+  })
+
+  it('keeps an explicit light/dark theme opt-in and defaults everything else to null (auto)', () => {
+    expect(validateLayout({ theme: 'light', sections: [] }).layout.theme).toBe('light')
+    expect(validateLayout({ theme: 'dark', sections: [] }).layout.theme).toBe('dark')
+    expect(validateLayout({ theme: 'neon', sections: [] }).layout.theme).toBeNull()
+    expect(validateLayout({ sections: [] }).layout.theme).toBeNull()
+  })
+
   it('coerces gig limits into range and defaults bad icons', () => {
     const result = validateLayout({
       sections: [

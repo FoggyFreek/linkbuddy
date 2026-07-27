@@ -110,27 +110,10 @@ describe('resolvePage', () => {
     expect(resolvePage(content, layout).release).toBeNull()
   })
 
-  it('normalizes the band theme to a light/dark opt-in', () => {
+  it('passes the band through as-is, or null when absent', () => {
     const layout = { sections: [] }
-    // Either explicit choice is preserved.
-    expect(resolvePage({ band: { name: 'A', theme: 'dark' } }, layout).band.theme).toBe('dark')
-    expect(resolvePage({ band: { name: 'A', theme: 'light' } }, layout).band.theme).toBe('light')
-    // Missing or unknown values fall back to light so the page never breaks.
-    expect(resolvePage({ band: { name: 'A' } }, layout).band.theme).toBe('light')
-    expect(resolvePage({ band: { name: 'A', theme: 'neon' } }, layout).band.theme).toBe('light')
-    // No band at all stays null.
+    expect(resolvePage({ band: { name: 'A' } }, layout).band).toEqual({ name: 'A' })
     expect(resolvePage({}, layout).band).toBeNull()
-  })
-
-  it('defaults release pages to the dark theme', () => {
-    const layout = { sections: [] }
-    const release = { songId: 1, title: 'Single', artist: 'A' }
-    // Unset or unknown → dark on a release page (light on a main page above).
-    expect(resolvePage({ band: { name: 'A' } }, layout, release).band.theme).toBe('dark')
-    expect(resolvePage({ band: { name: 'A', theme: 'neon' } }, layout, release).band.theme).toBe('dark')
-    // An explicit band choice still wins, in both directions.
-    expect(resolvePage({ band: { name: 'A', theme: 'light' } }, layout, release).band.theme).toBe('light')
-    expect(resolvePage({ band: { name: 'A', theme: 'dark' } }, layout, release).band.theme).toBe('dark')
   })
 
   it('passes the layout background through, defaulting to none', () => {
@@ -141,6 +124,32 @@ describe('resolvePage', () => {
     expect(resolvePage({ band }, { sections: [] }).background).toBe('none')
     expect(resolvePage({ band }, { background: 'lasers', sections: [] }).background).toBe('none')
     expect(resolvePage({ band }, null).background).toBe('none')
+  })
+
+  it('passes the layout showBanner flag through, defaulting to false', () => {
+    const band = { name: 'A', bannerUrl: 'https://gb.example/banner.jpg' }
+    expect(resolvePage({ band }, { showBanner: true, sections: [] }).showBanner).toBe(true)
+    expect(resolvePage({ band }, { showBanner: false, sections: [] }).showBanner).toBe(false)
+    expect(resolvePage({ band }, { sections: [] }).showBanner).toBe(false)
+    expect(resolvePage({ band }, null).showBanner).toBe(false)
+  })
+
+  it('normalizes the layout theme to a light/dark opt-in, falling back by page type', () => {
+    const band = { name: 'A' }
+    // Explicit choice wins on a main page...
+    expect(resolvePage({ band }, { theme: 'dark', sections: [] }).theme).toBe('dark')
+    expect(resolvePage({ band }, { theme: 'light', sections: [] }).theme).toBe('light')
+    // ...and on a release page, in both directions.
+    const release = { songId: 1, title: 'Single', artist: 'A' }
+    expect(resolvePage({ band }, { theme: 'light', sections: [] }, release).theme).toBe('light')
+    expect(resolvePage({ band }, { theme: 'dark', sections: [] }, release).theme).toBe('dark')
+    // Missing/unset/unknown falls back by page type: light on the main page,
+    // dark on a release page.
+    expect(resolvePage({ band }, { sections: [] }).theme).toBe('light')
+    expect(resolvePage({ band }, { theme: 'neon', sections: [] }).theme).toBe('light')
+    expect(resolvePage({ band }, { sections: [] }, release).theme).toBe('dark')
+    expect(resolvePage({ band }, { theme: 'neon', sections: [] }, release).theme).toBe('dark')
+    expect(resolvePage({ band }, null).theme).toBe('light')
   })
 
   it('survives an empty snapshot', () => {

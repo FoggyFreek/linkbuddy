@@ -7,6 +7,8 @@ import Link from '@mui/material/Link'
 import LinearProgress from '@mui/material/LinearProgress'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import { BarChart } from '@mui/x-charts/BarChart'
+import { PieChart } from '@mui/x-charts/PieChart'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
@@ -32,6 +34,52 @@ const SHARE_NAMES = {
   facebook: 'Facebook',
   telegram: 'Telegram',
   email: 'Email',
+}
+
+// The theme's validated categorical slots. Colours are assigned by *identity*
+// (a category always keeps its slot) rather than by rank, so a range change
+// can't repaint the survivors of a chart.
+const SLOT = (n) => `var(--mui-palette-chart-c${n})`
+// Ink, not a series colour: the views baseline and the folded 'Other' bucket
+// are deliberately colourless so they never read as one more category.
+const NEUTRAL = 'var(--mui-palette-text-secondary)'
+
+// Click targets are stored as 'kind:value'; the kind drives the daily stack.
+// Order here is the stacking order (and the slot assignment).
+const CLICK_KINDS = [
+  { kind: 'platform', label: 'Streaming', color: SLOT(1) },
+  { kind: 'song', label: 'Songs', color: SLOT(2) },
+  { kind: 'link', label: 'Links', color: SLOT(3) },
+  { kind: 'embed', label: 'Previews', color: SLOT(4) },
+  { kind: 'share', label: 'Shares', color: SLOT(5) },
+  { kind: 'social', label: 'Socials', color: SLOT(6) },
+  { kind: 'shop', label: 'Merch shop', color: SLOT(7) },
+  { kind: 'other', label: 'Other', color: SLOT(8) },
+]
+const KNOWN_KINDS = new Set(CLICK_KINDS.map((k) => k.kind))
+
+const DEVICE_SLOTS = { mobile: SLOT(1), desktop: SLOT(2), tablet: SLOT(3), bot: SLOT(7) }
+const DEVICE_LABELS = { mobile: 'Mobile', desktop: 'Desktop', tablet: 'Tablet', bot: 'Bots', unknown: 'Unknown' }
+
+// Day buckets arrive as 'YYYY-MM-DD'; parse as local time so the label doesn't
+// slip a day for visitors behind UTC.
+const DAY_FORMAT = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
+const REGION_NAMES = new Intl.DisplayNames(undefined, { type: 'region' })
+
+function formatDay(day) {
+  const parsed = new Date(`${day}T00:00:00`)
+  return Number.isNaN(parsed.getTime()) ? day : DAY_FORMAT.format(parsed)
+}
+
+// 'NL' → 'Netherlands'; anything that isn't a region code (notably 'unknown',
+// what a visit without a CDN geo header records) is shown as-is.
+function formatCountry(code) {
+  if (!/^[A-Z]{2}$/.test(code)) return code === 'unknown' ? 'Unknown' : code
+  try {
+    return REGION_NAMES.of(code) || code
+  } catch {
+    return code
+  }
 }
 
 // Click targets are stored as compact machine keys ('platform:spotify',
@@ -93,6 +141,91 @@ function BarList({ title, rows, total, valueKey = 'views', formatKey = (key) => 
   )
 }
 
+// Keep a pie readable (and its colours inside the slots that clear the
+// colour-blind gates): the long tail folds into one neutral 'Other' slice.
+const PIE_SLICES = 5
+
+function foldTail(rows, colorFor) {
+  const head = rows.slice(0, PIE_SLICES).map((row, i) => ({ ...row, color: colorFor(row.key, i) }))
+  const tail = rows.slice(PIE_SLICES)
+  if (tail.length === 0) return head
+  return [...head, { key: 'other', label: `Other (${tail.length})`, views: tail.reduce((sum, r) => sum + r.views, 0), color: NEUTRAL }]
+}
+
+// Share of a dimension as a donut, with the exact counts kept in the table
+// underneath — that table doubles as the pie's legend (swatch + name) and as
+// the readable fallback for slices too thin to carry a label.
+function SharePie({ title, rows, formatKey, colorFor }) {
+  const slices = foldTail(rows, colorFor)
+  const total = slices.reduce((sum, row) => sum + row.views, 0)
+  const share = (value) => (total ? Math.round((value / total) * 1000) / 10 : 0)
+
+  return (
+    <StatsBlock title={title}>
+      {slices.length === 0 ? (
+        <Typography variant="body2" color="text.secondary">No data yet</Typography>
+      ) : (
+        <>
+          <PieChart
+            height={190}
+            hideLegend
+            margin={{ top: 4, right: 48, bottom: 4, left: 48 }}
+            series={[{
+              data: slices.map((row) => ({
+                id: row.key,
+                value: row.views,
+                label: row.label ?? formatKey(row.key),
+                color: row.color,
+              })),
+              innerRadius: 38,
+              outerRadius: 72,
+              paddingAngle: 1.5,
+              cornerRadius: 3,
+              arcLabelRadius: 88,
+              // Percentages on the arcs; slivers under 5% (18° of the circle)
+              // stay unlabelled and are read off the table instead.
+              arcLabel: (item) => `${Math.round(share(item.value))}%`,
+              arcLabelMinAngle: 18,
+              valueFormatter: (item) => `${item.value} (${share(item.value)}%)`,
+              highlightScope: { fade: 'global', highlight: 'item' },
+            }]}
+            sx={{ '& .MuiPieChart-arcLabel': { fill: 'var(--mui-palette-text-secondary)', fontSize: 11 } }}
+          />
+          <Table size="small" sx={{ mt: 0.5, '& td': { px: 0.5, py: 0.5, border: 0 }, '& td:not(:first-of-type)': { textAlign: 'right', width: 56, fontVariantNumeric: 'tabular-nums' } }}>
+            <TableBody>
+              {slices.map((row) => (
+                <TableRow key={row.key}>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                      <Box sx={{ width: 10, height: 10, borderRadius: '2px', flex: '0 0 auto', bgcolor: row.color }} />
+                      <Typography variant="caption" noWrap title={row.label ?? formatKey(row.key)}>{row.label ?? formatKey(row.key)}</Typography>
+                    </Box>
+                  </TableCell>
+                  <TableCell><Typography variant="caption">{row.views}</Typography></TableCell>
+                  <TableCell><Typography variant="caption" color="text.secondary">{share(row.views)}%</Typography></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
+      )}
+    </StatsBlock>
+  )
+}
+
+// One row per day for the chart: views plus a column per click kind, since the
+// dataset a stacked BarChart reads has to be flat.
+function dailyDataset(byDay) {
+  return byDay.map((d) => {
+    const row = { day: d.day, views: d.views }
+    for (const [kind, clicks] of Object.entries(d.clicks || {})) {
+      const key = KNOWN_KINDS.has(kind) ? kind : 'other'
+      row[key] = (row[key] || 0) + clicks
+    }
+    return row
+  })
+}
+
 // Aggregate-only statistics: views + outbound clicks (conversion) by device
 // class, source, country, and click target (platform).
 export default function StatsPanel({ session, pageId }) {
@@ -118,8 +251,17 @@ export default function StatsPanel({ session, pageId }) {
   if (error) return <CenteredStatus>{error}</CenteredStatus>
   if (!stats) return <CenteredStatus busy />
 
-  const maxDay = Math.max(...stats.byDay.map((d) => d.views), 1)
   const hasConversion = stats.conversionBySource.some((r) => r.clicks > 0)
+  // Only days with activity come back from the API, so the axis is dense: thin
+  // the date ticks to ~8, anchored on the last day.
+  const tickStep = Math.max(1, Math.ceil(stats.byDay.length / 8))
+  const dataset = dailyDataset(stats.byDay)
+  // Views are the baseline of the stack; a click kind only earns a series (and
+  // a legend entry) once it actually happened in this window.
+  const daySeries = [
+    { dataKey: 'views', label: 'Views', color: NEUTRAL },
+    ...CLICK_KINDS.filter(({ kind }) => dataset.some((row) => row[kind])).map(({ kind, label, color }) => ({ dataKey: kind, label, color })),
+  ]
 
   const tiles = [
     { value: stats.totalViews, label: 'Views' },
@@ -152,33 +294,76 @@ export default function StatsPanel({ session, pageId }) {
 
       {!stats.enabled && <Typography variant="body2" color="text.secondary">Statistics collection is disabled on this server.</Typography>}
 
-      <Stack direction="row" spacing={1.5} sx={{ flexWrap: 'wrap' }}>
+      {/* Same grid metrics as the panels below, so the tiles line up with them. */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 1.5 }}>
         {tiles.map((tile) => (
-          <Card key={tile.label} sx={{ p: '16px 22px', display: 'flex', flexDirection: 'column' }}>
-            <Typography sx={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>{tile.value}</Typography>
-            <Typography variant="caption" color="text.secondary">{tile.label}</Typography>
+          <Card key={tile.label} sx={{ p: '16px 22px', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <Typography noWrap sx={{ fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>{tile.value}</Typography>
+            <Typography variant="caption" color="text.secondary" noWrap title={tile.label}>{tile.label}</Typography>
           </Card>
         ))}
-      </Stack>
+      </Box>
 
       {stats.byDay.length > 0 && (
-        <StatsBlock title="Views per day">
-          <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: 90 }}>
-            {stats.byDay.map((d) => (
-              <Box
-                key={d.day}
-                title={`${d.day}: ${d.views}`}
-                sx={{ flex: 1, minHeight: 2, height: `${(d.views / maxDay) * 100}%`, bgcolor: 'text.primary', borderRadius: '2px 2px 0 0' }}
-              />
-            ))}
-          </Box>
+        <StatsBlock title="Views and clicks per day">
+          <BarChart
+            dataset={dataset}
+            height={260}
+            grid={{ horizontal: true }}
+            // Right margin is the room the last date tick needs: MUI ellipsizes a
+            // tick label that would cross the drawing area's edge.
+            margin={{ top: 8, right: 24, bottom: 0, left: 0 }}
+            xAxis={[{
+              dataKey: 'day',
+              scaleType: 'band',
+              valueFormatter: formatDay,
+              // Count from the end so the most recent day always keeps its label.
+              tickInterval: (value, index) => (stats.byDay.length - 1 - index) % tickStep === 0,
+              disableTicks: true,
+            }]}
+            yAxis={[{ width: 32, disableLine: true, disableTicks: true, tickMinStep: 1 }]}
+            series={daySeries.map((series) => ({
+              ...series,
+              stack: 'day',
+              // The day's view count, printed in the baseline segment when it has
+              // room. Only that one: a number per click segment would both clutter
+              // the stack and sit on colours it can't stay legible against — those
+              // are read from the tooltip.
+              barLabel: series.dataKey === 'views'
+                ? (item, context) => (context.bar.width >= 22 && context.bar.height >= 16 ? item.value || null : null)
+                : undefined,
+            }))}
+            borderRadius={3}
+            sx={{
+              '& .MuiBarChart-label': { fontSize: 11, fill: 'var(--mui-palette-background-paper)' },
+              '& .MuiChartsAxis-tickLabel': { fontSize: 11 },
+              // A hairline of the card surface between stacked segments, so two
+              // touching categories never blend into one block.
+              '& .MuiBarChart-element': { stroke: 'var(--mui-palette-background-paper)', strokeWidth: 1 },
+            }}
+          />
         </StatsBlock>
       )}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 1.5 }}>
-        <BarList title="Clicks by platform / target" rows={stats.byTarget} total={stats.totalClicks} valueKey="clicks" formatKey={formatTarget} />
-        <BarList title="Devices" rows={stats.byDevice} total={stats.totalViews} />
-        <BarList title="Countries" rows={stats.byCountry} total={stats.totalViews} />
+      {/* The target list is a long, full-width list; the two share pies split the
+          row below it. */}
+      <BarList title="Clicks by platform / target" rows={stats.byTarget} total={stats.totalClicks} valueKey="clicks" formatKey={formatTarget} />
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 1.5 }}>
+        <SharePie
+          title="Devices"
+          rows={stats.byDevice}
+          formatKey={(key) => DEVICE_LABELS[key] || key}
+          colorFor={(key) => DEVICE_SLOTS[key] || NEUTRAL}
+        />
+        <SharePie
+          title="Countries"
+          rows={stats.byCountry}
+          formatKey={formatCountry}
+          // No fixed vocabulary to pin slots to, so countries take the slots in
+          // rank order — except 'unknown', which stays neutral like 'Other'.
+          colorFor={(key, i) => (key === 'unknown' ? NEUTRAL : SLOT(i + 1))}
+        />
       </Box>
 
       <StatsBlock title="Conversion by source">
@@ -209,8 +394,7 @@ export default function StatsPanel({ session, pageId }) {
       </StatsBlock>
 
       <Typography variant="caption" color="text.secondary">
-        Anonymous and cookieless: device class, source, country and clicked platform only — no IPs,
-        no personal data (see <Link href="/privacy" sx={{ color: 'inherit', textDecoration: 'underline' }}>privacy notice</Link>).
+        Anonymous and cookieless: device class, source, country and clicked platform only (see <Link href="/privacy" sx={{ color: 'inherit', textDecoration: 'underline' }}>privacy notice</Link>).
       </Typography>
     </Stack>
   )

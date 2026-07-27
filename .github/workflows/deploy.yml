@@ -1,0 +1,81 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+# Two overlapping deploys would race on .env and `docker compose build` in the
+# same working copy; queue them instead.
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git pull origin main
+        timeout-minutes: 1
+        uses: appleboy/ssh-action@v1.0.3 # 029f5b4aeeeb58fdfe1410a5d17f967dacf36262
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/linkbuddy
+            git pull origin main
+      - name: Build and deploy Docker containers
+        uses: appleboy/ssh-action@v1.0.3 # 029f5b4aeeeb58fdfe1410a5d17f967dacf36262
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # The action defaults to killing the session after 10m. A cold build
+          # (two `npm ci` passes plus `vite build`, no layer cache) can exceed
+          # that on a small VPS — the very first deploy is the one at risk.
+          command_timeout: 30m
+          script: |
+            set -e
+            cd /opt/linkbuddy
+            umask 077
+            cat > .env <<'EOF'
+            NODE_ENV=production
+            # Port inside the container; compose publishes it on 127.0.0.1 only
+            # and nginx terminates TLS for link.jorisbos.nl in front of it.
+            LINKPAGE_PORT=3010
+            # Consumed by the postgres container, and by compose to build the
+            # PG* vars it injects into `app` and `migrate`. LINKPAGE_DATABASE_URL
+            # is deliberately absent — compose blanks it inside the stack.
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            # Origins, no ports: nginx serves both over 443.
+            GIGBUDDY_URL=${{ secrets.GIGBUDDY_URL }}
+            LINKPAGE_PUBLIC_URL=${{ secrets.LINKPAGE_PUBLIC_URL }}
+            # Must equal LINKPAGE_SECRET in the GigBuddy deployment: it verifies
+            # editor handoff tokens, signs editor sessions, authenticates the
+            # content-export pull, and keys the daily visitor hash.
+            GIGBUDDY_SYNC_SECRET=${{ secrets.GIGBUDDY_SYNC_SECRET }}
+            LINKPAGE_CONTENT_TTL_MINUTES=15
+            STATS_RETENTION_DAYS=30
+            EOF
+            chmod 600 .env
+            docker compose build
+            docker compose up -d db
+            # Run migrations as an explicit one-off so a failure fails the
+            # deploy here, rather than being folded into `app`'s startup wait.
+            docker compose run --rm migrate
+            # --no-deps: migrations just ran above; without it compose would
+            # re-run the `migrate` service to satisfy app's depends_on.
+            docker compose up -d --no-deps app
+            for i in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:3010/api/health > /dev/null; then
+                echo "app healthy"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "app did not become healthy within 60s" >&2
+            docker compose logs --tail=50 app >&2
+            exit 1

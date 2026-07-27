@@ -3,6 +3,8 @@ import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import theme from '../../src/theme.js'
+import WidgetStack from '../../src/WidgetStack.jsx'
+import ColorSchemeScope from '../../src/ColorSchemeScope.jsx'
 
 // Mock the network layer so the real PublicPage data-loading path runs against
 // fixed mock data instead of a live API. Each test sets the resolved page.
@@ -16,8 +18,8 @@ vi.mock('../../src/api.js', () => ({
 // Imported after the mock is registered.
 const { default: PublicPage } = await import('../../src/PublicPage.jsx')
 
-// `band` is merged (so a test can set just `theme` without losing the name);
-// every other key is a plain override.
+// `band` is merged (so a test can set just one field without losing the
+// name); every other key is a plain override.
 function mockPage(overrides = {}) {
   return {
     sections: [
@@ -36,7 +38,6 @@ function mockPage(overrides = {}) {
       bio: 'Loud, clear, and cookie-free.',
       slug: 'testers',
       socials: { instagram: 'testers' },
-      theme: 'light',
       ...(overrides.band || {}),
     },
   }
@@ -90,8 +91,8 @@ describe('PublicPage rendering (real component, mocked API)', () => {
     expect(sublabel.element().className).toContain('MuiTypography-caption')
   })
 
-  it('paints a light surface for a light-theme band', async () => {
-    state.page = mockPage({ band: { theme: 'light' } })
+  it('paints a light surface for the main page', async () => {
+    state.page = mockPage()
     const screen = await renderPage()
     await expect.element(screen.getByRole('heading', { level: 1, name: 'The Testers' })).toBeInTheDocument()
 
@@ -107,13 +108,13 @@ describe('PublicPage rendering (real component, mocked API)', () => {
     expect(getComputedStyle(card).backgroundColor).toBe('rgb(255, 255, 255)')
   })
 
-  it('switches every surface to the dark scheme for a dark-theme band', async () => {
-    state.page = mockPage({ band: { theme: 'dark' } })
+  it('switches every surface to the dark scheme when the resolved page theme is dark', async () => {
+    state.page = mockPage({ theme: 'dark', release: { title: 'Hurricane EP', artist: 'The Testers' } })
     const screen = await renderPage()
-    await expect.element(screen.getByRole('heading', { level: 1, name: 'The Testers' })).toBeInTheDocument()
+    await expect.element(screen.getByText('Hurricane EP')).toBeInTheDocument()
 
-    // The band's scheme lives on the scope wrapper, NOT on <html> — the editor's
-    // own scheme owns the document, so the two never collide.
+    // The scheme lives on the scope wrapper, NOT on <html> — the editor's own
+    // scheme owns the document, so the two never collide.
     const card = document.querySelector('section .MuiCard-root')
     const scope = card.closest('[data-theme]')
     expect(scope.getAttribute('data-theme')).toBe('dark')
@@ -187,6 +188,23 @@ describe('BandHeader logo / avatar', () => {
     return els.filter((el) => getComputedStyle(el).display !== 'none')
   }
 
+  // The light-mode/dark-mode logo swap (BandTitle in WidgetStack.jsx) is pure CSS driven
+  // off the enclosing ColorSchemeScope's `data-theme`, independent of how a
+  // page ends up in that scheme. The public page only ever puts a band header
+  // in a light scope (main pages are always light), so the dark side of the
+  // swap is exercised directly against WidgetStack in a forced dark scope
+  // rather than through PublicPage.
+  function renderDarkHeader(band) {
+    return render(
+      <ThemeProvider theme={theme} defaultMode="light">
+        <CssBaseline enableColorScheme />
+        <ColorSchemeScope mode="dark">
+          <WidgetStack page={{ band, sections: [] }} />
+        </ColorSchemeScope>
+      </ThemeProvider>,
+    )
+  }
+
   it('uses avatarUrl for the profile picture, not the logo', async () => {
     state.page = mockPage({ band: { avatarUrl: AVATAR, logoUrl: LOGO } })
     const screen = await renderPage()
@@ -214,8 +232,8 @@ describe('BandHeader logo / avatar', () => {
     expect(logos()).toHaveLength(0)
   })
 
-  it('shows the dark-ink logo instead of the name for a light-theme band', async () => {
-    state.page = mockPage({ band: { theme: 'light', logoUrl: LOGO, logoDarkUrl: LOGO_DARK } })
+  it('shows the light-mode logo instead of the name on a light page', async () => {
+    state.page = mockPage({ band: { logoUrl: LOGO, logoDarkUrl: LOGO_DARK } })
     const screen = await renderPage()
     await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
 
@@ -223,27 +241,25 @@ describe('BandHeader logo / avatar', () => {
     expect(document.querySelector('header').textContent).not.toContain('The Testers')
     const shown = visible(logos())
     expect(shown).toHaveLength(1)
-    expect(shown[0].getAttribute('src')).toBe(LOGO_DARK)
+    expect(shown[0].getAttribute('src')).toBe(LOGO)
     expect(shown[0].getAttribute('alt')).toBe('The Testers')
   })
 
-  it('swaps to the light-ink logo for a dark-theme band', async () => {
-    state.page = mockPage({ band: { theme: 'dark', logoUrl: LOGO, logoDarkUrl: LOGO_DARK } })
-    const screen = await renderPage()
+  it('swaps to the dark-mode logo on a dark page', async () => {
+    const screen = await renderDarkHeader({ name: 'The Testers', logoUrl: LOGO, logoDarkUrl: LOGO_DARK })
     await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
 
     await vi.waitFor(() => {
       const shown = visible(logos())
       expect(shown).toHaveLength(1)
-      expect(shown[0].getAttribute('src')).toBe(LOGO)
+      expect(shown[0].getAttribute('src')).toBe(LOGO_DARK)
     })
-    // The page scheme drives it — the document is untouched.
+    // The scope's own attribute drives it — the document is untouched.
     expect(document.documentElement.dataset.theme).not.toBe('dark')
   })
 
-  it('uses the only light logo on a dark page when no dark logo exists', async () => {
-    state.page = mockPage({ band: { theme: 'dark', logoUrl: LOGO } })
-    const screen = await renderPage()
+  it('uses the only light-mode logo on a dark page when no dark-mode logo exists', async () => {
+    const screen = await renderDarkHeader({ name: 'The Testers', logoUrl: LOGO })
     await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
 
     const shown = visible(logos())
@@ -251,13 +267,61 @@ describe('BandHeader logo / avatar', () => {
     expect(shown[0].getAttribute('src')).toBe(LOGO)
   })
 
-  it('uses the only dark logo on a light page when no light logo exists', async () => {
-    state.page = mockPage({ band: { theme: 'light', logoDarkUrl: LOGO_DARK } })
+  it('uses the only dark-mode logo on a light page when no light-mode logo exists', async () => {
+    state.page = mockPage({ band: { logoDarkUrl: LOGO_DARK } })
     const screen = await renderPage()
     await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
 
     const shown = visible(logos())
     expect(shown).toHaveLength(1)
     expect(shown[0].getAttribute('src')).toBe(LOGO_DARK)
+  })
+})
+
+describe('Band banner', () => {
+  const AVATAR = 'https://cdn.test/avatar.png'
+  const BANNER = 'https://cdn.test/banner.jpg'
+
+  it('renders the banner above the header when showBanner is on and a bannerUrl is set', async () => {
+    state.page = mockPage({ showBanner: true, band: { avatarUrl: AVATAR, bannerUrl: BANNER } })
+    const screen = await renderPage()
+    await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+
+    const banner = document.querySelector(`img[src="${BANNER}"]`)
+    expect(banner).toBeTruthy()
+  })
+
+  it('renders no banner when showBanner is off, even with a bannerUrl set', async () => {
+    state.page = mockPage({ showBanner: false, band: { avatarUrl: AVATAR, bannerUrl: BANNER } })
+    const screen = await renderPage()
+    await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+
+    expect(document.querySelector(`img[src="${BANNER}"]`)).toBeNull()
+  })
+
+  it('renders no banner when showBanner is on but the band has no bannerUrl', async () => {
+    state.page = mockPage({ showBanner: true, band: { avatarUrl: AVATAR } })
+    const screen = await renderPage()
+    await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+
+    expect(document.querySelector(`img[src="${BANNER}"]`)).toBeNull()
+  })
+
+  it('overlaps the avatar halfway across the banner’s bottom edge', async () => {
+    state.page = mockPage({ showBanner: true, band: { avatarUrl: AVATAR, bannerUrl: BANNER } })
+    const screen = await renderPage()
+    await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
+
+    const banner = document.querySelector(`img[src="${BANNER}"]`)
+    const avatar = document.querySelector('.MuiAvatar-root')
+    const bannerBox = banner.getBoundingClientRect()
+    const avatarBox = avatar.getBoundingClientRect()
+
+    // The banner's bottom edge falls inside the avatar's vertical span —
+    // roughly through its middle, since the overlap is meant to be a half.
+    expect(bannerBox.bottom).toBeGreaterThan(avatarBox.top)
+    expect(bannerBox.bottom).toBeLessThan(avatarBox.bottom)
+    const midpoint = (avatarBox.top + avatarBox.bottom) / 2
+    expect(Math.abs(bannerBox.bottom - midpoint)).toBeLessThan(4)
   })
 })

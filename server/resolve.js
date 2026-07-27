@@ -92,11 +92,11 @@ export function resolvePage(content, layout, release = null) {
     }
   }
   return {
-    band: content.band
-      ? { ...content.band, theme: normalizeTheme(content.band.theme, release ? 'dark' : 'light') }
-      : null,
+    band: content.band || null,
     release: resolvedRelease,
     background: normalizeBackground(layout?.background),
+    showBanner: layout?.showBanner === true,
+    theme: normalizeTheme(layout?.theme, release ? 'dark' : 'light'),
     sections,
   }
 }
@@ -107,11 +107,10 @@ function normalizeBackground(background) {
   return PAGE_BACKGROUND_KEYS.includes(background) ? background : DEFAULT_PAGE_BACKGROUND
 }
 
-// Band-level look, chosen in gigbuddy and shipped in the content snapshot.
-// Either explicit opt-in is honoured; a missing or unknown value falls back to
-// `fallback` so the page never breaks. Release pages pass 'dark' — their
-// artwork-led layout is designed dark-first — while main pages stay light.
+// The page's colour scheme: the editor's explicit light/dark opt-in when it
+// made one, otherwise `fallback` — dark for a release page's artwork-led
+// layout, light for the main page — so the page never breaks on a missing or
+// stale value.
 function normalizeTheme(theme, fallback) {
-  if (theme === 'dark' || theme === 'light') return theme
-  return fallback
+  return theme === 'dark' || theme === 'light' ? theme : fallback
 }
