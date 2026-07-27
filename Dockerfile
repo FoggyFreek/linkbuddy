@@ -12,6 +12,9 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY server ./server
+# server/{layout,platforms,resolve}.js import the shared allow-lists — the
+# runtime needs them as much as the build does.
+COPY shared ./shared
 COPY --from=build /app/dist ./dist
 # Drop root: the runtime only needs to read the app and listen on a port.
 USER node
