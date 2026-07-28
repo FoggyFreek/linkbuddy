@@ -2,8 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import App from './App.jsx'
-import theme from './theme.js'
+import App from './app/App.jsx'
+import theme from './lib/theme.js'
 
 // One theme for the whole app. ThemeProvider owns the `data-theme` attribute and
 // the light/dark colour schemes; CssBaseline paints the page background/text from

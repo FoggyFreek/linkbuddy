@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import theme from '../src/theme.js'
+import theme from '../src/lib/theme.js'
 
 // Guards the design tokens the feature components lean on, so a stray edit to
 // theme.js (or responsiveFontSizes dropping component config) is caught here

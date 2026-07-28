@@ -2,9 +2,9 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
-import ColorSchemeScope from '../../src/ColorSchemeScope.jsx'
-import WidgetStack from '../../src/WidgetStack.jsx'
+import theme from '../../src/lib/theme.js'
+import ColorSchemeScope from '../../src/components/ColorSchemeScope.jsx'
+import PageContent from '../../src/components/PageContent.jsx'
 
 // Embed widgets carry the server-derived descriptor; `display` only picks the
 // shape of the modal the player opens in.
@@ -24,7 +24,7 @@ function renderStack(widget, { mode = 'light', onLinkClick } = {}) {
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <ColorSchemeScope mode={mode}>
-        <WidgetStack page={page} {...(onLinkClick ? { onLinkClick } : {})} />
+        <PageContent page={page} {...(onLinkClick ? { onLinkClick } : {})} />
       </ColorSchemeScope>
     </ThemeProvider>,
   )

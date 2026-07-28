@@ -1,0 +1,42 @@
+// The band's link page: one centered card holding the band header and the
+// sections of widget cards. Its `surface.s2` shell keeps the `background.paper`
+// widget cards inside it reading as a distinct surface in both schemes. Living
+// here rather than in PublicPage means the editor preview shows the same card.
+import Stack from '@mui/material/Stack'
+import Card from '@mui/material/Card'
+import Section from '../../../components/Section.jsx'
+import BandHeader from './BandHeader.jsx'
+import BandBanner from './BandBanner.jsx'
+import { CARD_PAD_TOP, CARD_PAD_X } from '../constants.js'
+
+// `corner` is a node pinned to the card (the public page's share button), which
+// is its positioned ancestor. `flush` runs the card's bottom edge off the page —
+// the public page sets it, the framed editor preview doesn't.
+export default function LinksCard({ page, onLinkClick, footer = null, corner = null, flush = false }) {
+  const bannerShown = !!(page.showBanner && page.band?.bannerUrl)
+  return (
+    <Card
+      sx={(theme) => ({
+        position: 'relative',
+        width: '100%', maxWidth: 612, mx: 'auto',
+        bgcolor: 'surface.s2',
+        borderRadius: `${theme.shape.preview}px`,
+        p: { xs: `${CARD_PAD_TOP.xs}px ${CARD_PAD_X.xs}px 26px`, sm: `${CARD_PAD_TOP.sm}px ${CARD_PAD_X.sm}px 34px` },
+        // Clips the banner's square corners to the card's rounded shape.
+        ...(bannerShown && { overflow: 'hidden' }),
+        ...(flush && {
+          flexGrow: 1,
+          borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
+        }),
+      })}
+    >
+      {corner}
+      {bannerShown && <BandBanner src={page.band.bannerUrl} />}
+      <Stack spacing={1.75} sx={{ maxWidth: 600, mx: 'auto' }}>
+        <BandHeader band={page.band} onLinkClick={onLinkClick} bannerShown={bannerShown} />
+        {page.sections.map((section) => <Section key={section.id} section={section} onLinkClick={onLinkClick} />)}
+      </Stack>
+      {footer}
+    </Card>
+  )
+}

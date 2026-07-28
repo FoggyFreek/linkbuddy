@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { slugFromPath } from '../src/pathSlug.js'
+import { slugFromPath } from '../src/utils/pathSlug.js'
 
 describe('slugFromPath', () => {
   it('parses main and release paths', () => {

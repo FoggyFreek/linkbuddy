@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
-import ItemOrderActions from '../../src/editor/ItemOrderActions.jsx'
+import theme from '../../src/lib/theme.js'
+import ItemOrderActions from '../../src/features/editor/components/ItemOrderActions.jsx'
 
 // The move-up / move-down / delete trio shared by section and widget rows. It
 // generates its own aria-labels and derives boundary-disabling from index/count

@@ -4,7 +4,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
-import theme from '../../src/theme.js'
+import theme from '../../src/lib/theme.js'
 
 // The pill (dashed add-button) and panel (editor content card) variants live in
 // the theme now instead of being repeated in each component's sx. These render

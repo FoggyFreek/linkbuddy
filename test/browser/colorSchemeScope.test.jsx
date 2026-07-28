@@ -5,10 +5,10 @@ import CssBaseline from '@mui/material/CssBaseline'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import Typography from '@mui/material/Typography'
-import theme from '../../src/theme.js'
-import ColorSchemeScope from '../../src/ColorSchemeScope.jsx'
-import ShareButton from '../../src/ShareButton.jsx'
-import { pageBackgroundSx } from '../../src/pageBackgrounds.js'
+import theme from '../../src/lib/theme.js'
+import ColorSchemeScope from '../../src/components/ColorSchemeScope.jsx'
+import ShareButton from '../../src/components/ShareButton.jsx'
+import { pageBackgroundSx } from '../../src/lib/pageBackgrounds.js'
 
 // ColorSchemeScope is the single mechanism behind the public page and the editor
 // preview. These tests pin the behaviour the refactor depends on: a subtree can

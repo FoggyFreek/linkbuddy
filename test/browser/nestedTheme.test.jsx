@@ -3,12 +3,12 @@ import { render } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import Box from '@mui/material/Box'
-import theme from '../../src/theme.js'
-import WidgetStack from '../../src/WidgetStack.jsx'
+import theme from '../../src/lib/theme.js'
+import PageContent from '../../src/components/PageContent.jsx'
 
 // Reproduces the editor preview: the colour scheme is forced on a NESTED
 // container (a Box carrying data-theme + its own text colour) while the document
-// root stays light — exactly what Editor.jsx renders around WidgetStack. MUI's
+// root stays light — exactly what Editor.jsx renders around PageContent. MUI's
 // components read theme.vars, so their surfaces recompute against the container's
 // scheme automatically; the container restates `color` so plain inherited text
 // (the Typography labels) follows the same scheme.
@@ -26,7 +26,7 @@ function renderNested(scheme) {
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <Box data-theme={scheme} data-testid="frame" sx={{ color: 'text.primary', bgcolor: 'background.default' }}>
-        <WidgetStack page={page} />
+        <PageContent page={page} />
       </Box>
     </ThemeProvider>,
   )

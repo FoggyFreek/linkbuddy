@@ -32,26 +32,58 @@ executor-first), `layout.js` (validate + normalize submitted layouts),
 `classify.js` (device/source/country, no IPs), `unfurl.js` + `safeFetch.js`
 (SSRF-hardened link enrichment), `entitlements.js` (plan gating).
 
-**Client** — `PublicPage.jsx` and `Editor.jsx` are the two roots. `Editor` keeps
-its state in `src/hooks/` (`useEditorSession` = handoff/session/page list,
-`useLayoutEditor` = draft layout + debounced autosave) and its UI in
-`src/editor/` (tabs: build, appearance, preview, stats). `WidgetStack.jsx`
-renders the resolved page for **both** the public page and the editor preview —
-keep it presentational so the two can't diverge. `widgets/widgetModel.js` is the
-pure client vocabulary for creating/labelling widgets.
+**Client** — feature-based, one direction only: `app/` → `features/` →
+`components/` → `lib/`+`utils/`. Nothing in `components/`, `lib/` or `utils/`
+may import a feature (`PageContent` is the one deliberate exception, below), and
+features don't import each other.
+
+```
+src/main.jsx              Vite entry: ThemeProvider + CssBaseline + <App/>
+src/app/App.jsx           path-based routing, no router
+src/app/routes/           PublicPage · Editor · Privacy
+src/components/           shared UI (below)
+src/features/<name>/       components/ · hooks/ · utils/ — only what that feature owns
+src/lib/                  api.js · theme.js · pageBackgrounds.js
+src/utils/                pure helpers: format · socials · pathSlug · trimChars
+```
+
+**Visitor-facing rendering** — `components/PageContent.jsx` is the only entry
+point, used by **both** `PublicPage` and the editor's preview tab so the two
+can't diverge. It just picks a shell: `features/smart-link/` (`SmartLinkPage` +
+`ReleaseArt`/`ReleaseInfo`) for a release, `features/public-links-card/`
+(`LinksCard` + `BandHeader`/`BandTitle`/`BandBanner`) for a band page. It lives
+in `components/` — reaching *down* into two features — precisely so a feature
+(the editor) and a route (the public page) can share one switch; don't copy that
+pattern elsewhere. Keep both shells presentational: data arrives resolved from
+`server/resolve.js`, and `onLinkClick` is the only outbound side effect.
+
+**`features/editor/`** — `components/` (tabs: build, appearance, preview, stats,
+plus the widget forms `WidgetEditors`/`NewReleaseForm`), `hooks/`
+(`useEditorSession` = handoff/session/page list, `useLayoutEditor` = draft
+layout + debounced autosave), `utils/` (`editorUtils.js`, and `widgetModel.js`
+= the pure vocabulary for creating/labelling widgets). Its root is the
+`app/routes/Editor.jsx` route, which owns the session and composes the tabs.
+
+**`src/components/`** — everything shared. `Section` renders a section's widgets
+through the `WIDGETS` map in `widgets/index.js` (one renderer per file); widgets
+live here rather than in a feature because `server/layout.js` allows any type on
+either page kind. Alongside them: `SocialLinks`, `Thumb`, `CardLabel`,
+`SectionTitle`, `PlayPill`, and the app-wide `ColorSchemeScope` (+
+`useScopedPortalProps`), `ColorModeToggle`, `ShareButton`, `CenteredStatus`,
+`icons.jsx`, `embeds.jsx`.
 
 **`shared/`** — allow-lists that the server validates against and the client
 renders from: `linkIcons.js`, `platforms.js`, `pageBackgrounds.js`. When you add
 a background, icon or platform, edit the `shared/` list first; both sides import
 it, so they can't drift. The artwork/component maps live client-side
-(`src/icons.jsx`, `src/pageBackgrounds.js`).
+(`components/icons.jsx`, `lib/pageBackgrounds.js`).
 
 ## Invariants
 
 - **Privacy (don't break).** Third-party embeds never load on page view:
   visitors get a click-to-play facade, and the iframe mounts only after
   interaction, inside a closable overlay that unmounts it on close
-  (`src/embeds.jsx`, `server/embeds.js`). The public page sets no cookies and
+  (`src/components/embeds.jsx`, `server/embeds.js`). The public page sets no cookies and
   stores nothing on the device. See `PRIVACY.md`.
 - **Client input is untrusted.** `server/layout.js` whitelists field-by-field:
   unknown widget types rejected, unknown fields dropped, strings capped, URLs
@@ -71,7 +103,7 @@ it, so they can't drift. The artwork/component maps live client-side
 Everything is **MUI v9** components styled with the **`sx` prop** and the theme.
 There is **no CSS file** — do not add one.
 
-- `src/theme.js` is the single source of truth: `cssVariables` with
+- `src/lib/theme.js` is the single source of truth: `cssVariables` with
   `colorSchemeSelector: 'data-theme'`, both colour schemes, `responsiveFontSizes`,
   and component defaults. Custom tokens `palette.surface.{s2,s3,border,field}`
   (`sx={{ bgcolor: 'surface.s2' }}`) and `palette.chart.c1…c8`.
@@ -107,7 +139,7 @@ There is **no CSS file** — do not add one.
 
 ## Testing notes
 
-- Browser tests render **real** components (e.g. `PublicPage` with `api.js`
+- Browser tests render **real** components (e.g. `PublicPage` with `lib/api.js`
   mocked) and assert MUI structure + computed styles — query `.MuiCard-root`,
   `.MuiTypography-h1`, not CSS classes.
 - If you touch theme scoping, keep `colorSchemeScope.test.jsx` (scope

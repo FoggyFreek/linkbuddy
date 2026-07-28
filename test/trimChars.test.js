@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { trim, trimStart, trimEnd } from '../src/trimChars.js'
+import { trim, trimStart, trimEnd } from '../src/utils/trimChars.js'
 
 describe('trimChars', () => {
   it('trims runs from the requested end only', () => {

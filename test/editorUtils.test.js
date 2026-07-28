@@ -6,7 +6,7 @@ import {
   pageLabel,
   pageSchemeMode,
   toListEntry,
-} from '../src/editorUtils.js'
+} from '../src/features/editor/utils/editorUtils.js'
 
 describe('moveItem', () => {
   it('moves an item without mutating the source list', () => {

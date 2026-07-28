@@ -3,11 +3,11 @@ import { render } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import Box from '@mui/material/Box'
-import theme from '../../src/theme.js'
-import WidgetStack from '../../src/WidgetStack.jsx'
+import theme from '../../src/lib/theme.js'
+import PageContent from '../../src/components/PageContent.jsx'
 
 // Smart-link (release) pages use a two-pane desktop layout where the album cover
-// sits on a full-height, blurred copy of itself (ReleaseArt in WidgetStack). The
+// sits on a full-height, blurred copy of itself (ReleaseArt in features/smart-link). The
 // backdrop only appears at the container breakpoint, so this renders inside a
 // wide (>=840px) container to engage the `@container (min-width:840px)` branch.
 // 1x1 transparent PNG so both <img>s have a valid, loadable src.
@@ -27,7 +27,7 @@ function renderWide() {
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <Box sx={{ width: 1000 }}>
-        <WidgetStack page={page} />
+        <PageContent page={page} />
       </Box>
     </ThemeProvider>,
   )

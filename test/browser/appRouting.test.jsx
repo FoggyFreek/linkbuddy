@@ -2,19 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
+import theme from '../../src/lib/theme.js'
 
 // The router reads window.location at render, so each case pushes a path first.
 // PublicPage's network layer is stubbed — this asserts which root App picks,
 // not what that root then renders.
-vi.mock('../../src/api.js', async (importOriginal) => ({
+vi.mock('../../src/lib/api.js', async (importOriginal) => ({
   ...(await importOriginal()),
   getPublicPage: () => new Promise(() => {}),
   sendView: () => {},
   sendClick: () => {},
 }))
 
-const { default: App } = await import('../../src/App.jsx')
+const { default: App } = await import('../../src/app/App.jsx')
 
 const original = window.location.pathname
 

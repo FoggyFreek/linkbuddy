@@ -2,21 +2,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
-import WidgetStack from '../../src/WidgetStack.jsx'
-import ColorSchemeScope from '../../src/ColorSchemeScope.jsx'
+import theme from '../../src/lib/theme.js'
+import PageContent from '../../src/components/PageContent.jsx'
+import ColorSchemeScope from '../../src/components/ColorSchemeScope.jsx'
 
 // Mock the network layer so the real PublicPage data-loading path runs against
 // fixed mock data instead of a live API. Each test sets the resolved page.
 const state = { page: null }
-vi.mock('../../src/api.js', () => ({
+vi.mock('../../src/lib/api.js', () => ({
   getPublicPage: () => Promise.resolve(state.page),
   sendView: () => {},
   sendClick: () => {},
 }))
 
 // Imported after the mock is registered.
-const { default: PublicPage } = await import('../../src/PublicPage.jsx')
+const { default: PublicPage } = await import('../../src/app/routes/PublicPage.jsx')
 
 // `band` is merged (so a test can set just one field without losing the
 // name); every other key is a plain override.
@@ -188,18 +188,18 @@ describe('BandHeader logo / avatar', () => {
     return els.filter((el) => getComputedStyle(el).display !== 'none')
   }
 
-  // The light-mode/dark-mode logo swap (BandTitle in WidgetStack.jsx) is pure CSS driven
+  // The light-mode/dark-mode logo swap (BandTitle in features/public-links-card) is pure CSS driven
   // off the enclosing ColorSchemeScope's `data-theme`, independent of how a
   // page ends up in that scheme. The public page only ever puts a band header
   // in a light scope (main pages are always light), so the dark side of the
-  // swap is exercised directly against WidgetStack in a forced dark scope
+  // swap is exercised directly against PageContent in a forced dark scope
   // rather than through PublicPage.
   function renderDarkHeader(band) {
     return render(
       <ThemeProvider theme={theme} defaultMode="light">
         <CssBaseline enableColorScheme />
         <ColorSchemeScope mode="dark">
-          <WidgetStack page={{ band, sections: [] }} />
+          <PageContent page={{ band, sections: [] }} />
         </ColorSchemeScope>
       </ThemeProvider>,
     )

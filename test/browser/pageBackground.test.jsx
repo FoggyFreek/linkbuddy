@@ -3,10 +3,10 @@ import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import Box from '@mui/material/Box'
-import theme from '../../src/theme.js'
-import ColorSchemeScope from '../../src/ColorSchemeScope.jsx'
-import { PAGE_BACKGROUND_OPTIONS, pageBackgroundSx } from '../../src/pageBackgrounds.js'
-import BackgroundPicker from '../../src/editor/BackgroundPicker.jsx'
+import theme from '../../src/lib/theme.js'
+import ColorSchemeScope from '../../src/components/ColorSchemeScope.jsx'
+import { PAGE_BACKGROUND_OPTIONS, pageBackgroundSx } from '../../src/lib/pageBackgrounds.js'
+import BackgroundPicker from '../../src/features/editor/components/BackgroundPicker.jsx'
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../shared/pageBackgrounds.js'
 
 // The page backgrounds are CSS background-images rather than DOM nodes, so these
@@ -14,13 +14,13 @@ import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../shared/page
 // a chosen background paints, that `none` leaves the theme's plain canvas, and
 // that each scene has its own artwork per colour scheme.
 const state = { page: null }
-vi.mock('../../src/api.js', () => ({
+vi.mock('../../src/lib/api.js', () => ({
   getPublicPage: () => Promise.resolve(state.page),
   sendView: () => {},
   sendClick: () => {},
 }))
 
-const { default: PublicPage } = await import('../../src/PublicPage.jsx')
+const { default: PublicPage } = await import('../../src/app/routes/PublicPage.jsx')
 
 function renderApp(node) {
   return render(

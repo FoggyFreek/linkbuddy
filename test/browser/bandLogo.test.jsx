@@ -2,10 +2,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
-import PagePreview from '../../src/editor/PagePreview.jsx'
+import theme from '../../src/lib/theme.js'
+import PagePreview from '../../src/features/editor/components/PagePreview.jsx'
 
-// The band logo swap (BandTitle in WidgetStack.jsx) picks `logoUrl` on a light
+// The band logo swap (BandTitle in features/public-links-card) picks `logoUrl` on a light
 // page and `logoDarkUrl` on a dark one — where "the page" means the enclosing
 // ColorSchemeScope, never the document. Both the public page and the editor
 // preview render the same scope + stack, and both must survive a *disagreeing*
@@ -17,13 +17,13 @@ const LOGO = 'https://cdn.test/logo-light.png'
 const LOGO_DARK = 'https://cdn.test/logo-dark.png'
 
 const state = { page: null }
-vi.mock('../../src/api.js', () => ({
+vi.mock('../../src/lib/api.js', () => ({
   getPublicPage: () => Promise.resolve(state.page),
   sendView: () => {},
   sendClick: () => {},
 }))
 
-const { default: PublicPage } = await import('../../src/PublicPage.jsx')
+const { default: PublicPage } = await import('../../src/app/routes/PublicPage.jsx')
 
 function mockPage(overrides = {}) {
   return {

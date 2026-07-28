@@ -2,15 +2,15 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
+import theme from '../../src/lib/theme.js'
 
 // The panel's only network call; each test sets the payload it resolves with.
 const state = { stats: null }
-vi.mock('../../src/api.js', () => ({
+vi.mock('../../src/lib/api.js', () => ({
   getStats: () => Promise.resolve(state.stats),
 }))
 
-const { default: StatsPanel } = await import('../../src/StatsPanel.jsx')
+const { default: StatsPanel } = await import('../../src/features/editor/components/StatsPanel.jsx')
 
 // The panel formats dates in the browser's locale, so the expectations have to
 // as well ('1 Jun' in en-US, '1 jun' in nl-NL).

@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
-import AppearancePanel from '../../src/editor/AppearancePanel.jsx'
+import theme from '../../src/lib/theme.js'
+import AppearancePanel from '../../src/features/editor/components/AppearancePanel.jsx'
 import { DEFAULT_PAGE_BACKGROUND } from '../../shared/pageBackgrounds.js'
 
 // AppearancePanel's theme toggle drives layout.theme (server/layout.js parses

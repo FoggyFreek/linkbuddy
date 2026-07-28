@@ -14,6 +14,10 @@ export const PAGE_BACKGROUND_KEYS = [
   'bloom',
   'blobs',
   'confetti',
+  'fluid',
+  'squares',
+  'hexagons',
+  'topography',
 ]
 
 export const DEFAULT_PAGE_BACKGROUND = 'none'

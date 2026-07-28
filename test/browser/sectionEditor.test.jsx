@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
-import theme from '../../src/theme.js'
-import SectionEditor from '../../src/editor/SectionEditor.jsx'
+import theme from '../../src/lib/theme.js'
+import SectionEditor from '../../src/features/editor/components/SectionEditor.jsx'
 
 // SectionEditor became a standalone component in the editor refactor. These
 // tests exercise its immutable widget-list transforms and the "Add:" palette

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { makeWidget, widgetSummary } from '../src/widgets/widgetModel.js'
+import { makeWidget, widgetSummary } from '../src/features/editor/utils/widgetModel.js'
 
 const CONTENT = {
   songs: [{ id: 3, title: 'Midnight Signal' }],
