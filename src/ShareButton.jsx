@@ -22,7 +22,7 @@ const CHANNELS = [
     id: 'whatsapp',
     label: 'WhatsApp',
     Icon: WhatsAppIcon,
-    href: (url, text) => `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
+    href: (url, text) => `https://wa.me/?text=${encodeURIComponent([text, url].join(' '))}`,
   },
   {
     id: 'facebook',

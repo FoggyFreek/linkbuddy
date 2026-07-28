@@ -51,6 +51,11 @@ export function useScopedPortalProps() {
 // mode test — no selector, nothing for an ancestor to override. It wraps the
 // scope's own Box too, so `sx` passed in here (the page background artwork) gets
 // the same treatment.
+function toSxArray(sx) {
+  if (Array.isArray(sx)) return sx
+  return sx ? [sx] : []
+}
+
 export default function ColorSchemeScope({ mode, sx, children, ...props }) {
   const [node, setNode] = useState(null)
   // A function theme keeps MUI's ThemeProvider on its plain (non-CSS-vars) path:
@@ -67,7 +72,7 @@ export default function ColorSchemeScope({ mode, sx, children, ...props }) {
         data-theme={mode}
         sx={[
           { colorScheme: mode, bgcolor: 'surface.canvas', color: 'text.primary' },
-          ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+          ...toSxArray(sx),
         ]}
         {...props}
       >

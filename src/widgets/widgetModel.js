@@ -34,6 +34,8 @@ export function makeWidget(type, content) {
   }
 }
 
+const productCount = (n) => `${n} products`
+
 // One-line label for a widget in the editor's section list.
 export function widgetSummary(widget, content) {
   const songTitle = (songId) => (content.songs || []).find((s) => s.id === songId)?.title || 'missing song'
@@ -45,7 +47,7 @@ export function widgetSummary(widget, content) {
     case 'gigs':
       return `Gigs · ${widget.title || 'Upcoming Gigs'}`
     case 'merch':
-      return `Merch · ${widget.title || `${widget.items.length} products`}`
+      return `Merch · ${widget.title || productCount(widget.items.length)}`
     case 'link':
       return `Custom link · ${widget.label || widget.url}`
     case 'embed':

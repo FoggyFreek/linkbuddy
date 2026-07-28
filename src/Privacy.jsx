@@ -11,8 +11,8 @@ export default function Privacy() {
     <Box sx={{ maxWidth: 640, mx: 'auto', px: '20px', pt: '40px', pb: '60px' }}>
       <Typography variant="h2" component="h1" gutterBottom>Privacy notice</Typography>
       <Typography variant="body1" sx={{ mb: 2 }}>
-        This is a band&apos;s public link page. You can visit it without an account, and it sets
-        <strong> no cookies</strong> and stores nothing on your device.
+        This is a band&apos;s public link page. You can visit it without an account, and it sets{' '}
+        <strong>no cookies</strong> and stores nothing on your device.
       </Typography>
 
       <Typography variant="h3" component="h2" sx={{ mt: 3.5, mb: 1 }}>What we measure</Typography>

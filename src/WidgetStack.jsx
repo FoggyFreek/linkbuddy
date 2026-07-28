@@ -34,11 +34,15 @@ import {
   PLATFORM_ICON_COMPONENTS,
 } from './icons.jsx'
 
+const OtherPlatformIcon = PLATFORM_ICON_COMPONENTS.other
+
+const atHandle = (h) => (h.startsWith('@') ? h : `@${h}`)
+
 const SOCIALS = [
   { key: 'instagram', Icon: InstagramIcon, url: (h) => `https://instagram.com/${h}` },
   { key: 'facebook', Icon: FacebookIcon, url: (h) => `https://facebook.com/${h}` },
-  { key: 'youtube', Icon: YoutubeIcon, url: (h) => `https://youtube.com/${h.startsWith('@') ? h : `@${h}`}` },
-  { key: 'tiktok', Icon: TiktokIcon, url: (h) => `https://tiktok.com/${h.startsWith('@') ? h : `@${h}`}` },
+  { key: 'youtube', Icon: YoutubeIcon, url: (h) => `https://youtube.com/${atHandle(h)}` },
+  { key: 'tiktok', Icon: TiktokIcon, url: (h) => `https://tiktok.com/${atHandle(h)}` },
   { key: 'spotify', Icon: SpotifyIcon, url: (h) => (h.includes('/') ? `https://open.spotify.com/${h}` : `https://open.spotify.com/artist/${h}`) },
 ]
 
@@ -276,14 +280,14 @@ function SongWidget({ widget, onLinkClick }) {
       </CardActionArea>
       {extras.length > 0 && (
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: 'center', pt: '10px', px: '4px' }}>
-          {extras.map((link, i) => {
+          {extras.map((link) => {
             // A link that resolves to a known platform renders as that
             // platform's clickable icon; anything else keeps the text pill.
             const platformId = link.platform && link.platform.id !== 'other' ? link.platform.id : null
             const Icon = platformId ? PLATFORM_ICON_COMPONENTS[platformId] : null
             return Icon ? (
               <IconButton
-                key={i}
+                key={link.url}
                 component="a"
                 href={link.url}
                 target="_blank"
@@ -297,7 +301,7 @@ function SongWidget({ widget, onLinkClick }) {
               </IconButton>
             ) : (
               <Chip
-                key={i}
+                key={link.url}
                 component="a"
                 href={link.url}
                 target="_blank"
@@ -463,11 +467,11 @@ function PlatformsWidget({ widget, onLinkClick }) {
   return (
     <Card sx={{ display: 'flex', flexDirection: 'column', gap: '6px', p: '8px 18px' }}>
       {widget.title && <SectionTitle>{widget.title}</SectionTitle>}
-      {widget.platforms.map((platform, i) => {
-        const Icon = PLATFORM_ICON_COMPONENTS[platform.id] || PLATFORM_ICON_COMPONENTS.other
+      {widget.platforms.map((platform) => {
+        const Icon = PLATFORM_ICON_COMPONENTS[platform.id] || OtherPlatformIcon
         return (
           <Link
-            key={i}
+            key={platform.url}
             href={platform.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -554,7 +558,7 @@ function EmbedWidget({ widget, onLinkClick }) {
         {widget.imageUrl ? (
           <Thumb src={widget.imageUrl} />
         ) : (
-          <Box component="span" sx={{ display: 'inline-flex', color: 'text.primary', flexShrink: 0 }}><PLATFORM_ICON_COMPONENTS.other size={26} /></Box>
+          <Box component="span" sx={{ display: 'inline-flex', color: 'text.primary', flexShrink: 0 }}><OtherPlatformIcon size={26} /></Box>
         )}
         <CardLabel label={label} sublabel={widget.description} sx={{ pr: '26px' }} />
       </CardActionArea>

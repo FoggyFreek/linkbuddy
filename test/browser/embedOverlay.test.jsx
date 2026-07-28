@@ -36,7 +36,7 @@ describe('embed players open in a closable modal overlay', () => {
   it('mounts no third-party iframe until the visitor clicks (privacy contract)', async () => {
     const screen = await renderStack(AUDIO)
     await expect.element(screen.getByText('Midnight Signal')).toBeInTheDocument()
-    expect(document.querySelectorAll('iframe').length).toBe(0)
+    expect(document.querySelectorAll('iframe')).toHaveLength(0)
   })
 
   // The audio facade is the whole row; the video facade is the artwork button.
@@ -70,7 +70,7 @@ describe('embed players open in a closable modal overlay', () => {
 
       await screen.getByRole('button', { name: 'Close player' }).click()
       await vi.waitFor(() => {
-        expect(document.querySelectorAll('iframe').length).toBe(0)
+        expect(document.querySelectorAll('iframe')).toHaveLength(0)
       })
     })
   }

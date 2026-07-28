@@ -2,7 +2,9 @@
 FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# --ignore-scripts: no dependency needs a lifecycle script to install, so a
+# compromised transitive package gets no build-time execution.
+RUN npm ci --ignore-scripts
 COPY . .
 RUN npm run build
 
@@ -10,7 +12,7 @@ FROM node:24-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 COPY server ./server
 # server/{layout,platforms,resolve}.js import the shared allow-lists — the
 # runtime needs them as much as the build does.

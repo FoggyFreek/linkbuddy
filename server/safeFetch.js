@@ -85,7 +85,7 @@ export function pinnedLookup(hostname, options, callback) {
     if (err) return callback(err)
     const blocked = addresses.find((a) => !isPublicAddress(a.address))
     if (blocked) return callback(new Error(`blocked non-public address ${blocked.address}`))
-    if (options && options.all) return callback(null, addresses)
+    if (options?.all) return callback(null, addresses)
     callback(null, addresses[0].address, addresses[0].family)
   })
 }

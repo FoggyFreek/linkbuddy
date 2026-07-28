@@ -31,9 +31,11 @@
             colorScheme = light;
           }
           if (colorScheme) {
-            document.documentElement.setAttribute('data-theme', colorScheme);
+            document.documentElement.dataset.theme = colorScheme;
           }
-        } catch (e) {}
+        } catch (e) {
+          // Storage blocked: fall through to the ThemeProvider's default mode.
+        }
       })();
     </script>
   </head>
