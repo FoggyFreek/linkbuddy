@@ -1,20 +1,27 @@
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Button from '@mui/material/Button'
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import ItemOrderActions from './ItemOrderActions.jsx'
 import { WidgetEditor } from './WidgetEditors.jsx'
 import { widgetSummary } from '../utils/widgetModel.js'
 
-// One widget row in a section: a summary button that toggles the inline editor,
-// plus move/delete controls. Purely presentational — every mutation is a
-// callback the SectionEditor supplies, keeping the immutable list transforms in
-// one place.
+// One widget row in a section: the drag thumb that reorders it (across sections
+// too — see useDragReorder), a summary button that toggles the inline editor,
+// and explicit move/delete controls as a touch-compatible fallback. Purely
+// presentational: every mutation is a callback from SectionEditor.
 export default function WidgetListItem({
   widget,
   content,
   open,
   index,
   count,
+  canMoveUp,
+  canMoveDown,
+  dragging,
+  dropTarget,
+  handleProps,
+  rowProps,
   onToggle,
   onMove,
   onDelete,
@@ -22,15 +29,49 @@ export default function WidgetListItem({
   onUnfurl,
 }) {
   return (
-    <Box component="li" sx={(theme) => ({ border: '1px solid', borderColor: 'divider', borderRadius: `${theme.shape.item}px`, p: '8px 10px' })}>
+    <Box
+      component="li"
+      {...rowProps}
+      sx={(theme) => ({
+        border: '1px solid',
+        borderColor: dropTarget ? 'primary.main' : 'divider',
+        borderRadius: `${theme.shape.item}px`,
+        p: '8px 10px',
+        opacity: dragging ? 0.4 : 1,
+      })}
+    >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+        <Box
+          {...handleProps}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            color: 'text.secondary',
+            cursor: 'grab',
+            borderRadius: 1,
+            touchAction: 'none',
+            '&:active': { cursor: 'grabbing' },
+            '&:hover': { color: 'text.primary' },
+            '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2 },
+          }}
+        >
+          <DragIndicatorIcon fontSize="small" />
+        </Box>
         <Button
           onClick={onToggle}
           sx={{ flex: 1, justifyContent: 'flex-start', textAlign: 'left', color: 'text.primary', fontWeight: 400 }}
         >
           {widgetSummary(widget, content)}
         </Button>
-        <ItemOrderActions index={index} count={count} itemLabel="widget" onMove={onMove} onDelete={onDelete} />
+        <ItemOrderActions
+          index={index}
+          count={count}
+          itemLabel="widget"
+          onMove={onMove}
+          onDelete={onDelete}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+        />
       </Stack>
       {open && (
         <Box sx={{ mt: 1.25 }}>

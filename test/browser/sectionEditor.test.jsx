@@ -23,10 +23,22 @@ const section = {
 const content = {}
 const canAdd = (needs) => !needs || (content[needs]?.length ?? 0) > 0
 
+// Widget reordering is owned by LayoutBuilder (a widget can be dragged into
+// another section), so here it's a stub; widgetReorder.test.jsx covers the real
+// thing through LayoutBuilder.
+const drag = {
+  isDragging: () => false,
+  isOver: () => false,
+  handleProps: () => ({}),
+  rowProps: () => ({}),
+  listProps: () => ({}),
+}
+
 async function renderSection(props = {}) {
   const handlers = {
     onUpdate: vi.fn(),
     onMove: vi.fn(),
+    onMoveWidgetByKey: vi.fn(),
     onRemove: vi.fn(),
     onAddWidget: vi.fn(),
     onUnfurl: vi.fn(),
@@ -43,6 +55,7 @@ async function renderSection(props = {}) {
         count={2}
         openWidget={null}
         canAdd={canAdd}
+        drag={drag}
         {...handlers}
       />
     </ThemeProvider>,
@@ -55,18 +68,6 @@ describe('SectionEditor (extracted editor component)', () => {
     const { screen } = await renderSection()
     await expect.element(screen.getByRole('button', { name: 'Custom link · Site' })).toBeInTheDocument()
     await expect.element(screen.getByRole('button', { name: 'Custom link · Shop' })).toBeInTheDocument()
-  })
-
-  it('reorders widgets immutably when moving one down', async () => {
-    const { screen, handlers } = await renderSection()
-    const downButtons = screen.getByRole('button', { name: 'Move widget down' })
-    await downButtons.first().click()
-
-    expect(handlers.onUpdate).toHaveBeenCalledWith({
-      widgets: [section.widgets[1], section.widgets[0]],
-    })
-    // The original section array is untouched.
-    expect(section.widgets[0].id).toBe('w1')
   })
 
   it('deletes a widget by filtering it out of the list', async () => {

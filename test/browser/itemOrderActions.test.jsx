@@ -6,8 +6,8 @@ import theme from '../../src/lib/theme.js'
 import ItemOrderActions from '../../src/features/editor/components/ItemOrderActions.jsx'
 
 // The move-up / move-down / delete trio shared by section and widget rows. It
-// generates its own aria-labels and derives boundary-disabling from index/count
-// so the two call sites can't drift on accessibility.
+// generates its own aria-labels and derives boundary-disabling from index/count,
+// with explicit overrides for widgets that continue into adjacent sections.
 
 async function renderActions(props = {}) {
   const handlers = { onMove: vi.fn(), onDelete: vi.fn() }
@@ -55,5 +55,17 @@ describe('ItemOrderActions (shared row controls)', () => {
     expect(handlers.onMove).toHaveBeenCalledWith(1)
     await screen.getByRole('button', { name: 'Delete widget' }).click()
     expect(handlers.onDelete).toHaveBeenCalled()
+  })
+
+  it('allows callers to override local list boundaries', async () => {
+    const { screen, handlers } = await renderActions({
+      index: 0,
+      count: 1,
+      canMoveUp: true,
+      canMoveDown: true,
+    })
+    await screen.getByRole('button', { name: 'Move widget up' }).click()
+    await screen.getByRole('button', { name: 'Move widget down' }).click()
+    expect(handlers.onMove.mock.calls).toEqual([[-1], [1]])
   })
 })

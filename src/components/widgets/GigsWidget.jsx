@@ -4,10 +4,12 @@ import Accordion from '@mui/material/Accordion'
 import AccordionSummary from '@mui/material/AccordionSummary'
 import AccordionDetails from '@mui/material/AccordionDetails'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import IconButton from '@mui/material/IconButton'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import { CalendarIcon } from '../icons.jsx'
 import { formatGigDate } from '../../utils/format.js'
 
-export default function GigsWidget({ widget }) {
+export default function GigsWidget({ widget, onLinkClick }) {
   return (
     <Accordion
       // Open on arrival — the list is the point; visitors can still collapse it.
@@ -49,17 +51,39 @@ export default function GigsWidget({ widget }) {
             {widget.gigs.map((gig) => {
               const { month, day } = formatGigDate(gig.date)
               return (
-                <Box component="li" key={gig.id} sx={{ display: 'flex', alignItems: 'baseline', gap: '14px', py: '10px', borderTop: '1px solid', borderColor: 'surface.s2' }}>
-                  <Box sx={{ flex: '0 0 44px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                    <Typography variant="caption" sx={{ fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'text.secondary' }}>{month}</Typography>
-                    <Typography sx={{ fontSize: '24px', fontWeight: 700, lineHeight: 1.1 }}>{day}</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                    <Typography sx={{ fontWeight: 700 }}>{gig.title}</Typography>
-                    {(gig.venue || gig.city) && (
-                      <Typography variant="body2" color="text.secondary">{[gig.venue, gig.city].filter(Boolean).join(', ')}</Typography>
-                    )}
-                  </Box>
+                <Box
+                  component="li"
+                  key={gig.id}
+                  // Two rows: the title sits on the month's baseline, the venue on
+                  // the day number's. Every cell is placed explicitly — the optional
+                  // third column must never pull a date cell out of its row.
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: gig.eventUrl ? '44px minmax(0, 1fr) auto' : '44px minmax(0, 1fr)',
+                    columnGap: '14px', alignItems: 'baseline', py: '10px',
+                    borderTop: '1px solid', borderColor: 'surface.s2',
+                  }}
+                >
+                  <Typography variant="caption" sx={{ gridColumn: 1, gridRow: 1, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'text.secondary', textAlign: 'center' }}>{month}</Typography>
+                  <Typography sx={{ gridColumn: 2, gridRow: 1, fontWeight: 700 }}>{gig.title}</Typography>
+                  <Typography sx={{ gridColumn: 1, gridRow: 2, fontSize: '24px', fontWeight: 700, lineHeight: 1.1, textAlign: 'center' }}>{day}</Typography>
+                  {(gig.venue || gig.city) && (
+                    <Typography variant="body2" color="text.secondary" sx={{ gridColumn: 2, gridRow: 2 }}>{[gig.venue, gig.city].filter(Boolean).join(', ')}</Typography>
+                  )}
+                  {gig.eventUrl && (
+                    <IconButton
+                      component="a"
+                      href={gig.eventUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => onLinkClick(`gig:${gig.title}`)}
+                      aria-label={`Event page for ${gig.title} (opens in a new tab)`}
+                      size="small"
+                      sx={{ gridColumn: 3, gridRow: '1 / span 2', alignSelf: 'center', color: 'text.secondary' }}
+                    >
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  )}
                 </Box>
               )
             })}

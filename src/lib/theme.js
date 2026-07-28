@@ -129,9 +129,9 @@ const baseTheme = createTheme({
           }),
         }),
       },
-      // The editor's standard content card: the section editor, the stats
-      // blocks, and the new-release form all use the same inset. (The public
-      // page's cards keep their own bespoke paddings.)
+      // The editor's standard content card: the section editor and the stats
+      // blocks use the same inset. (The public page's cards keep their own
+      // bespoke paddings.)
       variants: [
         { props: { variant: 'panel' }, style: { padding: '14px 16px' } },
       ],

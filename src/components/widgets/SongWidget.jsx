@@ -1,3 +1,4 @@
+import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Card from '@mui/material/Card'
 import CardActionArea from '@mui/material/CardActionArea'
@@ -7,9 +8,13 @@ import { PLATFORM_ICON_COMPONENTS } from '../icons.jsx'
 import Thumb from '../Thumb.jsx'
 import CardLabel from '../CardLabel.jsx'
 
+const OtherPlatformIcon = PLATFORM_ICON_COMPONENTS.other
+
 export default function SongWidget({ widget, onLinkClick }) {
   const primary = widget.links[0]
   const extras = widget.links.slice(1)
+  // The row links to the first platform — show its icon so the destination is visible.
+  const PrimaryIcon = PLATFORM_ICON_COMPONENTS[primary.platform?.id] || OtherPlatformIcon
   return (
     <Card sx={{ p: '10px 14px' }}>
       <CardActionArea
@@ -21,7 +26,14 @@ export default function SongWidget({ widget, onLinkClick }) {
         sx={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '8px' }}
       >
         <Thumb src={widget.coverUrl} />
-        <CardLabel label={widget.title} sublabel={widget.artist} sx={{ pr: '56px' }} />
+        <CardLabel label={widget.title} sublabel={widget.artist} />
+        <Box
+          component="span"
+          title={primary.platform?.label}
+          sx={{ width: 56, flexShrink: 0, display: 'inline-flex', justifyContent: 'center' }}
+        >
+          <PrimaryIcon size={26} />
+        </Box>
       </CardActionArea>
       {extras.length > 0 && (
         <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: 'center', pt: '10px', px: '4px' }}>

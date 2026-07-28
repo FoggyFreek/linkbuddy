@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   moveItem,
+  moveWidget,
   slugify,
   saveErrorState,
   pageLabel,
@@ -20,6 +21,50 @@ describe('moveItem', () => {
     const list = ['a', 'b']
     expect(moveItem(list, 0, -1)).toBe(list)
     expect(moveItem(list, 1, 1)).toBe(list)
+  })
+})
+
+describe('moveWidget', () => {
+  const sections = () => [
+    { id: 's1', title: 'A', widgets: [{ id: 'w1' }, { id: 'w2' }, { id: 'w3' }] },
+    { id: 's2', title: 'B', widgets: [{ id: 'w4' }] },
+    { id: 's3', title: 'C', widgets: [] },
+  ]
+  const ids = (result, sectionId) => result.find((s) => s.id === sectionId).widgets.map((w) => w.id)
+
+  it('reorders within a section like a drop onto that row', () => {
+    const before = sections()
+    const after = moveWidget(before, { sectionId: 's1', index: 0 }, { sectionId: 's1', index: 2 })
+    expect(ids(after, 's1')).toEqual(['w2', 'w3', 'w1'])
+    expect(before[0].widgets.map((w) => w.id)).toEqual(['w1', 'w2', 'w3'])
+  })
+
+  it('moves a widget into another section at the drop index', () => {
+    const after = moveWidget(sections(), { sectionId: 's1', index: 1 }, { sectionId: 's2', index: 0 })
+    expect(ids(after, 's1')).toEqual(['w1', 'w3'])
+    expect(ids(after, 's2')).toEqual(['w2', 'w4'])
+  })
+
+  it('appends when the target index is past the end (drop on empty space)', () => {
+    const after = moveWidget(sections(), { sectionId: 's1', index: 0 }, { sectionId: 's3', index: 0 })
+    expect(ids(after, 's3')).toEqual(['w1'])
+    const appended = moveWidget(sections(), { sectionId: 's2', index: 0 }, { sectionId: 's1', index: 99 })
+    expect(ids(appended, 's1')).toEqual(['w1', 'w2', 'w3', 'w4'])
+  })
+
+  it('leaves untouched sections identical and no-ops on an unknown source', () => {
+    const before = sections()
+    const after = moveWidget(before, { sectionId: 's1', index: 0 }, { sectionId: 's2', index: 0 })
+    expect(after[2]).toBe(before[2])
+    expect(moveWidget(before, { sectionId: 'nope', index: 0 }, { sectionId: 's1', index: 0 })).toBe(before)
+    expect(moveWidget(before, { sectionId: 's1', index: 9 }, { sectionId: 's1', index: 0 })).toBe(before)
+    expect(moveWidget(before, { sectionId: 's1', index: 1 }, { sectionId: 's1', index: 1 })).toBe(before)
+  })
+
+  it('does not remove the widget when the destination section is unknown', () => {
+    const before = sections()
+    expect(moveWidget(before, { sectionId: 's1', index: 0 }, { sectionId: 'nope', index: 0 })).toBe(before)
+    expect(ids(before, 's1')).toEqual(['w1', 'w2', 'w3'])
   })
 })
 

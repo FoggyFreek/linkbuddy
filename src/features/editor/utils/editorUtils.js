@@ -12,6 +12,29 @@ export function moveItem(list, index, delta) {
   return next
 }
 
+// Immutably move one widget within, or across, sections. `from`/`to` are
+// `{ sectionId, index }`; `to.index` is the slot the widget occupies once it has
+// been lifted out of its source, so dropping onto a row puts it in that row's
+// place. Out-of-range targets clamp, and an unknown source or section is a no-op.
+export function moveWidget(sections, from, to) {
+  const widget = sections.find((s) => s.id === from.sectionId)?.widgets[from.index]
+  if (!widget) return sections
+  if (!sections.some((s) => s.id === to.sectionId)) return sections
+  if (from.sectionId === to.sectionId && from.index === to.index) return sections
+
+  return sections.map((section) => {
+    if (section.id !== from.sectionId && section.id !== to.sectionId) return section
+    let widgets = section.id === from.sectionId
+      ? section.widgets.filter((_, i) => i !== from.index)
+      : section.widgets
+    if (section.id === to.sectionId) {
+      const at = Math.max(0, Math.min(to.index, widgets.length))
+      widgets = [...widgets.slice(0, at), widget, ...widgets.slice(at)]
+    }
+    return { ...section, widgets }
+  })
+}
+
 // Turn free text into a URL-safe release slug tail (lowercase, ASCII, dashes),
 // matching the server's RELEASE_TAIL length cap.
 export function slugify(value) {

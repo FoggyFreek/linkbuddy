@@ -58,9 +58,11 @@ pattern elsewhere. Keep both shells presentational: data arrives resolved from
 `server/resolve.js`, and `onLinkClick` is the only outbound side effect.
 
 **`features/editor/`** — `components/` (tabs: build, appearance, preview, stats,
-plus the widget forms `WidgetEditors`/`NewReleaseForm`), `hooks/`
+plus the widget forms `WidgetEditors` and the `NewReleaseForm` dialog), `hooks/`
 (`useEditorSession` = handoff/session/page list, `useLayoutEditor` = draft
-layout + debounced autosave), `utils/` (`editorUtils.js`, and `widgetModel.js`
+layout + debounced autosave, `useDragReorder` = widget drag/keyboard reordering,
+owned by `LayoutBuilder` because a widget can be dragged between sections),
+`utils/` (`editorUtils.js`, and `widgetModel.js`
 = the pure vocabulary for creating/labelling widgets). Its root is the
 `app/routes/Editor.jsx` route, which owns the session and composes the tabs.
 

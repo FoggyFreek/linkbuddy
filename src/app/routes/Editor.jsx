@@ -25,7 +25,7 @@ import { useEditorSession } from '../../features/editor/hooks/useEditorSession.j
 import { useLayoutEditor } from '../../features/editor/hooks/useLayoutEditor.js'
 import NewReleaseForm from '../../features/editor/components/NewReleaseForm.jsx'
 import { makeWidget } from '../../features/editor/utils/widgetModel.js'
-import { moveItem, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
+import { moveItem, moveWidget, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
 import { DEFAULT_PAGE_BACKGROUND } from '../../../shared/pageBackgrounds.js'
 
 function newId() {
@@ -142,6 +142,12 @@ export default function Editor() {
     applyLayout({ ...layout, sections: moveItem(layout.sections, index, delta) })
   }
 
+  // A widget dragged (or arrow-keyed) to a new slot, possibly in another
+  // section; `from`/`to` are { sectionId, index }.
+  const relocateWidget = (from, to) => {
+    applyLayout({ ...layout, sections: moveWidget(layout.sections, from, to) })
+  }
+
   const addWidget = (section, type) => {
     const widget = makeWidget(type, content)
     if (!widget) return
@@ -200,7 +206,6 @@ export default function Editor() {
         publishedAt={publishedAt}
         onRefresh={refresh}
         onDelete={removeCurrentPage}
-        onPreview={openPreview}
         onPublish={publish}
       />
 
@@ -212,15 +217,6 @@ export default function Editor() {
         onSelect={selectPage}
         onNewRelease={() => setCreatingRelease(true)}
       />
-
-      {creatingRelease && (
-        <NewReleaseForm
-          songs={content.songs || []}
-          mainSlug={mainSlug}
-          onCreate={createRelease}
-          onCancel={() => setCreatingRelease(false)}
-        />
-      )}
 
       <EditorTabs value={tab} onChange={(e, v) => (v === 'preview' ? openPreview() : setTab(v))} />
 
@@ -242,6 +238,7 @@ export default function Editor() {
           pageType={page.pageType}
           onUpdateSection={updateSection}
           onMoveSection={moveSection}
+          onMoveWidget={relocateWidget}
           onRemoveSection={removeSection}
           onAddWidget={addWidget}
           onAddSection={addSection}
@@ -269,6 +266,16 @@ export default function Editor() {
         <Suspense fallback={<CenteredStatus busy />}>
           <StatsPanel session={session} pageId={page.id} />
         </Suspense>
+      )}
+
+      {/* Mounted only while open so each run starts on a fresh song/slug. */}
+      {creatingRelease && (
+        <NewReleaseForm
+          songs={content.songs || []}
+          mainSlug={mainSlug}
+          onCreate={createRelease}
+          onCancel={() => setCreatingRelease(false)}
+        />
       )}
     </Box>
   )
