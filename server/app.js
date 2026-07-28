@@ -71,6 +71,52 @@ function statsEnabled() {
   return process.env.STATS_DISABLED !== '1'
 }
 
+// Shared beacon dimension derivation — the ONLY place raw request data is
+// touched; everything stored is coarse and anonymous (PRIVACY.md).
+function beaconDimensions(req) {
+  const ua = req.get('user-agent') || ''
+  const device = classifyDevice(ua)
+  return {
+    device,
+    source: classifySource(
+      typeof req.body?.referrer === 'string' ? req.body.referrer : req.get('referer'),
+      typeof req.body?.utmSource === 'string' ? req.body.utmSource : null,
+      req.hostname || null,
+    ),
+    country: resolveCountry((name) => req.get(name)),
+    visitorHash: visitorHash(req.ip, ua, process.env.GIGBUDDY_SYNC_SECRET),
+  }
+}
+
+// Slug from the public path's 1 or 2 segments (main / release).
+function publicSlug(req) {
+  return slugFromSegments([req.params.s1, req.params.s2])
+}
+
+function editorPagePayload(page) {
+  return {
+    id: page.id,
+    slug: page.slug,
+    pageType: page.page_type,
+    release: page.release,
+    draftLayout: page.draft_layout,
+    publishedAt: page.published_at,
+    contentSyncedAt: page.content_synced_at,
+    content: page.content,
+    publicUrl: `${(process.env.LINKPAGE_PUBLIC_URL || '').replace(/\/$/, '')}/${page.slug}`,
+  }
+}
+
+function pageListPayload(pages) {
+  return pages.map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    pageType: p.page_type,
+    release: p.release,
+    publishedAt: p.published_at,
+  }))
+}
+
 export function createApp(pool) {
   const app = express()
   app.set('trust proxy', true)
@@ -97,34 +143,12 @@ export function createApp(pool) {
     })
   }
 
-  // Shared beacon dimension derivation — the ONLY place raw request data is
-  // touched; everything stored is coarse and anonymous (PRIVACY.md).
-  function beaconDimensions(req) {
-    const ua = req.get('user-agent') || ''
-    const device = classifyDevice(ua)
-    return {
-      device,
-      source: classifySource(
-        typeof req.body?.referrer === 'string' ? req.body.referrer : req.get('referer'),
-        typeof req.body?.utmSource === 'string' ? req.body.utmSource : null,
-        req.hostname || null,
-      ),
-      country: resolveCountry((name) => req.get(name)),
-      visitorHash: visitorHash(req.ip, ua, process.env.GIGBUDDY_SYNC_SECRET),
-    }
-  }
-
-  // Slug from the public path's 1 or 2 segments (main / release).
-  function publicSlug(req) {
-    return slugFromSegments([req.params.s1, req.params.s2])
-  }
-
   async function publishedPageForBeacon(req) {
     if (!statsEnabled()) return null
     const slug = publicSlug(req)
     if (!slug) return null
     const page = await getPageBySlug(pool, slug)
-    if (!page || !page.published_layout) return null
+    if (!page?.published_layout) return null
     if (!pageEntitlements(page.content).enabled) return null
     return page
   }
@@ -141,7 +165,7 @@ export function createApp(pool) {
       const slug = publicSlug(req)
       if (!slug) return res.status(404).json({ error: 'Not found' })
       const page = await getPageBySlug(pool, slug)
-      if (!page || !page.published_layout) return res.status(404).json({ error: 'Not found' })
+      if (!page?.published_layout) return res.status(404).json({ error: 'Not found' })
       maybeRefreshContent(page)
       // A lapsed plan (content sync reported the linkpage feature off) takes
       // the page offline — same 404 as an unpublished page.
@@ -191,38 +215,13 @@ export function createApp(pool) {
 
   // ---------- editor ----------
 
-  function editorPagePayload(page) {
-    return {
-      id: page.id,
-      slug: page.slug,
-      pageType: page.page_type,
-      release: page.release,
-      draftLayout: page.draft_layout,
-      publishedAt: page.published_at,
-      contentSyncedAt: page.content_synced_at,
-      content: page.content,
-      publicUrl: `${(process.env.LINKPAGE_PUBLIC_URL || '').replace(/\/$/, '')}/${page.slug}`,
-    }
-  }
-
-  function pageListPayload(pages) {
-    return pages.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      pageType: p.page_type,
-      release: p.release,
-      publishedAt: p.published_at,
-    }))
-  }
-
   // Exchange a gigbuddy handoff token for an editor session bound to the
   // band (tenant), covering the main page and all its release pages.
   app.post('/api/editor/session', async (req, res, next) => {
     try {
       const handoff = verifyPayload(req.body?.token)
       if (
-        !handoff ||
-        handoff.t !== 'handoff' ||
+        handoff?.t !== 'handoff' ||
         typeof handoff.slug !== 'string' ||
         !MAIN_SLUG_RE.test(handoff.slug) ||
         !Number.isInteger(handoff.tenantId)
@@ -264,7 +263,7 @@ export function createApp(pool) {
     const header = req.get('authorization') || ''
     const token = header.startsWith('Bearer ') ? header.slice(7) : null
     const session = verifyPayload(token)
-    if (!session || session.t !== 'session' || !Number.isInteger(session.tenantId)) {
+    if (session?.t !== 'session' || !Number.isInteger(session.tenantId)) {
       return res.status(401).json({ error: 'Session expired — reopen the editor from GigBuddy' })
     }
     req.editorSession = session

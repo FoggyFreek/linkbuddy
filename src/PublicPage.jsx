@@ -13,6 +13,12 @@ function utmSourceFromLocation() {
   return new URLSearchParams(window.location.search).get('utm_source')
 }
 
+function documentTitle(data) {
+  if (data.release?.title) return `${data.release.title} — ${data.release.artist || 'Listen'}`
+  if (data.band?.name) return `${data.band.name} — Links`
+  return 'Band Links'
+}
+
 // The visitor-facing page. Sets no cookies and stores nothing on the device;
 // the single view beacon carries only the referrer/utm_source already known
 // to the browser (see PRIVACY.md).
@@ -27,11 +33,7 @@ export default function PublicPage({ slug }) {
         if (cancelled) return
         setPage(data)
         setStatus('ready')
-        document.title = data.release?.title
-          ? `${data.release.title} — ${data.release.artist || 'Listen'}`
-          : data.band?.name
-            ? `${data.band.name} — Links`
-            : 'Band Links'
+        document.title = documentTitle(data)
         sendView(slug, { referrer: document.referrer, utmSource: utmSourceFromLocation() })
       })
       .catch((err) => {

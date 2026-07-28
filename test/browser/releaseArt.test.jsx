@@ -40,7 +40,7 @@ describe('ReleaseArt (smart-link desktop backdrop)', () => {
 
     // Two copies of the same album cover: the blurred backdrop and the cover.
     const imgs = [...document.querySelectorAll(`img[src="${COVER}"]`)]
-    expect(imgs.length).toBe(2)
+    expect(imgs).toHaveLength(2)
     const backdrop = imgs.find((i) => i.getAttribute('aria-hidden') === 'true')
     const cover = imgs.find((i) => i.getAttribute('aria-hidden') !== 'true')
     expect(backdrop).toBeTruthy()

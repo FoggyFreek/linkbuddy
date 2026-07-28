@@ -1,4 +1,5 @@
 // Small pure helpers shared across the editor UI. No React, no I/O.
+import { trim } from './trimChars.js'
 
 // Immutably move list[index] by `delta` positions; returns the list unchanged
 // when the move would fall off either end.
@@ -14,13 +15,12 @@ export function moveItem(list, index, delta) {
 // Turn free text into a URL-safe release slug tail (lowercase, ASCII, dashes),
 // matching the server's RELEASE_TAIL length cap.
 export function slugify(value) {
-  return value
+  const dashed = value
     .toLowerCase()
     .normalize('NFKD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 60)
+  return trim(dashed, '-').slice(0, 60)
 }
 
 // A failed editor write is either an expired session (needs re-auth) or a

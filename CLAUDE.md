@@ -63,6 +63,9 @@ it, so they can't drift. The artwork/component maps live client-side
   song, archived product) are dropped silently — a public page must never break
   because GigBuddy content moved on.
 
+## General notes
+- Keep comments to the minimum, concise. only add where relevant for understanding code. otherwise, let the code speak for itself.
+
 ## Front end: MUI component-first, no stylesheet
 
 Everything is **MUI v9** components styled with the **`sx` prop** and the theme.

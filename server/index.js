@@ -33,10 +33,12 @@ async function purge() {
     console.error('stats purge failed:', err.message)
   }
 }
-purge()
 setInterval(purge, 24 * 60 * 60 * 1000).unref()
 
 const port = Number(process.env.LINKPAGE_PORT) || 3010
 app.listen(port, () => {
   console.log(`linkpage listening on :${port}`)
 })
+
+// After listen: a slow purge must not hold up readiness.
+await purge()

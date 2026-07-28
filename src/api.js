@@ -8,7 +8,7 @@ async function request(path, options = {}) {
   // and leave JSON bodies unparsed by express.json().
   const res = await fetch(path, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    headers: { 'Content-Type': 'application/json', ...options.headers },
   })
   if (res.status === 204) return null
   const body = await res.json().catch(() => ({}))
@@ -79,7 +79,7 @@ export function storeSession(token) {
 }
 
 function authed(session, options = {}) {
-  return { ...options, headers: { Authorization: `Bearer ${session}`, ...(options.headers || {}) } }
+  return { ...options, headers: { Authorization: `Bearer ${session}`, ...options.headers } }
 }
 
 export function exchangeHandoff(token) {

@@ -67,6 +67,51 @@ describe('validateLayout', () => {
     expect(validateLayout({ sections: [{ widgets: [song(0)] }] }).error).toBeTruthy()
   })
 
+  it('validates merch items and drops unsafe item urls', () => {
+    expect(validateLayout({ sections: [{ widgets: [{ type: 'merch', items: [] }] }] }).error).toMatch(/at least one/)
+    expect(
+      validateLayout({ sections: [{ widgets: [{ type: 'merch', items: [{ productId: 0 }] }] }] }).error,
+    ).toMatch(/productId/)
+    expect(
+      validateLayout({
+        sections: [{ widgets: [{ type: 'merch', items: Array.from({ length: 51 }, () => ({ productId: 1 })) }] }],
+      }).error,
+    ).toMatch(/Too many merch/)
+
+    const item = validateLayout({
+      sections: [{ widgets: [{ type: 'merch', shopUrl: 'javascript:x', items: [{ productId: 9, imageUrl: 'javascript:x', badge: '  SALE  ' }] }] }],
+    }).layout.sections[0].widgets[0]
+    expect(item.shopUrl).toBeNull()
+    expect(item.items[0].imageUrl).toBeNull()
+    expect(item.items[0].badge).toBe('SALE')
+  })
+
+  it('caps widgets per section', () => {
+    const widgets = Array.from({ length: 31 }, () => song(1))
+    expect(validateLayout({ sections: [{ widgets }] }).error).toMatch(/Too many widgets/)
+  })
+
+  it('keeps a well-formed client id but replaces a malformed one', () => {
+    const kept = validateLayout({ sections: [{ widgets: [{ ...song(1), id: 'widget-1' }] }] })
+    expect(kept.layout.sections[0].widgets[0].id).toBe('widget-1')
+
+    const replaced = validateLayout({ sections: [{ widgets: [{ ...song(1), id: 'no spaces allowed' }] }] })
+    expect(replaced.layout.sections[0].widgets[0].id).not.toBe('no spaces allowed')
+    expect(replaced.layout.sections[0].widgets[0].id).toBeTruthy()
+  })
+
+  it('rejects sections that are not objects with a widgets array', () => {
+    expect(validateLayout({ sections: [null] }).error).toMatch(/Invalid section/)
+    expect(validateLayout({ sections: [{}] }).error).toMatch(/Invalid section/)
+    expect(validateLayout({ sections: [{ widgets: [null] }] }).error).toMatch(/Invalid widget/)
+  })
+
+  it('rejects a widget type inherited from Object.prototype', () => {
+    // The parser table is a plain object; 'constructor' must not resolve on it.
+    expect(validateLayout({ sections: [{ widgets: [{ type: 'constructor' }] }] }).error).toMatch(/Unknown widget/)
+    expect(validateLayout({ sections: [{ widgets: [{ type: 'toString' }] }] }).error).toMatch(/Unknown widget/)
+  })
+
   it('rejects link widgets with unsafe urls', () => {
     const result = validateLayout({
       sections: [{ widgets: [{ type: 'link', label: 'x', url: 'javascript:alert(1)' }] }],

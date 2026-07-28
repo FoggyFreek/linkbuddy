@@ -39,11 +39,12 @@ export async function runMigrations(pool) {
 // Run directly: `npm run migrate`
 if (process.argv[1] === url.fileURLToPath(import.meta.url)) {
   const pool = createPool()
-  runMigrations(pool)
-    .then(() => pool.end())
-    .catch((err) => {
-      console.error(err)
-      process.exitCode = 1
-      return pool.end()
-    })
+  try {
+    await runMigrations(pool)
+  } catch (err) {
+    console.error(err)
+    process.exitCode = 1
+  } finally {
+    await pool.end()
+  }
 }

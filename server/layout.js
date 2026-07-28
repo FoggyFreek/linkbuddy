@@ -45,78 +45,121 @@ function widgetId(raw) {
   return typeof raw === 'string' && /^[\w-]{1,40}$/.test(raw) ? raw : crypto.randomUUID()
 }
 
+function positiveId(value) {
+  const n = Number(value)
+  return Number.isInteger(n) && n > 0 ? n : null
+}
+
+function optionalUrl(value) {
+  return value ? sanitizeUrl(value) : null
+}
+
+function parseSong(raw, id) {
+  const songId = positiveId(raw.songId)
+  if (!songId) return fail('Song widget needs a songId')
+  return { widget: { id, type: 'song', songId } }
+}
+
+// One button per streaming platform for a song's links — the core widget of a
+// release landing page, but usable on any page.
+function parsePlatforms(raw, id) {
+  const songId = positiveId(raw.songId)
+  if (!songId) return fail('Platforms widget needs a songId')
+  return { widget: { id, type: 'platforms', songId, title: cleanString(raw.title, MAX_TITLE) } }
+}
+
+function parseGigs(raw, id) {
+  const limit = positiveId(raw.limit)
+  return {
+    widget: {
+      id,
+      type: 'gigs',
+      title: cleanString(raw.title, MAX_TITLE),
+      limit: limit ? Math.min(limit, 50) : 10,
+    },
+  }
+}
+
+function parseMerch(raw, id) {
+  if (!Array.isArray(raw.items) || raw.items.length === 0) {
+    return fail('Merch widget needs at least one item')
+  }
+  if (raw.items.length > MAX_MERCH_ITEMS) return fail('Too many merch items')
+  const items = []
+  for (const item of raw.items) {
+    const productId = positiveId(item?.productId)
+    if (!productId) return fail('Merch item needs a productId')
+    items.push({
+      productId,
+      imageUrl: optionalUrl(item.imageUrl),
+      badge: cleanString(item.badge, 20),
+    })
+  }
+  // Products carry no URL of their own in gigbuddy; an optional widget-level
+  // shop URL (e.g. the band's Shopify store) makes the cards clickable.
+  return {
+    widget: {
+      id,
+      type: 'merch',
+      title: cleanString(raw.title, MAX_TITLE),
+      shopUrl: optionalUrl(raw.shopUrl),
+      items,
+    },
+  }
+}
+
+// Rich embed card for a pasted URL: metadata (title/image/description) is
+// snapshotted from the editor's unfurl; the player descriptor itself is
+// recomputed server-side at resolve time — never stored from the client.
+function parseEmbed(raw, id) {
+  const url = sanitizeUrl(raw.url)
+  if (!url) return fail('Embed widget needs a valid http(s) URL')
+  return {
+    widget: {
+      id,
+      type: 'embed',
+      url,
+      title: cleanString(raw.title, MAX_LABEL),
+      description: cleanString(raw.description, 300),
+      imageUrl: optionalUrl(raw.imageUrl),
+    },
+  }
+}
+
+function parseLink(raw, id) {
+  const label = cleanString(raw.label, MAX_LABEL)
+  const url = sanitizeUrl(raw.url)
+  if (!label) return fail('Link widget needs a label')
+  if (!url) return fail('Link widget needs a valid http(s) URL')
+  return {
+    widget: {
+      id,
+      type: 'link',
+      label,
+      sublabel: cleanString(raw.sublabel, MAX_LABEL),
+      url,
+      icon: LINK_ICONS.has(raw.icon) ? raw.icon : 'globe',
+      imageUrl: optionalUrl(raw.imageUrl),
+    },
+  }
+}
+
+// The closed set of widget types. A type absent from this map is rejected —
+// this is the whitelist the public payload's shape rests on.
+const WIDGET_PARSERS = {
+  song: parseSong,
+  platforms: parsePlatforms,
+  gigs: parseGigs,
+  merch: parseMerch,
+  embed: parseEmbed,
+  link: parseLink,
+}
+
 function parseWidget(raw) {
   if (!raw || typeof raw !== 'object') return fail('Invalid widget')
-  const id = widgetId(raw.id)
-  switch (raw.type) {
-    case 'song': {
-      const songId = Number(raw.songId)
-      if (!Number.isInteger(songId) || songId <= 0) return fail('Song widget needs a songId')
-      return { widget: { id, type: 'song', songId } }
-    }
-    // One button per streaming platform for a song's links — the core widget
-    // of a release landing page, but usable on any page.
-    case 'platforms': {
-      const songId = Number(raw.songId)
-      if (!Number.isInteger(songId) || songId <= 0) return fail('Platforms widget needs a songId')
-      return { widget: { id, type: 'platforms', songId, title: cleanString(raw.title, MAX_TITLE) } }
-    }
-    case 'gigs': {
-      const limit = Number.isInteger(Number(raw.limit)) && Number(raw.limit) > 0
-        ? Math.min(Number(raw.limit), 50)
-        : 10
-      return { widget: { id, type: 'gigs', title: cleanString(raw.title, MAX_TITLE), limit } }
-    }
-    case 'merch': {
-      if (!Array.isArray(raw.items) || raw.items.length === 0) {
-        return fail('Merch widget needs at least one item')
-      }
-      if (raw.items.length > MAX_MERCH_ITEMS) return fail('Too many merch items')
-      const items = []
-      for (const item of raw.items) {
-        const productId = Number(item?.productId)
-        if (!Number.isInteger(productId) || productId <= 0) return fail('Merch item needs a productId')
-        items.push({
-          productId,
-          imageUrl: item.imageUrl ? sanitizeUrl(item.imageUrl) : null,
-          badge: cleanString(item.badge, 20),
-        })
-      }
-      // Products carry no URL of their own in gigbuddy; an optional widget-level
-      // shop URL (e.g. the band's Shopify store) makes the cards clickable.
-      const shopUrl = raw.shopUrl ? sanitizeUrl(raw.shopUrl) : null
-      return { widget: { id, type: 'merch', title: cleanString(raw.title, MAX_TITLE), shopUrl, items } }
-    }
-    // Rich embed card for a pasted URL: metadata (title/image/description) is
-    // snapshotted from the editor's unfurl; the player descriptor itself is
-    // recomputed server-side at resolve time — never stored from the client.
-    case 'embed': {
-      const url = sanitizeUrl(raw.url)
-      if (!url) return fail('Embed widget needs a valid http(s) URL')
-      return {
-        widget: {
-          id,
-          type: 'embed',
-          url,
-          title: cleanString(raw.title, MAX_LABEL),
-          description: cleanString(raw.description, 300),
-          imageUrl: raw.imageUrl ? sanitizeUrl(raw.imageUrl) : null,
-        },
-      }
-    }
-    case 'link': {
-      const label = cleanString(raw.label, MAX_LABEL)
-      const url = sanitizeUrl(raw.url)
-      if (!label) return fail('Link widget needs a label')
-      if (!url) return fail('Link widget needs a valid http(s) URL')
-      const icon = LINK_ICONS.has(raw.icon) ? raw.icon : 'globe'
-      const sublabel = cleanString(raw.sublabel, MAX_LABEL)
-      const imageUrl = raw.imageUrl ? sanitizeUrl(raw.imageUrl) : null
-      return { widget: { id, type: 'link', label, sublabel, url, icon, imageUrl } }
-    }
-    default:
-      return fail('Unknown widget type')
-  }
+  const parser = Object.hasOwn(WIDGET_PARSERS, raw.type) ? WIDGET_PARSERS[raw.type] : null
+  if (!parser) return fail('Unknown widget type')
+  return parser(raw, widgetId(raw.id))
 }
 
 // Returns { layout } (normalized, safe to store) or { error }.

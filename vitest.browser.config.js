@@ -19,6 +19,13 @@ export default defineConfig({
   test: {
     include: ['test/browser/**/*.test.jsx'],
     setupFiles: ['test/browser/setup.js'],
+    // Reported separately from the node run; Sonar merges both lcov files.
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'lcov'],
+      reportsDirectory: 'coverage-browser',
+      include: ['src/**/*.{js,jsx}', 'shared/**/*.js'],
+    },
     browser: {
       enabled: true,
       provider: playwright({ launchOptions }),

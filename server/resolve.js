@@ -10,7 +10,7 @@ function resolveWidget(widget, content) {
   switch (widget.type) {
     case 'song': {
       const song = (content.songs || []).find((s) => s.id === widget.songId)
-      if (!song || !song.links?.length) return null
+      if (!song?.links?.length) return null
       return {
         id: widget.id,
         type: 'song',
@@ -25,7 +25,7 @@ function resolveWidget(widget, content) {
     }
     case 'platforms': {
       const song = (content.songs || []).find((s) => s.id === widget.songId)
-      if (!song || !song.links?.length) return null
+      if (!song?.links?.length) return null
       return {
         id: widget.id,
         type: 'platforms',

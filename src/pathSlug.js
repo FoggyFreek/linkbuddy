@@ -3,8 +3,10 @@
 // decodeURIComponent throws a URIError on malformed percent-encoding (e.g.
 // /%E0%A4%A), so decoding is guarded — a bad path resolves to null (not-found)
 // instead of crashing the render.
+import { trim } from './trimChars.js'
+
 export function slugFromPath(pathname) {
-  const rest = pathname.replace(/\/+$/, '').replace(/^\/+/, '')
+  const rest = trim(pathname, '/')
   if (!rest) return null
   const segments = rest.split('/')
   if (segments.length > 2) return null
