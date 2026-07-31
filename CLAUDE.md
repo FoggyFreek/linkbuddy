@@ -11,7 +11,8 @@ A standalone GigBuddy "link page" app: React 19 + Vite SPA (`src/`) over an
 Express 5 + Postgres API (`server/`). No accounts and no router: GigBuddy is the
 identity provider (HMAC handoff token → editor session), and routing is
 path-based — `/edit` (editor), `/privacy`, `/` (server root), everything else is
-a band or release slug rendered by `PublicPage`.
+a page slug, where the segment count picks the kind: `/<slug>` is a band's link
+page (`BandPage`), `/<mainSlug>/<tail>` a release smart link (`ReleasePage`).
 
 ## Commands
 
@@ -34,28 +35,37 @@ executor-first), `layout.js` (validate + normalize submitted layouts),
 
 **Client** — feature-based, one direction only: `app/` → `features/` →
 `components/` → `lib/`+`utils/`. Nothing in `components/`, `lib/` or `utils/`
-may import a feature (`PageContent` is the one deliberate exception, below), and
-features don't import each other.
+may import a feature (`PreviewContent` is the one deliberate exception, below),
+and features don't import each other.
 
 ```
 src/main.jsx              Vite entry: ThemeProvider + CssBaseline + <App/>
 src/app/App.jsx           path-based routing, no router
-src/app/routes/           PublicPage · Editor · Privacy
+src/app/routes/           BandPage · ReleasePage · Editor · Privacy
 src/components/           shared UI (below)
 src/features/<name>/       components/ · hooks/ · utils/ — only what that feature owns
 src/lib/                  api.js · theme.js · pageBackgrounds.js
 src/utils/                pure helpers: format · socials · pathSlug · trimChars
 ```
 
-**Visitor-facing rendering** — `components/PageContent.jsx` is the only entry
-point, used by **both** `PublicPage` and the editor's preview tab so the two
-can't diverge. It just picks a shell: `features/smart-link/` (`SmartLinkPage` +
-`ReleaseArt`/`ReleaseInfo`) for a release, `features/public-links-card/`
-(`LinksCard` + `BandHeader`/`BandTitle`/`BandBanner`) for a band page. It lives
-in `components/` — reaching *down* into two features — precisely so a feature
-(the editor) and a route (the public page) can share one switch; don't copy that
-pattern elsewhere. Keep both shells presentational: data arrives resolved from
-`server/resolve.js`, and `onLinkClick` is the only outbound side effect.
+**Visitor-facing rendering** — two page kinds, two routes, no shared branch.
+`app/routes/BandPage.jsx` renders `features/public-links-card/` (`LinksCard` +
+`BandHeader`/`BandTitle`/`BandBanner`) and `app/routes/ReleasePage.jsx` renders
+`features/smart-link/` (`SmartLinkPage` + `ReleaseArt`/`ReleaseInfo`). Each owns
+its own chrome end to end — share-button placement, the GigBuddy attribution,
+the footer, viewport spacing — because the two designs are genuinely different:
+the band page is a centered card its chrome pins to, the release page is
+full-bleed with viewport-pinned chrome. **Resist adding a `page.release` branch
+back**; if something differs by kind, it belongs in one route, not in a shared
+component. What they *do* share is extracted: `usePublicPage` (fetch + view/click
+beacons), `PageStatus` (loading/not-found/error), `PageScope` (payload → colour
+scheme + background artwork), `PrivacyNote`.
+
+Keep both shells presentational: data arrives resolved from `server/resolve.js`,
+and `onLinkClick` is the only outbound side effect. `components/PreviewContent.jsx`
+picks the same shell for the editor's Preview tab, minus the chrome; it lives in
+`components/` — reaching *down* into two features — only because `features/editor`
+may not import another feature. Don't copy that pattern elsewhere.
 
 **`features/editor/`** — `components/` (tabs: build, appearance, preview, stats,
 plus the widget forms `WidgetEditors` and the `NewReleaseForm` dialog), `hooks/`
@@ -141,9 +151,9 @@ There is **no CSS file** — do not add one.
 
 ## Testing notes
 
-- Browser tests render **real** components (e.g. `PublicPage` with `lib/api.js`
-  mocked) and assert MUI structure + computed styles — query `.MuiCard-root`,
-  `.MuiTypography-h1`, not CSS classes.
+- Browser tests render **real** components (e.g. `BandPage`/`ReleasePage` with
+  `lib/api.js` mocked) and assert MUI structure + computed styles — query
+  `.MuiCard-root`, `.MuiTypography-h1`, not CSS classes.
 - If you touch theme scoping, keep `colorSchemeScope.test.jsx` (scope
   independence, two disagreeing scopes, portal inheritance) and
   `nestedTheme.test.jsx` (the MUI behaviour it rests on) green.

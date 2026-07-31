@@ -23,7 +23,7 @@ vi.mock('../../src/lib/api.js', () => ({
   sendClick: () => {},
 }))
 
-const { default: PublicPage } = await import('../../src/app/routes/PublicPage.jsx')
+const { default: BandPage } = await import('../../src/app/routes/BandPage.jsx')
 
 function mockPage(overrides = {}) {
   return {
@@ -40,7 +40,7 @@ function renderPublic(page, docMode) {
   return render(
     <ThemeProvider theme={theme} defaultMode={docMode}>
       <CssBaseline enableColorScheme />
-      <PublicPage slug="testers" />
+      <BandPage slug="testers" />
     </ThemeProvider>,
   )
 }

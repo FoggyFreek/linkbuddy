@@ -3,11 +3,11 @@ import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import theme from '../../src/lib/theme.js'
-import PageContent from '../../src/components/PageContent.jsx'
+import PreviewContent from '../../src/components/PreviewContent.jsx'
 import ColorSchemeScope from '../../src/components/ColorSchemeScope.jsx'
 
-// Mock the network layer so the real PublicPage data-loading path runs against
-// fixed mock data instead of a live API. Each test sets the resolved page.
+// Mock the network layer so the real data-loading path runs against fixed mock
+// data instead of a live API. Each test sets the resolved page.
 const state = { page: null }
 vi.mock('../../src/lib/api.js', () => ({
   getPublicPage: () => Promise.resolve(state.page),
@@ -15,8 +15,10 @@ vi.mock('../../src/lib/api.js', () => ({
   sendClick: () => {},
 }))
 
-// Imported after the mock is registered.
-const { default: PublicPage } = await import('../../src/app/routes/PublicPage.jsx')
+// Imported after the mock is registered. The two public page kinds are separate
+// routes: a band's link page and a release's smart link.
+const { default: BandPage } = await import('../../src/app/routes/BandPage.jsx')
+const { default: ReleasePage } = await import('../../src/app/routes/ReleasePage.jsx')
 
 // `band` is merged (so a test can set just one field without losing the
 // name); every other key is a plain override.
@@ -48,7 +50,17 @@ function renderPage() {
   return render(
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
-      <PublicPage slug="testers" />
+      <BandPage slug="testers" />
+    </ThemeProvider>,
+  )
+}
+
+// A release lives under its band's slug, so its route gets the two-segment slug.
+function renderRelease() {
+  return render(
+    <ThemeProvider theme={theme} defaultMode="light">
+      <CssBaseline enableColorScheme />
+      <ReleasePage slug="testers/hurricane" />
     </ThemeProvider>,
   )
 }
@@ -64,7 +76,7 @@ afterEach(() => {
   delete document.documentElement.dataset.theme
 })
 
-describe('PublicPage rendering (real component, mocked API)', () => {
+describe('public page rendering (real components, mocked API)', () => {
   it('renders the band name as an MUI Typography h1', async () => {
     state.page = mockPage()
     const screen = await renderPage()
@@ -110,7 +122,7 @@ describe('PublicPage rendering (real component, mocked API)', () => {
 
   it('switches every surface to the dark scheme when the resolved page theme is dark', async () => {
     state.page = mockPage({ theme: 'dark', release: { title: 'Hurricane EP', artist: 'The Testers' } })
-    const screen = await renderPage()
+    const screen = await renderRelease()
     await expect.element(screen.getByText('Hurricane EP')).toBeInTheDocument()
 
     // The scheme lives on the scope wrapper, NOT on <html> — the editor's own
@@ -168,7 +180,7 @@ describe('page content card', () => {
 
   it('keeps the release layout full-bleed with a viewport-pinned share button', async () => {
     state.page = mockPage({ release: { title: 'Hurricane EP', artist: 'The Testers' } })
-    const screen = await renderPage()
+    const screen = await renderRelease()
     await expect.element(screen.getByText('Hurricane EP')).toBeInTheDocument()
 
     const share = document.querySelector('[aria-label="Share this page"]')
@@ -192,14 +204,14 @@ describe('BandHeader logo / avatar', () => {
   // off the enclosing ColorSchemeScope's `data-theme`, independent of how a
   // page ends up in that scheme. The public page only ever puts a band header
   // in a light scope (main pages are always light), so the dark side of the
-  // swap is exercised directly against PageContent in a forced dark scope
-  // rather than through PublicPage.
+  // swap is exercised directly against the shell in a forced dark scope rather
+  // than through BandPage.
   function renderDarkHeader(band) {
     return render(
       <ThemeProvider theme={theme} defaultMode="light">
         <CssBaseline enableColorScheme />
         <ColorSchemeScope mode="dark">
-          <PageContent page={{ band, sections: [] }} />
+          <PreviewContent page={{ band, sections: [] }} />
         </ColorSchemeScope>
       </ThemeProvider>,
     )

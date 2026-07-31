@@ -52,6 +52,9 @@ jobs:
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             # Origins, no ports: nginx serves both over 443.
             GIGBUDDY_URL=${{ secrets.GIGBUDDY_URL }}
+            # Browser-facing GigBuddy origin (the attribution badge's href),
+            # separate from the API origin above.
+            GIGBUDDY_WEB_URL=${{ secrets.GIGBUDDY_WEB_URL }}
             LINKPAGE_PUBLIC_URL=${{ secrets.LINKPAGE_PUBLIC_URL }}
             # Must equal LINKPAGE_SECRET in the GigBuddy deployment: it verifies
             # editor handoff tokens, signs editor sessions, authenticates the

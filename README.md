@@ -117,7 +117,8 @@ server, its **own** Postgres, and a one-shot migration step:
 
 ```
 cp .env.example .env      # set POSTGRES_PASSWORD, GIGBUDDY_URL,
-                          #   GIGBUDDY_SYNC_SECRET, LINKPAGE_PUBLIC_URL
+                          #   GIGBUDDY_WEB_URL, GIGBUDDY_SYNC_SECRET,
+                          #   LINKPAGE_PUBLIC_URL
 docker compose up -d --build
 ```
 
@@ -132,6 +133,7 @@ For a three-subdomain setup — GigBuddy at `app.<domain>`, this app at
 | Where | Variable | Value |
 |---|---|---|
 | this app (`link`) | `GIGBUDDY_URL` | `https://app.<domain>` (server-to-server export pull) |
+| this app (`link`) | `GIGBUDDY_WEB_URL` | `https://www.<domain>` (browser-facing: the attribution badge's href) |
 | this app (`link`) | `GIGBUDDY_SYNC_SECRET` | shared secret |
 | this app (`link`) | `LINKPAGE_PUBLIC_URL` | `https://link.<domain>` |
 | GigBuddy (`app`) | `LINKPAGE_SECRET` | **same** shared secret |

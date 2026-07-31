@@ -4,7 +4,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import theme from '../../src/lib/theme.js'
 import ColorSchemeScope from '../../src/components/ColorSchemeScope.jsx'
-import PageContent from '../../src/components/PageContent.jsx'
+import PreviewContent from '../../src/components/PreviewContent.jsx'
 
 // Embed widgets carry the server-derived descriptor; `display` only picks the
 // shape of the modal the player opens in.
@@ -24,7 +24,7 @@ function renderStack(widget, { mode = 'light', onLinkClick } = {}) {
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <ColorSchemeScope mode={mode}>
-        <PageContent page={page} {...(onLinkClick ? { onLinkClick } : {})} />
+        <PreviewContent page={page} {...(onLinkClick ? { onLinkClick } : {})} />
       </ColorSchemeScope>
     </ThemeProvider>,
   )

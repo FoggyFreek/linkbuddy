@@ -5,14 +5,22 @@
 // instead of crashing the render.
 import { trim } from './trimChars.js'
 
-export function slugFromPath(pathname) {
+// `{ slug, isRelease }`, or null. The segment count is the routing signal: the
+// release slug namespace is `<mainSlug>/<tail>` and a main slug can never
+// contain '/' (see server/migrations/003_release_slug_paths.sql), so two
+// segments always address a release page.
+export function parsePagePath(pathname) {
   const rest = trim(pathname, '/')
   if (!rest) return null
   const segments = rest.split('/')
   if (segments.length > 2) return null
   try {
-    return segments.map(decodeURIComponent).join('/').toLowerCase()
+    return { slug: segments.map(decodeURIComponent).join('/').toLowerCase(), isRelease: segments.length === 2 }
   } catch {
     return null
   }
+}
+
+export function slugFromPath(pathname) {
+  return parsePagePath(pathname)?.slug ?? null
 }

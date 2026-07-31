@@ -4,11 +4,11 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import Box from '@mui/material/Box'
 import theme from '../../src/lib/theme.js'
-import PageContent from '../../src/components/PageContent.jsx'
+import PreviewContent from '../../src/components/PreviewContent.jsx'
 
 // Reproduces the editor preview: the colour scheme is forced on a NESTED
 // container (a Box carrying data-theme + its own text colour) while the document
-// root stays light — exactly what Editor.jsx renders around PageContent. MUI's
+// root stays light — exactly what Editor.jsx renders around PreviewContent. MUI's
 // components read theme.vars, so their surfaces recompute against the container's
 // scheme automatically; the container restates `color` so plain inherited text
 // (the Typography labels) follows the same scheme.
@@ -26,7 +26,7 @@ function renderNested(scheme) {
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <Box data-theme={scheme} data-testid="frame" sx={{ color: 'text.primary', bgcolor: 'background.default' }}>
-        <PageContent page={page} />
+        <PreviewContent page={page} />
       </Box>
     </ThemeProvider>,
   )

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { slugFromPath } from '../src/utils/pathSlug.js'
+import { parsePagePath, slugFromPath } from '../src/utils/pathSlug.js'
 
 describe('slugFromPath', () => {
   it('parses main and release paths', () => {
@@ -23,5 +23,20 @@ describe('slugFromPath', () => {
     expect(slugFromPath('/')).toBeNull()
     expect(slugFromPath('')).toBeNull()
     expect(slugFromPath('/a/b/c')).toBeNull()
+  })
+})
+
+// The segment count is the router's page-kind signal: release slugs are
+// `<mainSlug>/<tail>` and a main slug can never contain '/'.
+describe('parsePagePath', () => {
+  it('marks a two-segment path as a release and a one-segment path as not', () => {
+    expect(parsePagePath('/thewoods')).toEqual({ slug: 'thewoods', isRelease: false })
+    expect(parsePagePath('/thewoods/underneath-the-sun')).toEqual({ slug: 'thewoods/underneath-the-sun', isRelease: true })
+  })
+
+  it('returns null on the same paths slugFromPath rejects', () => {
+    expect(parsePagePath('/')).toBeNull()
+    expect(parsePagePath('/a/b/c')).toBeNull()
+    expect(parsePagePath('/%E0%A4%A')).toBeNull()
   })
 })

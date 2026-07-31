@@ -1,8 +1,17 @@
 // The only integration point with GigBuddy: pulling a band's content export
 // over HTTP with the shared-secret bearer. See README.md for the contract.
 
+const origin = (value) => (value || '').replace(/\/$/, '')
+
+// Where a visitor's browser reaches GigBuddy — the href behind the public
+// page's attribution badge. Deliberately not GIGBUDDY_URL: that one is the API
+// origin this server pulls exports from, which may be internal-only.
+export function gigbuddyWebOrigin() {
+  return origin(process.env.GIGBUDDY_WEB_URL)
+}
+
 export async function fetchExport(slug) {
-  const base = (process.env.GIGBUDDY_URL || '').replace(/\/$/, '')
+  const base = origin(process.env.GIGBUDDY_URL)
   if (!base || !process.env.GIGBUDDY_SYNC_SECRET) {
     throw new Error('GIGBUDDY_URL / GIGBUDDY_SYNC_SECRET are not configured')
   }
