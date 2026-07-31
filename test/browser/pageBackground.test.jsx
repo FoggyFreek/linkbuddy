@@ -20,7 +20,7 @@ vi.mock('../../src/lib/api.js', () => ({
   sendClick: () => {},
 }))
 
-const { default: PublicPage } = await import('../../src/app/routes/PublicPage.jsx')
+const { default: BandPage } = await import('../../src/app/routes/BandPage.jsx')
 
 function renderApp(node) {
   return render(
@@ -41,7 +41,7 @@ function mockPage(background) {
 
 async function renderPublicPage(background) {
   state.page = mockPage(background)
-  const screen = await renderApp(<PublicPage slug="testers" />)
+  const screen = await renderApp(<BandPage slug="testers" />)
   await expect.element(screen.getByRole('heading', { name: 'The Testers' })).toBeInTheDocument()
   // The scope wrapping the whole page — the element the background is painted
   // on. Searched from <body>, since MUI also puts data-theme on <html>.

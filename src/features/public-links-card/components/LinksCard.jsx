@@ -1,7 +1,7 @@
 // The band's link page: one centered card holding the band header and the
 // sections of widget cards. Its `surface.s2` shell keeps the `background.paper`
 // widget cards inside it reading as a distinct surface in both schemes. Living
-// here rather than in PublicPage means the editor preview shows the same card.
+// here rather than in the route means the editor preview shows the same card.
 import Stack from '@mui/material/Stack'
 import Card from '@mui/material/Card'
 import Section from '../../../components/Section.jsx'
@@ -9,9 +9,9 @@ import BandHeader from './BandHeader.jsx'
 import BandBanner from './BandBanner.jsx'
 import { CARD_PAD_TOP, CARD_PAD_X } from '../constants.js'
 
-// `corner` is a node pinned to the card (the public page's share button), which
-// is its positioned ancestor. `flush` runs the card's bottom edge off the page —
-// the public page sets it, the framed editor preview doesn't.
+// `corner` is a node pinned to the card (the band page's attribution and share
+// buttons), which is its positioned ancestor. `flush` runs the card's bottom
+// edge off the page — the band page sets it, the framed editor preview doesn't.
 export default function LinksCard({ page, onLinkClick, footer = null, corner = null, flush = false }) {
   const bannerShown = !!(page.showBanner && page.band?.bannerUrl)
   return (

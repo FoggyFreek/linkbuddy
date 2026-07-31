@@ -4,7 +4,7 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import Box from '@mui/material/Box'
 import theme from '../../src/lib/theme.js'
-import PageContent from '../../src/components/PageContent.jsx'
+import PreviewContent from '../../src/components/PreviewContent.jsx'
 
 // Smart-link (release) pages use a two-pane desktop layout where the album cover
 // sits on a full-height, blurred copy of itself (ReleaseArt in features/smart-link). The
@@ -27,7 +27,7 @@ function renderWide() {
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <Box sx={{ width: 1000 }}>
-        <PageContent page={page} />
+        <PreviewContent page={page} />
       </Box>
     </ThemeProvider>,
   )

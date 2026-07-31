@@ -5,7 +5,7 @@
 import express from 'express'
 import crypto from 'node:crypto'
 import { signPayload, verifyPayload } from './tokens.js'
-import { fetchExport } from './gigbuddy.js'
+import { fetchExport, gigbuddyWebOrigin } from './gigbuddy.js'
 import {
   upsertMainPage,
   getPageBySlug,
@@ -171,7 +171,9 @@ export function createApp(pool) {
       // the page offline — same 404 as an unpublished page.
       if (!pageEntitlements(page.content).enabled) return res.status(404).json({ error: 'Not found' })
       res.set('Cache-Control', 'public, max-age=60')
-      res.json(resolvePage(page.content, page.published_layout, page.release))
+      // gigbuddyUrl rides along with the payload (rather than being baked into
+      // the bundle) so the attribution badge follows the deployment's config.
+      res.json({ ...resolvePage(page.content, page.published_layout, page.release), gigbuddyUrl: gigbuddyWebOrigin() || null })
     } catch (err) {
       next(err)
     }
