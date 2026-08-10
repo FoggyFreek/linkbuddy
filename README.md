@@ -189,7 +189,15 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
   the token is HMAC-signed by GigBuddy with the same secret and embedded in
   the export payload's image URLs.
 - Handoff token (GigBuddy → here, in the `/edit` URL fragment): payload
-  `{ t: 'handoff', slug, tenantId, exp }`, HMAC-SHA256, 10 min TTL.
+  `{ t: 'handoff', slug, slugRevision, tenantId, exp }`, HMAC-SHA256, 10 min
+  TTL. Legacy tokens without `slugRevision` remain valid only while their slug
+  matches LinkBuddy's recorded tenant namespace; they can never rename it.
+- `PUT /api/integrations/gigbuddy/tenants/:tenantId/slug` atomically moves the
+  tenant's main page and every `/<main>/<release>` path without replacing page
+  rows. Send `{ oldSlug, newSlug, revision }` with the shared-secret bearer.
+  Stable success codes are `applied`, `already_applied`, `no_pages`, and
+  `stale_ignored`; conflicts use `slug_conflict` or `revision_gap`. Tenant ID
+  and revision are authoritative; `oldSlug` is diagnostic only.
 
 Tokens are compact `base64url(json) + '.' + base64url(hmac)` — see
 `server/tokens.js` (mirrored in gigbuddy's `server/security/linkpageTokens.js`).

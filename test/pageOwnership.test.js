@@ -1,12 +1,11 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest'
 import request from 'supertest'
 import { createApp } from '../server/app.js'
-import { signPayload } from '../server/tokens.js'
+import { signPayload, verifyPayload } from '../server/tokens.js'
+import { NamespaceError } from '../server/namespaceService.js'
 
-// A faithful in-memory model of the `pages` table for the queries the editor
-// session route issues — crucially reproducing upsertMainPage's guarded
-// ON CONFLICT semantics (update only when the existing row is the SAME tenant
-// and a main page; otherwise RETURNING is empty).
+// A small in-memory pages model for the editor-session route. Namespace
+// reconciliation itself has dedicated transaction tests.
 function makeFakePool(pages) {
   let nextId = Math.max(0, ...pages.map((p) => p.id)) + 1
   return {
@@ -42,7 +41,7 @@ function makeFakePool(pages) {
       if (sql.includes('SET content =')) {
         const row = pages.find((p) => p.id === params[0])
         if (row) {
-          row.content = JSON.parse(params[1])
+          row.content = JSON.parse(params[4] ?? params[1])
           row.content_synced_at = new Date()
         }
         return { rows: row ? [row] : [] }
@@ -53,6 +52,40 @@ function makeFakePool(pages) {
       return { rows: [], rowCount: 0 }
     },
   }
+}
+
+async function ensureMainPage(pool, handoff) {
+  let page = pool.rows.find(
+    (candidate) => candidate.gigbuddy_tenant_id === handoff.tenantId && candidate.page_type === 'main',
+  )
+  if (page && page.slug !== handoff.slug) {
+    throw new NamespaceError('namespace_sync_required', 'Namespace is still synchronizing')
+  }
+  const collision = pool.rows.find(
+    (candidate) => candidate.slug === handoff.slug && candidate.gigbuddy_tenant_id !== handoff.tenantId,
+  )
+  if (collision) throw new NamespaceError('slug_conflict', 'Slug is owned by another tenant')
+  if (!page) {
+    page = {
+      id: Math.max(0, ...pool.rows.map((candidate) => candidate.id)) + 1,
+      slug: handoff.slug,
+      gigbuddy_tenant_id: handoff.tenantId,
+      page_type: 'main',
+      release: null,
+      draft_layout: { sections: [] },
+      published_layout: null,
+      content: {},
+      content_synced_at: null,
+      published_at: null,
+      created_at: new Date(),
+    }
+    pool.rows.push(page)
+  }
+  return { page, mainSlug: page.slug, slugRevision: handoff.slugRevision || 0 }
+}
+
+function makeApp(pool) {
+  return createApp(pool, { ensureTenantMainPage: ensureMainPage })
 }
 
 const SECRET = 'ownership-test-secret'
@@ -77,16 +110,16 @@ beforeEach(() => {
   pages = []
 })
 
-function openSession(app, slug, tenantId) {
+function openSession(app, slug, tenantId, slugRevision) {
   return request(app)
     .post('/api/editor/session')
-    .send({ token: signPayload({ t: 'handoff', slug, tenantId, exp: exp() }) })
+    .send({ token: signPayload({ t: 'handoff', slug, tenantId, slugRevision, exp: exp() }) })
 }
 
-describe('main-page upsert ownership', () => {
+describe('tenant-keyed main-page ownership', () => {
   it('creates the main page on first open and reuses it on re-open (same tenant)', async () => {
     const pool = makeFakePool(pages)
-    const app = createApp(pool)
+    const app = makeApp(pool)
 
     const first = await openSession(app, 'foo-bar', 42)
     expect(first.status).toBe(200)
@@ -115,7 +148,7 @@ describe('main-page upsert ownership', () => {
       created_at: new Date(),
     })
     const pool = makeFakePool(pages)
-    const app = createApp(pool)
+    const app = makeApp(pool)
 
     // Tenant 2 (band "foo-bar") opens its editor. Its main slug 'foo-bar' is a
     // different string from the release slug 'foo/bar', so there is no
@@ -132,10 +165,22 @@ describe('main-page upsert ownership', () => {
 
   it('rejects a handoff whose slug is not a bare main slug (e.g. contains a slash)', async () => {
     const pool = makeFakePool(pages)
-    const app = createApp(pool)
+    const app = makeApp(pool)
     const res = await openSession(app, 'foo/bar', 2)
     expect(res.status).toBe(401)
     expect(pages).toHaveLength(0)
+  })
+
+  it('mints the editor session with the reconciled slug revision', async () => {
+    const pool = makeFakePool(pages)
+    const res = await openSession(makeApp(pool), 'versioned', 2, 4)
+    expect(res.status).toBe(200)
+    expect(verifyPayload(res.body.session)).toMatchObject({
+      t: 'session',
+      tenantId: 2,
+      mainSlug: 'versioned',
+      slugRevision: 4,
+    })
   })
 
   it('refuses when the slug is another tenant’s main page', async () => {
@@ -153,7 +198,7 @@ describe('main-page upsert ownership', () => {
       created_at: new Date(),
     })
     const pool = makeFakePool(pages)
-    const app = createApp(pool)
+    const app = makeApp(pool)
 
     const res = await openSession(app, 'foo', 2)
     expect(res.status).toBe(409)

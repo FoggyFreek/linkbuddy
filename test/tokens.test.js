@@ -8,8 +8,14 @@ beforeAll(() => {
 describe('tokens', () => {
   it('round-trips a payload', () => {
     const exp = Math.floor(Date.now() / 1000) + 60
-    const token = signPayload({ t: 'handoff', slug: 'woods', exp })
-    expect(verifyPayload(token)).toMatchObject({ t: 'handoff', slug: 'woods' })
+    const token = signPayload({ t: 'handoff', slug: 'woods', slugRevision: 4, exp })
+    expect(verifyPayload(token)).toMatchObject({ t: 'handoff', slug: 'woods', slugRevision: 4 })
+  })
+
+  it('keeps accepting a legacy handoff without a slug revision', () => {
+    const exp = Math.floor(Date.now() / 1000) + 60
+    const token = signPayload({ t: 'handoff', slug: 'woods', tenantId: 1, exp })
+    expect(verifyPayload(token)).toMatchObject({ t: 'handoff', slug: 'woods', tenantId: 1 })
   })
 
   it('rejects tampering and expiry', () => {
