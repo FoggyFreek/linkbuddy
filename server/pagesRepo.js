@@ -1,30 +1,5 @@
 // SQL for the pages table. Every function takes the executor first so
-// callers stay in control of transactions (none are needed yet — writes are
-// single-statement).
-
-// Get-or-create the tenant's main page. Returns the row, or null when the slug
-// is already taken by a DIFFERENT tenant or by a non-main (release) row.
-//
-// The `pages.slug` namespace is global and shared with release-page slugs
-// (which must merely start with the band's main slug), so tenant A's release
-// `foo-bar` can collide with tenant B's legitimate main slug `foo-bar`. The
-// conflict update is therefore guarded to the SAME tenant AND page_type='main':
-// a foreign or release row leaves RETURNING empty instead of silently
-// transferring ownership / corrupting the row. The caller turns null into a
-// 409 rather than opening an editor session onto someone else's data.
-export async function upsertMainPage(executor, slug, tenantId) {
-  const { rows } = await executor.query(
-    `INSERT INTO pages (slug, gigbuddy_tenant_id, page_type)
-     VALUES ($1, $2, 'main')
-     ON CONFLICT (slug) DO UPDATE
-       SET updated_at = NOW()
-       WHERE pages.gigbuddy_tenant_id = EXCLUDED.gigbuddy_tenant_id
-         AND pages.page_type = 'main'
-     RETURNING *`,
-    [slug, tenantId],
-  )
-  return rows[0] || null
-}
+// callers stay in control of transactions.
 
 export async function getPageBySlug(executor, slug) {
   const { rows } = await executor.query('SELECT * FROM pages WHERE slug = $1', [slug])
@@ -52,15 +27,46 @@ export async function listPagesForTenant(executor, tenantId) {
   return rows
 }
 
+export async function getMainPageForTenant(executor, tenantId) {
+  const { rows } = await executor.query(
+    `SELECT * FROM pages
+      WHERE gigbuddy_tenant_id = $1 AND page_type = 'main'`,
+    [tenantId],
+  )
+  return rows[0] || null
+}
+
 // Release landing page. Returns null on a slug collision (caller turns that
 // into a 409) instead of throwing.
-export async function insertReleasePage(executor, slug, tenantId, release, layout, content) {
+export async function insertReleasePage(
+  executor,
+  slug,
+  tenantId,
+  release,
+  layout,
+  content,
+  mainSlug,
+  slugRevision,
+) {
   const { rows } = await executor.query(
     `INSERT INTO pages (slug, gigbuddy_tenant_id, page_type, release, draft_layout, content, content_synced_at)
-     VALUES ($1, $2, 'release', $3, $4, $5, NOW())
+     SELECT $1, $2, 'release', $3, $4, $5, NOW()
+       FROM gigbuddy_tenant_namespaces
+      WHERE gigbuddy_tenant_id = $2
+        AND main_slug = $6
+        AND ($7::bigint IS NULL OR slug_revision = $7)
+      FOR SHARE
      ON CONFLICT (slug) DO NOTHING
      RETURNING *`,
-    [slug, tenantId, JSON.stringify(release), JSON.stringify(layout), JSON.stringify(content)],
+    [
+      slug,
+      tenantId,
+      JSON.stringify(release),
+      JSON.stringify(layout),
+      JSON.stringify(content),
+      mainSlug,
+      Number.isSafeInteger(slugRevision) ? slugRevision : null,
+    ],
   )
   return rows[0] || null
 }
@@ -99,9 +105,36 @@ export async function unpublish(executor, pageId) {
   )
 }
 
-export async function saveContent(executor, pageId, content) {
-  await executor.query(
-    'UPDATE pages SET content = $2, content_synced_at = NOW(), updated_at = NOW() WHERE id = $1',
-    [pageId, JSON.stringify(content)],
+export async function saveContentForNamespace(
+  executor,
+  pageId,
+  tenantId,
+  mainSlug,
+  slugRevision,
+  content,
+) {
+  const { rows } = await executor.query(
+    `WITH current_namespace AS MATERIALIZED (
+       SELECT gigbuddy_tenant_id
+         FROM gigbuddy_tenant_namespaces
+        WHERE gigbuddy_tenant_id = $2
+          AND main_slug = $3
+          AND ($4::bigint IS NULL OR slug_revision = $4)
+        FOR SHARE
+     )
+     UPDATE pages
+        SET content = $5, content_synced_at = NOW(), updated_at = NOW()
+       FROM current_namespace
+      WHERE pages.id = $1
+        AND pages.gigbuddy_tenant_id = current_namespace.gigbuddy_tenant_id
+     RETURNING pages.*`,
+    [
+      pageId,
+      tenantId,
+      mainSlug,
+      Number.isSafeInteger(slugRevision) ? slugRevision : null,
+      JSON.stringify(content),
+    ],
   )
+  return rows[0] || null
 }

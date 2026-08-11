@@ -7,16 +7,19 @@ import crypto from 'node:crypto'
 import { signPayload, verifyPayload } from './tokens.js'
 import { fetchExport, gigbuddyWebOrigin } from './gigbuddy.js'
 import {
-  upsertMainPage,
   getPageBySlug,
   getPageForTenant,
+  getMainPageForTenant,
   listPagesForTenant,
   insertReleasePage,
   deleteReleasePage,
   saveDraftLayout,
   publishDraft,
-  saveContent,
+  saveContentForNamespace,
 } from './pagesRepo.js'
+import { getTenantNamespace } from './namespacesRepo.js'
+import { ensureTenantMainPage, migrateTenantNamespace, NamespaceError } from './namespaceService.js'
+import { MAIN_SLUG_RE, RELEASE_TAIL_RE, slugFromSegments, mainSlugOf } from './slugs.js'
 import { insertView, insertClick, aggregateStats } from './statsRepo.js'
 import { classifyDevice, classifySource, resolveCountry, visitorHash } from './classify.js'
 import { validateLayout } from './layout.js'
@@ -33,6 +36,8 @@ const UNFURL_MAX_GLOBAL = 6
 const UNFURL_MAX_PER_TENANT = 2
 
 const SESSION_TTL_SECONDS = 12 * 60 * 60
+const INTEGRATION_RATE_LIMIT = 120
+const INTEGRATION_RATE_WINDOW_MS = 60 * 1000
 
 // URL/namespace design: a band's main page lives at /<mainSlug> (the band's
 // GigBuddy slug); each release page lives one segment deeper at
@@ -40,27 +45,7 @@ const SESSION_TTL_SECONDS = 12 * 60 * 60
 // slugs 'foo' (main) and 'foo/bar' (release) occupy separate namespaces and
 // can NEVER collide — a release page can no longer shadow, or be mistaken for,
 // another band's main page. Both are validated segment-by-segment.
-export const MAIN_SLUG_RE = /^[a-z0-9][a-z0-9-]{0,80}$/
-export const RELEASE_TAIL_RE = /^[a-z0-9][a-z0-9-]{0,60}$/
-
-// Builds the stored slug from 1 (main) or 2 (release) public path segments,
-// each validated. Returns null for anything that isn't a well-formed page path.
-export function slugFromSegments(segments) {
-  const parts = (Array.isArray(segments) ? segments : [segments])
-    .filter((s) => typeof s === 'string' && s.length > 0)
-    .map((s) => s.toLowerCase())
-  if (parts.length === 1 && MAIN_SLUG_RE.test(parts[0])) return parts[0]
-  if (parts.length === 2 && MAIN_SLUG_RE.test(parts[0]) && RELEASE_TAIL_RE.test(parts[1])) {
-    return `${parts[0]}/${parts[1]}`
-  }
-  return null
-}
-
-// The band's main slug for any stored page: a release slug is '<main>/<tail>',
-// so its main slug is the first segment.
-export function mainSlugOf(page) {
-  return page.page_type === 'main' ? page.slug : page.slug.split('/')[0]
-}
+export { MAIN_SLUG_RE, RELEASE_TAIL_RE, slugFromSegments, mainSlugOf }
 
 function contentTtlMs() {
   const minutes = Number(process.env.LINKPAGE_CONTENT_TTL_MINUTES)
@@ -117,7 +102,48 @@ function pageListPayload(pages) {
   }))
 }
 
-export function createApp(pool) {
+function validIntegrationBearer(header) {
+  const prefix = 'Bearer '
+  const supplied = typeof header === 'string' && header.startsWith(prefix) ? header.slice(prefix.length) : ''
+  const expected = process.env.GIGBUDDY_SYNC_SECRET || ''
+  const suppliedHash = crypto.createHash('sha256').update(supplied).digest()
+  const expectedHash = crypto.createHash('sha256').update(expected).digest()
+  return Boolean(expected) && crypto.timingSafeEqual(suppliedHash, expectedHash)
+}
+
+function createIntegrationRateLimiter() {
+  const clients = new Map()
+  return (req, res, next) => {
+    const now = Date.now()
+    const key = req.ip || 'unknown'
+    let entry = clients.get(key)
+    if (!entry || now - entry.startedAt >= INTEGRATION_RATE_WINDOW_MS) {
+      entry = { startedAt: now, count: 0 }
+      clients.set(key, entry)
+    }
+    entry.count += 1
+    if (entry.count > INTEGRATION_RATE_LIMIT) {
+      const retrySeconds = Math.max(1, Math.ceil((entry.startedAt + INTEGRATION_RATE_WINDOW_MS - now) / 1000))
+      res.set('Retry-After', String(retrySeconds))
+      return res.status(429).json({ code: 'rate_limited', error: 'Too many synchronization requests' })
+    }
+    next()
+  }
+}
+
+function namespaceErrorResponse(error) {
+  if (!(error instanceof NamespaceError)) return null
+  if (error.code === 'invalid_request') return { status: 400, code: error.code }
+  if (['slug_conflict', 'revision_gap', 'revision_conflict', 'invalid_namespace'].includes(error.code)) {
+    return { status: 409, code: error.code }
+  }
+  if (error.code === 'namespace_sync_required') return { status: 409, code: error.code }
+  return null
+}
+
+export function createApp(pool, overrides = {}) {
+  const migrateNamespace = overrides.migrateTenantNamespace || migrateTenantNamespace
+  const ensureMainPage = overrides.ensureTenantMainPage || ensureTenantMainPage
   const app = express()
   app.set('trust proxy', true)
   app.use(express.json({ limit: '256kb' }))
@@ -128,11 +154,17 @@ export function createApp(pool) {
 
   // Content exports are fetched per band (by the band's main slug) and stored
   // per page, so release pages resolve against the same fresh snapshot.
-  async function syncContent(page, mainSlug) {
+  async function syncContent(page, mainSlug, slugRevision) {
     const result = await fetchExport(mainSlug)
     if (result.notFound) return page
-    await saveContent(pool, page.id, result.content)
-    return { ...page, content: result.content, content_synced_at: new Date() }
+    return saveContentForNamespace(
+      pool,
+      page.id,
+      page.gigbuddy_tenant_id,
+      mainSlug,
+      slugRevision,
+      result.content,
+    )
   }
 
   function maybeRefreshContent(page) {
@@ -142,6 +174,68 @@ export function createApp(pool) {
       console.error(`content refresh failed for ${page.slug}:`, err.message)
     })
   }
+
+  const integrationRateLimit = createIntegrationRateLimiter()
+  const requireIntegrationSecret = (req, res, next) => {
+    if (!validIntegrationBearer(req.get('authorization'))) {
+      return res.status(401).json({ code: 'unauthorized', error: 'Unauthorized' })
+    }
+    next()
+  }
+
+  app.put(
+    '/api/integrations/gigbuddy/tenants/:tenantId/slug',
+    requireIntegrationSecret,
+    integrationRateLimit,
+    async (req, res, next) => {
+      const startedAt = Date.now()
+      const tenantText = req.params.tenantId
+      const tenantId = /^[1-9]\d*$/.test(tenantText) ? Number(tenantText) : NaN
+      const { oldSlug, newSlug, revision } = req.body || {}
+      let resultCode = 'internal_error'
+      try {
+        if (
+          !Number.isSafeInteger(tenantId) ||
+          typeof oldSlug !== 'string' ||
+          !MAIN_SLUG_RE.test(oldSlug) ||
+          typeof newSlug !== 'string' ||
+          !MAIN_SLUG_RE.test(newSlug) ||
+          oldSlug === newSlug ||
+          !Number.isSafeInteger(revision) ||
+          revision <= 0
+        ) {
+          resultCode = 'invalid_request'
+          return res.status(400).json({ code: resultCode, error: 'Invalid slug synchronization command' })
+        }
+
+        const result = await migrateNamespace(pool, { tenantId, newSlug, revision })
+        resultCode = result.code
+        if (result.code === 'applied') {
+          const main = await getMainPageForTenant(pool, tenantId)
+          if (main) {
+            try {
+              await syncContent(main, newSlug, revision)
+            } catch (error) {
+              console.error(`content refresh failed after namespace migration for tenant ${tenantId}:`, error.message)
+            }
+          }
+        }
+        return res.json({ code: result.code })
+      } catch (error) {
+        const response = namespaceErrorResponse(error)
+        if (!response) return next(error)
+        resultCode = response.code
+        return res.status(response.status).json({ code: response.code, error: error.message })
+      } finally {
+        console.info('gigbuddy slug sync', {
+          tenantId: Number.isSafeInteger(tenantId) ? tenantId : null,
+          revision: Number.isSafeInteger(revision) ? revision : null,
+          result: resultCode,
+          durationMs: Date.now() - startedAt,
+        })
+      }
+    },
+  )
 
   async function publishedPageForBeacon(req) {
     if (!statsEnabled()) return null
@@ -226,11 +320,28 @@ export function createApp(pool) {
         handoff?.t !== 'handoff' ||
         typeof handoff.slug !== 'string' ||
         !MAIN_SLUG_RE.test(handoff.slug) ||
-        !Number.isInteger(handoff.tenantId)
+        !Number.isSafeInteger(handoff.tenantId) ||
+        handoff.tenantId <= 0 ||
+        (handoff.slugRevision !== undefined &&
+          (!Number.isSafeInteger(handoff.slugRevision) || handoff.slugRevision < 0))
       ) {
         return res.status(401).json({ error: 'Invalid or expired editor link — reopen it from GigBuddy' })
       }
-      let page = await upsertMainPage(pool, handoff.slug, handoff.tenantId)
+      let reconciled
+      try {
+        reconciled = await ensureMainPage(pool, handoff)
+      } catch (error) {
+        const response = namespaceErrorResponse(error)
+        if (!response) throw error
+        const reopen = ['namespace_sync_required', 'revision_gap', 'revision_conflict'].includes(error.code)
+        return res.status(response.status).json({
+          error: reopen
+            ? 'Link-page address is still synchronizing - reopen the editor from GigBuddy'
+            : 'This link-page address is already in use - contact support to resolve it',
+          code: error.code,
+        })
+      }
+      let page = reconciled.page
       // null → the slug is already held by another tenant or a release page
       // (the global slug namespace is shared). Refuse rather than open a
       // session onto a foreign/corrupted row.
@@ -241,7 +352,13 @@ export function createApp(pool) {
         })
       }
       try {
-        page = await syncContent(page, handoff.slug)
+        page = await syncContent(page, reconciled.mainSlug, reconciled.slugRevision)
+        if (!page) {
+          return res.status(409).json({
+            code: 'namespace_sync_required',
+            error: 'Link-page address changed again - reopen the editor from GigBuddy',
+          })
+        }
       } catch (err) {
         console.error(`content sync failed for ${page.slug}:`, err.message)
         return res.status(502).json({ error: 'Could not load content from GigBuddy — try again' })
@@ -250,7 +367,8 @@ export function createApp(pool) {
       const session = signPayload({
         t: 'session',
         tenantId: handoff.tenantId,
-        mainSlug: handoff.slug,
+        mainSlug: reconciled.mainSlug,
+        slugRevision: reconciled.slugRevision,
         exp,
         n: crypto.randomUUID(),
       })
@@ -270,6 +388,21 @@ export function createApp(pool) {
     }
     req.editorSession = session
     next()
+  }
+
+  const requireCurrentNamespace = async (req, res, next) => {
+    try {
+      const namespace = await getTenantNamespace(pool, req.editorSession.tenantId)
+      const sessionRevision = req.editorSession.slugRevision
+      const revisionMismatch = Number.isSafeInteger(sessionRevision) &&
+        sessionRevision !== Number(namespace?.slug_revision)
+      if (!namespace || namespace.main_slug !== req.editorSession.mainSlug || revisionMismatch) {
+        return res.status(401).json({ error: 'Session expired - reopen the editor from GigBuddy' })
+      }
+      next()
+    } catch (error) {
+      next(error)
+    }
   }
 
   // Loads req.page for :pageId, scoped to the session's tenant: a foreign
@@ -319,7 +452,7 @@ export function createApp(pool) {
   // namespaced under the band's main slug (so it can never collide with any
   // band's main page), the layout starts with a platforms widget, and the
   // content snapshot is inherited so the page previews instantly.
-  app.post('/api/editor/pages', requireSession, async (req, res, next) => {
+  app.post('/api/editor/pages', requireSession, requireCurrentNamespace, async (req, res, next) => {
     try {
       const { tenantId, mainSlug } = req.editorSession
       const main = await getPageBySlug(pool, mainSlug)
@@ -366,8 +499,28 @@ export function createApp(pool) {
           },
         ],
       }
-      const page = await insertReleasePage(pool, slug, tenantId, release, layout, main.content)
-      if (!page) return res.status(409).json({ error: 'That slug is already taken' })
+      const page = await insertReleasePage(
+        pool,
+        slug,
+        tenantId,
+        release,
+        layout,
+        main.content,
+        mainSlug,
+        req.editorSession.slugRevision,
+      )
+      if (!page) {
+        const namespace = await getTenantNamespace(pool, tenantId)
+        if (
+          !namespace ||
+          namespace.main_slug !== mainSlug ||
+          (Number.isSafeInteger(req.editorSession.slugRevision) &&
+            Number(namespace.slug_revision) !== req.editorSession.slugRevision)
+        ) {
+          return res.status(401).json({ error: 'Session expired - reopen the editor from GigBuddy' })
+        }
+        return res.status(409).json({ error: 'That slug is already taken' })
+      }
       res.status(201).json({ page: editorPagePayload(page) })
     } catch (err) {
       next(err)
@@ -414,14 +567,27 @@ export function createApp(pool) {
     }
   })
 
-  app.post('/api/editor/pages/:pageId/refresh-content', requireSession, loadPage, async (req, res, next) => {
-    try {
-      const page = await syncContent(req.page, req.editorSession.mainSlug)
-      res.json(editorPagePayload(page))
-    } catch (err) {
-      next(err)
-    }
-  })
+  app.post(
+    '/api/editor/pages/:pageId/refresh-content',
+    requireSession,
+    requireCurrentNamespace,
+    loadPage,
+    async (req, res, next) => {
+      try {
+        const page = await syncContent(
+          req.page,
+          req.editorSession.mainSlug,
+          req.editorSession.slugRevision,
+        )
+        if (!page) {
+          return res.status(401).json({ error: 'Session expired - reopen the editor from GigBuddy' })
+        }
+        res.json(editorPagePayload(page))
+      } catch (err) {
+        next(err)
+      }
+    },
+  )
 
   app.get('/api/editor/pages/:pageId/stats', requireSession, loadPage, async (req, res, next) => {
     try {
@@ -438,6 +604,12 @@ export function createApp(pool) {
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
+    if (err?.type === 'entity.parse.failed') {
+      return res.status(400).json({ code: 'invalid_request', error: 'Malformed JSON body' })
+    }
+    if (err?.type === 'entity.too.large') {
+      return res.status(413).json({ code: 'request_too_large', error: 'Request body is too large' })
+    }
     console.error(err)
     res.status(500).json({ error: 'Internal error' })
   })

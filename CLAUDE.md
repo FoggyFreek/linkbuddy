@@ -26,8 +26,10 @@ page (`BandPage`), `/<mainSlug>/<tail>` a release smart link (`ReleasePage`).
 ## Map
 
 **Server** — `app.js` (all routes: public page + view/click beacons, and the
-session-authenticated `/api/editor/*`), `pagesRepo.js`/`statsRepo.js` (SQL,
-executor-first), `layout.js` (validate + normalize submitted layouts),
+session-authenticated `/api/editor/*` plus the internal slug-sync route),
+`namespaceService.js`/`namespacesRepo.js` (revisioned tenant namespace moves),
+`pagesRepo.js`/`statsRepo.js` (SQL, executor-first), `layout.js` (validate +
+normalize submitted layouts),
 `resolve.js` (stored layout × content snapshot → public payload),
 `gigbuddy.js` (content export pull), `tokens.js` (HMAC handoff/session),
 `classify.js` (device/source/country, no IPs), `unfurl.js` + `safeFetch.js`
@@ -108,7 +110,9 @@ it, so they can't drift. The artwork/component maps live client-side
   because GigBuddy content moved on.
 
 ## General notes
-- Keep comments to the minimum, concise. only add where relevant for understanding code. otherwise, let the code speak for itself.
+
+- Keep comments to the minimum and concise. Only add them where relevant for
+  understanding code; otherwise, let the code speak for itself.
 
 ## Front end: MUI component-first, no stylesheet
 
@@ -151,13 +155,28 @@ There is **no CSS file** — do not add one.
 
 ## Testing notes
 
-- Browser tests render **real** components (e.g. `BandPage`/`ReleasePage` with
-  `lib/api.js` mocked) and assert MUI structure + computed styles — query
-  `.MuiCard-root`, `.MuiTypography-h1`, not CSS classes.
+- **Develop test-first.** For every new behavior, bug fix, endpoint, validation
+  rule, state transition, or failure mode, write the failing test before the
+  implementation, then make it pass and refactor with the suite green. A change
+  is not complete unless its behavior is covered by an automated regression
+  test.
+- Build a regression suite around the workflows the app supports, not around
+  implementation details. Cover the complete observable path at the closest
+  useful boundary: request to response and persisted state for server flows;
+  user action to rendered result and API interaction for browser flows; pure
+  unit tests for isolated rules.
+- Exercise the happy path and meaningful alternatives, including validation,
+  authorization and tenant isolation, stale or duplicate requests, conflicts,
+  retries, failure recovery, and invariants such as privacy and preserved data.
+  When a bug is found, reproduce it with a failing regression test before
+  fixing it.
+- Do not mock away the contract being tested. Repository and migration changes
+  need transaction/state assertions; routes need status and response-contract
+  assertions; UI workflows should render real components and mock only external
+  boundaries such as HTTP.
+- Run every affected suite before handing off. Use `npm test` for server and
+  pure logic, `npm run test:browser` for changed browser workflows, and
+  `npm run build` when production bundling could be affected.
 - If you touch theme scoping, keep `colorSchemeScope.test.jsx` (scope
   independence, two disagreeing scopes, portal inheritance) and
   `nestedTheme.test.jsx` (the MUI behaviour it rests on) green.
-- `vitest.browser.config.js` uses a pre-installed Chromium at
-  `/opt/pw-browsers/chromium-1194/…` when that path exists, and otherwise lets
-  Playwright resolve its own browser — so a local `playwright install` is fine
-  on a dev machine, but don't run it in the sandbox.
