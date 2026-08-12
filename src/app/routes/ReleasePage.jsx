@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import Box from '@mui/material/Box'
 import usePublicPage from './usePublicPage.js'
+import useFavicon from './useFavicon.js'
 import SmartLinkPage from '../../features/smart-link/components/SmartLinkPage.jsx'
 import PageScope from '../../components/PageScope.jsx'
 import PageStatus from '../../components/PageStatus.jsx'
@@ -18,6 +19,7 @@ export default function ReleasePage({ slug }) {
   useEffect(() => {
     if (release) document.title = `${release.title} — ${release.artist || 'Listen'}`
   }, [release])
+  useFavicon(release?.coverUrl)
 
   if (status !== 'ready') return <PageStatus status={status} />
   // The path says release but the payload has no release header: treat it as a

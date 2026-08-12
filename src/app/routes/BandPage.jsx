@@ -1,6 +1,7 @@
 import { Fragment, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import usePublicPage from './usePublicPage.js'
+import useFavicon from './useFavicon.js'
 import LinksCard from '../../features/public-links-card/components/LinksCard.jsx'
 import PageScope from '../../components/PageScope.jsx'
 import PageStatus from '../../components/PageStatus.jsx'
@@ -18,6 +19,7 @@ export default function BandPage({ slug }) {
   useEffect(() => {
     if (page) document.title = page.band?.name ? `${page.band.name} — Links` : 'Band Links'
   }, [page])
+  useFavicon(band?.avatarUrl)
 
   if (status !== 'ready') return <PageStatus status={status} />
 
