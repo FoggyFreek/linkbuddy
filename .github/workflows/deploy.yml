@@ -64,14 +64,14 @@ jobs:
             STATS_RETENTION_DAYS=30
             EOF
             chmod 600 .env
-            docker compose build
-            docker compose up -d db
+            sudo /usr/bin/docker compose build
+            sudo /usr/bin/docker compose up -d db
             # Run migrations as an explicit one-off so a failure fails the
             # deploy here, rather than being folded into `app`'s startup wait.
-            docker compose run --rm migrate
+            sudo /usr/bin/docker compose run --rm migrate
             # --no-deps: migrations just ran above; without it compose would
             # re-run the `migrate` service to satisfy app's depends_on.
-            docker compose up -d --no-deps app
+            sudo /usr/bin/docker compose up -d --no-deps app
             for i in $(seq 1 30); do
               if curl -fsS http://127.0.0.1:3010/api/health > /dev/null; then
                 echo "app healthy"
@@ -80,5 +80,5 @@ jobs:
               sleep 2
             done
             echo "app did not become healthy within 60s" >&2
-            docker compose logs --tail=50 app >&2
+            sudo /usr/bin/docker compose logs --tail=50 app >&2
             exit 1
