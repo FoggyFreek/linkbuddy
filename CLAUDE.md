@@ -25,8 +25,10 @@ page (`BandPage`), `/<mainSlug>/<tail>` a release smart link (`ReleasePage`).
 
 ## Map
 
-**Server** — `app.js` (all routes: public page + view/click beacons, and the
-session-authenticated `/api/editor/*` plus the internal slug-sync route),
+**Server** — `app.js` (all routes: public page + view/click beacons, the
+session-authenticated `/api/editor/*`, and the shared-secret
+`/api/integrations/gigbuddy/*` routes — slug sync, plus the page list and a
+summary-only stats read backing GigBuddy's dashboard tile),
 `namespaceService.js`/`namespacesRepo.js` (revisioned tenant namespace moves),
 `pagesRepo.js`/`statsRepo.js` (SQL, executor-first), `layout.js` (validate +
 normalize submitted layouts),

@@ -51,21 +51,12 @@ export function mergeDailyActivity(viewRows, clickRows) {
   return [...byDay.values()].sort((a, b) => (a.day < b.day ? -1 : 1))
 }
 
-// Views, outbound clicks, and the conversion view: clicks per platform/target
-// and a per-source table combining views + clicks into a click-through rate —
-// the launch-campaign question ("which channel converts?") in one payload.
-export async function aggregateStats(executor, pageId, since) {
-  const [
-    { rows: totals },
-    { rows: clickTotals },
-    byDevice,
-    bySource,
-    byCountry,
-    byTarget,
-    clicksBySource,
-    { rows: viewsByDay },
-    { rows: clicksByDay },
-  ] = await Promise.all([
+// The headline numbers plus the daily views/clicks series — everything an
+// overview surface needs, and nothing per-dimension. Split out of
+// aggregateStats so a caller that only renders the summary (GigBuddy's
+// dashboard tile) doesn't pay for the breakdowns it never shows.
+export async function summaryStats(executor, pageId, since) {
+  const [{ rows: totals }, { rows: clickTotals }, { rows: viewsByDay }, { rows: clicksByDay }] = await Promise.all([
     executor.query(
       `SELECT COUNT(*)::int AS views,
               COUNT(DISTINCT (visitor_hash, occurred_at::date))::int AS unique_visits
@@ -84,20 +75,6 @@ export async function aggregateStats(executor, pageId, since) {
           AND target NOT LIKE 'share:%' AND target NOT LIKE 'embed:%'`,
       [pageId, since],
     ),
-    countBy(executor, pageId, since, 'page_views', 'device', 10),
-    countBy(executor, pageId, since, 'page_views', 'source', 12),
-    countBy(executor, pageId, since, 'page_views', 'country', 12),
-    countBy(executor, pageId, since, 'page_clicks', 'target', 15),
-    executor.query(
-      `SELECT source AS key, COUNT(*)::int AS views
-         FROM page_clicks
-        WHERE page_id = $1 AND occurred_at >= $2
-          AND target NOT LIKE 'share:%' AND target NOT LIKE 'embed:%'
-        GROUP BY source
-        ORDER BY views DESC, key
-        LIMIT 12`,
-      [pageId, since],
-    ).then((r) => r.rows),
     executor.query(
       `SELECT occurred_at::date AS day, COUNT(*)::int AS views
          FROM page_views
@@ -123,6 +100,37 @@ export async function aggregateStats(executor, pageId, since) {
 
   const totalViews = totals[0].views
   const totalClicks = clickTotals[0].clicks
+  return {
+    totalViews,
+    uniqueVisits: totals[0].unique_visits,
+    totalClicks,
+    clickThroughRate: totalViews ? Math.round((totalClicks / totalViews) * 1000) / 10 : null,
+    byDay: mergeDailyActivity(viewsByDay, clicksByDay),
+  }
+}
+
+// The summary plus the conversion view: clicks per platform/target and a
+// per-source table combining views + clicks into a click-through rate — the
+// launch-campaign question ("which channel converts?") in one payload.
+export async function aggregateStats(executor, pageId, since) {
+  const [summary, byDevice, bySource, byCountry, byTarget, clicksBySource] = await Promise.all([
+    summaryStats(executor, pageId, since),
+    countBy(executor, pageId, since, 'page_views', 'device', 10),
+    countBy(executor, pageId, since, 'page_views', 'source', 12),
+    countBy(executor, pageId, since, 'page_views', 'country', 12),
+    countBy(executor, pageId, since, 'page_clicks', 'target', 15),
+    executor.query(
+      `SELECT source AS key, COUNT(*)::int AS views
+         FROM page_clicks
+        WHERE page_id = $1 AND occurred_at >= $2
+          AND target NOT LIKE 'share:%' AND target NOT LIKE 'embed:%'
+        GROUP BY source
+        ORDER BY views DESC, key
+        LIMIT 12`,
+      [pageId, since],
+    ).then((r) => r.rows),
+  ])
+
   const clicksMap = new Map(clicksBySource.map((r) => [r.key, r.views]))
   const conversionBySource = bySource.map((row) => {
     const clicks = clicksMap.get(row.key) || 0
@@ -135,16 +143,12 @@ export async function aggregateStats(executor, pageId, since) {
   })
 
   return {
-    totalViews,
-    uniqueVisits: totals[0].unique_visits,
-    totalClicks,
-    clickThroughRate: totalViews ? Math.round((totalClicks / totalViews) * 1000) / 10 : null,
+    ...summary,
     byDevice,
     bySource,
     byCountry,
     byTarget: byTarget.map((r) => ({ key: r.key, clicks: r.views })),
     conversionBySource,
-    byDay: mergeDailyActivity(viewsByDay, clicksByDay),
   }
 }
 

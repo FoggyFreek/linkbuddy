@@ -20,12 +20,12 @@ import {
 import { getTenantNamespace } from './namespacesRepo.js'
 import { ensureTenantMainPage, migrateTenantNamespace, NamespaceError } from './namespaceService.js'
 import { MAIN_SLUG_RE, RELEASE_TAIL_RE, slugFromSegments, mainSlugOf } from './slugs.js'
-import { insertView, insertClick, aggregateStats } from './statsRepo.js'
+import { insertView, insertClick, aggregateStats, summaryStats } from './statsRepo.js'
 import { classifyDevice, classifySource, resolveCountry, visitorHash } from './classify.js'
 import { validateLayout } from './layout.js'
 import { resolvePage } from './resolve.js'
 import { sanitizeClickTarget } from './platforms.js'
-import { pageEntitlements } from './entitlements.js'
+import { pageEntitlements, DEFAULT_STATS_RETENTION_DAYS } from './entitlements.js'
 import { fetchLinkMetadata } from './unfurl.js'
 import { createConcurrencyGate } from './concurrencyGate.js'
 
@@ -36,7 +36,12 @@ const UNFURL_MAX_GLOBAL = 6
 const UNFURL_MAX_PER_TENANT = 2
 
 const SESSION_TTL_SECONDS = 12 * 60 * 60
+// Every GigBuddy call arrives from one host, so these budgets are shared by all
+// of its tenants. The read routes get their own, far larger bucket: a dashboard
+// view costs two reads, and a busy hour of those must never exhaust the budget
+// the slug-sync outbox depends on to converge.
 const INTEGRATION_RATE_LIMIT = 120
+const INTEGRATION_READ_RATE_LIMIT = 1200
 const INTEGRATION_RATE_WINDOW_MS = 60 * 1000
 
 // URL/namespace design: a band's main page lives at /<mainSlug> (the band's
@@ -111,7 +116,7 @@ function validIntegrationBearer(header) {
   return Boolean(expected) && crypto.timingSafeEqual(suppliedHash, expectedHash)
 }
 
-function createIntegrationRateLimiter() {
+function createIntegrationRateLimiter(limit = INTEGRATION_RATE_LIMIT) {
   const clients = new Map()
   return (req, res, next) => {
     const now = Date.now()
@@ -122,13 +127,26 @@ function createIntegrationRateLimiter() {
       clients.set(key, entry)
     }
     entry.count += 1
-    if (entry.count > INTEGRATION_RATE_LIMIT) {
+    if (entry.count > limit) {
       const retrySeconds = Math.max(1, Math.ceil((entry.startedAt + INTEGRATION_RATE_WINDOW_MS - now) / 1000))
       res.set('Retry-After', String(retrySeconds))
       return res.status(429).json({ code: 'rate_limited', error: 'Too many synchronization requests' })
     }
     next()
   }
+}
+
+// Tenant and page ids arrive as text on the GigBuddy integration routes; only
+// a positive integer is ever a real one.
+function parseId(text) {
+  return /^[1-9]\d*$/.test(text) ? Number(text) : NaN
+}
+
+// The requested statistics window, clamped into [1, the page's plan window].
+// A missing, non-numeric or fractional `days` falls back to the 30-day default.
+function statsWindow(rawDays, retentionDays) {
+  const days = Math.min(Math.max(Math.floor(Number(rawDays)) || DEFAULT_STATS_RETENTION_DAYS, 1), retentionDays)
+  return { days, since: new Date(Date.now() - days * 24 * 60 * 60 * 1000) }
 }
 
 function namespaceErrorResponse(error) {
@@ -176,6 +194,8 @@ export function createApp(pool, overrides = {}) {
   }
 
   const integrationRateLimit = createIntegrationRateLimiter()
+  // Separate bucket, so read traffic and slug sync cannot starve each other.
+  const integrationReadRateLimit = createIntegrationRateLimiter(INTEGRATION_READ_RATE_LIMIT)
   const requireIntegrationSecret = (req, res, next) => {
     if (!validIntegrationBearer(req.get('authorization'))) {
       return res.status(401).json({ code: 'unauthorized', error: 'Unauthorized' })
@@ -189,8 +209,7 @@ export function createApp(pool, overrides = {}) {
     integrationRateLimit,
     async (req, res, next) => {
       const startedAt = Date.now()
-      const tenantText = req.params.tenantId
-      const tenantId = /^[1-9]\d*$/.test(tenantText) ? Number(tenantText) : NaN
+      const tenantId = parseId(req.params.tenantId)
       const { oldSlug, newSlug, revision } = req.body || {}
       let resultCode = 'internal_error'
       try {
@@ -233,6 +252,72 @@ export function createApp(pool, overrides = {}) {
           result: resultCode,
           durationMs: Date.now() - startedAt,
         })
+      }
+    },
+  )
+
+  // The tenant's pages, so GigBuddy can offer a picker when a band has more
+  // than one. Identity and publication state only — no layout, no content
+  // snapshot; those stay behind the editor session.
+  app.get(
+    '/api/integrations/gigbuddy/tenants/:tenantId/pages',
+    requireIntegrationSecret,
+    integrationReadRateLimit,
+    async (req, res, next) => {
+      const tenantId = parseId(req.params.tenantId)
+      if (!Number.isSafeInteger(tenantId)) {
+        return res.status(400).json({ code: 'invalid_request', error: 'Invalid tenant id' })
+      }
+      try {
+        res.json({ pages: pageListPayload(await listPagesForTenant(pool, tenantId)) })
+      } catch (err) {
+        next(err)
+      }
+    },
+  )
+
+  // Aggregate statistics for one of a tenant's link pages — the main page
+  // unless `pageId` names another. Same shared secret as the slug sync, and
+  // summary-only: the per-dimension breakdowns (device, country, source) stay
+  // inside the editor, so nothing beyond totals and the daily series ever
+  // leaves this app.
+  app.get(
+    '/api/integrations/gigbuddy/tenants/:tenantId/stats',
+    requireIntegrationSecret,
+    integrationReadRateLimit,
+    async (req, res, next) => {
+      const tenantId = parseId(req.params.tenantId)
+      const requestedPage = req.query.pageId === undefined ? null : parseId(String(req.query.pageId))
+      if (!Number.isSafeInteger(tenantId) || (requestedPage !== null && !Number.isSafeInteger(requestedPage))) {
+        return res.status(400).json({ code: 'invalid_request', error: 'Invalid tenant or page id' })
+      }
+      try {
+        // Page ids are global but pages are not: the lookup is tenant-scoped,
+        // so another tenant's page is simply not found.
+        const page = requestedPage === null
+          ? await getMainPageForTenant(pool, tenantId)
+          : await getPageForTenant(pool, requestedPage, tenantId)
+        if (!page && requestedPage !== null) {
+          return res.status(404).json({ code: 'page_not_found', error: 'Page not found' })
+        }
+        // Not an error: a band can be on a plan that includes link pages long
+        // before it opens the editor for the first time.
+        if (!page) return res.json({ hasPage: false })
+
+        const retentionDays = pageEntitlements(page.content).statsRetentionDays
+        const { days, since } = statsWindow(req.query.days, retentionDays)
+        const stats = await summaryStats(pool, page.id, since)
+        res.json({
+          hasPage: true,
+          pageId: page.id,
+          slug: page.slug,
+          days,
+          retentionDays,
+          enabled: statsEnabled(),
+          ...stats,
+        })
+      } catch (err) {
+        next(err)
       }
     },
   )
@@ -593,8 +678,7 @@ export function createApp(pool, overrides = {}) {
     try {
       // The plan's rolling window (30 or 90 days) caps how far back stats go.
       const retentionDays = pageEntitlements(req.page.content).statsRetentionDays
-      const days = Math.min(Math.max(Number(req.query.days) || 30, 1), retentionDays)
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+      const { days, since } = statsWindow(req.query.days, retentionDays)
       const stats = await aggregateStats(pool, req.page.id, since)
       res.json({ days, retentionDays, enabled: statsEnabled(), ...stats })
     } catch (err) {
