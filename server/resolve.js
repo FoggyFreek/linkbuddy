@@ -5,6 +5,7 @@
 import { detectPlatform } from './platforms.js'
 import { detectEmbed } from './embeds.js'
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../shared/pageBackgrounds.js'
+import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../shared/pageFonts.js'
 
 function resolveWidget(widget, content) {
   switch (widget.type) {
@@ -95,6 +96,7 @@ export function resolvePage(content, layout, release = null) {
     band: content.band || null,
     release: resolvedRelease,
     background: normalizeBackground(layout?.background),
+    font: normalizeFont(layout?.font),
     showBanner: layout?.showBanner === true,
     theme: normalizeTheme(layout?.theme, release ? 'dark' : 'light'),
     sections,
@@ -105,6 +107,13 @@ export function resolvePage(content, layout, release = null) {
 // backgrounds existed have none) so the page always gets a key it can paint.
 function normalizeBackground(background) {
   return PAGE_BACKGROUND_KEYS.includes(background) ? background : DEFAULT_PAGE_BACKGROUND
+}
+
+// The stored typeface key, re-checked at resolve time (layouts written before
+// fonts existed have none) so the page always gets a face it can render — the
+// same page kind on both sides, since a font is a plain per-page choice.
+function normalizeFont(font) {
+  return PAGE_FONT_KEYS.includes(font) ? font : DEFAULT_PAGE_FONT
 }
 
 // The page's colour scheme: the editor's explicit light/dark opt-in when it

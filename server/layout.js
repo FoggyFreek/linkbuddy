@@ -8,6 +8,7 @@
 import crypto from 'node:crypto'
 import { LINK_ICON_KEYS } from '../shared/linkIcons.js'
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../shared/pageBackgrounds.js'
+import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../shared/pageFonts.js'
 
 const MAX_SECTIONS = 20
 const MAX_WIDGETS_PER_SECTION = 30
@@ -18,6 +19,7 @@ const MAX_URL = 2000
 
 export const LINK_ICONS = new Set(LINK_ICON_KEYS)
 export const PAGE_BACKGROUNDS = new Set(PAGE_BACKGROUND_KEYS)
+export const PAGE_FONTS = new Set(PAGE_FONT_KEYS)
 
 function fail(message) {
   return { error: message }
@@ -185,6 +187,7 @@ export function validateLayout(raw) {
   return {
     layout: {
       background: parseBackground(raw.background),
+      font: parseFont(raw.font),
       showBanner: raw.showBanner === true,
       theme: parseTheme(raw.theme),
       sections,
@@ -198,6 +201,14 @@ export function validateLayout(raw) {
 // layout written by an older/newer editor still stores.
 function parseBackground(raw) {
   return PAGE_BACKGROUNDS.has(raw) ? raw : DEFAULT_PAGE_BACKGROUND
+}
+
+// The page's typeface (see src/lib/pageFonts.js). A closed key set like the
+// backgrounds — never a font name or a URL the client picks — so the only faces
+// a page can load are the ones this app ships. Unknown or missing falls back to
+// the theme's system stack rather than failing the save.
+function parseFont(raw) {
+  return PAGE_FONTS.has(raw) ? raw : DEFAULT_PAGE_FONT
 }
 
 // The page's colour-scheme override: an explicit 'light'/'dark' opt-in, or

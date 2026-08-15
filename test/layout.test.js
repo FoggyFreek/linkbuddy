@@ -160,6 +160,16 @@ describe('validateLayout', () => {
     expect(validateLayout({ sections: [] }).layout.theme).toBeNull()
   })
 
+  it('keeps a known page font and falls back to system otherwise', () => {
+    expect(validateLayout({ font: 'bebas', sections: [] }).layout.font).toBe('bebas')
+    expect(validateLayout({ font: 'space-grotesk', sections: [] }).layout.font).toBe('space-grotesk')
+    expect(validateLayout({ font: 'system', sections: [] }).layout.font).toBe('system')
+    expect(validateLayout({ font: 'comic sans', sections: [] }).layout.font).toBe('system')
+    expect(validateLayout({ font: 'url(evil.woff2)', sections: [] }).layout.font).toBe('system')
+    expect(validateLayout({ font: { toString: () => 'inter' }, sections: [] }).layout.font).toBe('system')
+    expect(validateLayout({ sections: [] }).layout.font).toBe('system')
+  })
+
   it('coerces gig limits into range and defaults bad icons', () => {
     const result = validateLayout({
       sections: [

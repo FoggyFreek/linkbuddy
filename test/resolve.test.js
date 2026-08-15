@@ -152,6 +152,18 @@ describe('resolvePage', () => {
     expect(resolvePage({ band }, null).theme).toBe('light')
   })
 
+  it('passes the layout font through, defaulting to system on both page kinds', () => {
+    const band = { name: 'A' }
+    const release = { songId: 1, title: 'Single', artist: 'A' }
+    expect(resolvePage({ band }, { font: 'oswald', sections: [] }).font).toBe('oswald')
+    expect(resolvePage({ band }, { font: 'oswald', sections: [] }, release).font).toBe('oswald')
+    // A layout stored before fonts existed, or carrying a key this build doesn't
+    // know, still resolves to something the page can render.
+    expect(resolvePage({ band }, { sections: [] }).font).toBe('system')
+    expect(resolvePage({ band }, { font: 'papyrus', sections: [] }).font).toBe('system')
+    expect(resolvePage({ band }, null).font).toBe('system')
+  })
+
   it('survives an empty snapshot', () => {
     const page = resolvePage({}, { sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'gigs', limit: 5 }] }] })
     expect(page.sections[0].widgets[0].gigs).toEqual([])

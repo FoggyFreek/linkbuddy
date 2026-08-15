@@ -89,10 +89,11 @@ either page kind. Alongside them: `SocialLinks`, `Thumb`, `CardLabel`,
 `icons.jsx`, `embeds.jsx`.
 
 **`shared/`** — allow-lists that the server validates against and the client
-renders from: `linkIcons.js`, `platforms.js`, `pageBackgrounds.js`. When you add
-a background, icon or platform, edit the `shared/` list first; both sides import
-it, so they can't drift. The artwork/component maps live client-side
-(`components/icons.jsx`, `lib/pageBackgrounds.js`).
+renders from: `linkIcons.js`, `platforms.js`, `pageBackgrounds.js`,
+`pageFonts.js`. When you add a background, font, icon or platform, edit the
+`shared/` list first; both sides import it, so they can't drift. The
+artwork/asset maps live client-side (`components/icons.jsx`,
+`lib/pageBackgrounds.js`, `lib/pageFonts.js`).
 
 ## Invariants
 
@@ -125,6 +126,16 @@ There is **no CSS file** — do not add one.
   `colorSchemeSelector: 'data-theme'`, both colour schemes, `responsiveFontSizes`,
   and component defaults. Custom tokens `palette.surface.{s2,s3,border,field}`
   (`sx={{ bgcolor: 'surface.s2' }}`) and `palette.chart.c1…c8`.
+- **Fonts** are self-hosted and bundled (`@fontsource*` `.woff2` files imported
+  in `lib/pageFonts.js`, which Vite hashes into `dist/assets`) — never a font
+  CDN, which would make a public page view hit a third party. Their `@font-face`
+  rules are a **CSS string** in `theme.js`'s `MuiCssBaseline.styleOverrides`
+  (several `@font-face` rules can't share one style-object key — as objects they
+  collapse into a single rule and only the last family survives). A *page* picks
+  a face by key: `typography.fontFamily` is `var(--lb-page-font, <system stack>)`,
+  and `pageFontSx` sets that variable on the `PageScope` element, so the whole
+  page subtree re-resolves while the editor chrome — where the variable is unset
+  — stays on the system stack.
 - **Charts** (`@mui/x-charts`, community only) live in the stats tab, which
   `Editor.jsx` lazy-loads so the public-page bundle doesn't carry the library.
   Series colours come from `palette.chart.*` as `var(--mui-palette-chart-c1)` so

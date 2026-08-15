@@ -27,6 +27,7 @@ import NewReleaseForm from '../../features/editor/components/NewReleaseForm.jsx'
 import { makeWidget } from '../../features/editor/utils/widgetModel.js'
 import { moveItem, moveWidget, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
 import { DEFAULT_PAGE_BACKGROUND } from '../../../shared/pageBackgrounds.js'
+import { DEFAULT_PAGE_FONT } from '../../../shared/pageFonts.js'
 
 function newId() {
   return crypto.randomUUID()
@@ -136,6 +137,13 @@ export default function Editor() {
   // save/publish/preview path as the background and banner.
   const setTheme = (theme) => {
     applyLayout({ ...layout, theme })
+  }
+
+  // The page's typeface, one of the self-hosted faces in src/lib/pageFonts.js. On
+  // the layout like the background and theme, so it takes the same
+  // save/publish/preview path — and each page can set its own.
+  const setFont = (font) => {
+    applyLayout({ ...layout, font })
   }
 
   const moveSection = (index, delta) => {
@@ -257,6 +265,8 @@ export default function Editor() {
           theme={layout.theme ?? null}
           autoTheme={page.pageType === 'release' ? 'dark' : 'light'}
           onSetTheme={setTheme}
+          font={layout.font || DEFAULT_PAGE_FONT}
+          onSetFont={setFont}
         />
       )}
 

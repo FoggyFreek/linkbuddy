@@ -7,6 +7,7 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import BackgroundPicker from './BackgroundPicker.jsx'
+import FontPicker from './FontPicker.jsx'
 
 // One titled block of the Appearance tab. Every appearance setting gets the same
 // panel card, heading and helper line, so adding the next one (colour scheme,
@@ -35,6 +36,8 @@ export default function AppearancePanel({
   theme,
   autoTheme,
   onSetTheme,
+  font,
+  onSetFont,
 }) {
   return (
     <Stack spacing={2}>
@@ -59,6 +62,13 @@ export default function AppearancePanel({
         hint="Artwork behind your page. Your content card stays on top of it, so text stays readable."
       >
         <BackgroundPicker value={background} mode={schemeMode} onChange={onSetBackground} />
+      </AppearanceSection>
+
+      <AppearanceSection
+        title="Font"
+        hint="The typeface for everything on this page. Each of your pages can use a different one."
+      >
+        <FontPicker value={font} mode={schemeMode} onChange={onSetFont} />
       </AppearanceSection>
 
       <AppearanceSection

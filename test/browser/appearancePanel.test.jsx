@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import theme from '../../src/lib/theme.js'
 import AppearancePanel from '../../src/features/editor/components/AppearancePanel.jsx'
 import { DEFAULT_PAGE_BACKGROUND } from '../../shared/pageBackgrounds.js'
+import { DEFAULT_PAGE_FONT } from '../../shared/pageFonts.js'
 
 // AppearancePanel's theme toggle drives layout.theme (server/layout.js parses
 // it, server/resolve.js falls back to it) — these tests exercise the control
@@ -19,6 +20,8 @@ async function renderPanel(props = {}) {
     theme: null,
     autoTheme: 'light',
     onSetTheme: vi.fn(),
+    font: DEFAULT_PAGE_FONT,
+    onSetFont: vi.fn(),
     ...props,
   }
   const screen = await render(
@@ -57,5 +60,25 @@ describe('AppearancePanel theme toggle', () => {
     const { screen, handlers } = await renderPanel({ theme: 'dark' })
     await screen.getByRole('button', { name: 'Dark' }).click()
     expect(handlers.onSetTheme).not.toHaveBeenCalled()
+  })
+})
+
+describe('AppearancePanel font picker', () => {
+  it('marks the layout\'s current font as the pressed swatch', async () => {
+    const { screen } = await renderPanel({ font: 'oswald' })
+    await expect.element(screen.getByRole('button', { name: 'Font: Oswald' })).toHaveAttribute('aria-pressed', 'true')
+    await expect.element(screen.getByRole('button', { name: 'Font: System' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('calls onSetFont with the picked key', async () => {
+    const { screen, handlers } = await renderPanel({ font: DEFAULT_PAGE_FONT })
+    await screen.getByRole('button', { name: 'Font: Bebas Neue' }).click()
+    expect(handlers.onSetFont).toHaveBeenCalledWith('bebas')
+  })
+
+  it('previews each swatch in the face it selects', async () => {
+    const { screen } = await renderPanel({ font: DEFAULT_PAGE_FONT })
+    const sample = screen.getByRole('button', { name: 'Font: Bebas Neue' }).element().querySelector('[data-sample]')
+    expect(getComputedStyle(sample).fontFamily).toContain('Bebas Neue')
   })
 })

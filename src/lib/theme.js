@@ -1,30 +1,10 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles'
+import { PAGE_FONT_FACE_CSS } from './pageFonts.js'
 
-// The single source of truth for the app's look. Everything the stylesheet and
-// components need — colours, surfaces, the type scale — comes from here, so the
-// design responds to MUI's light/dark colour schemes rather than a hand-rolled
-// set of CSS variables.
-//
-// `colorSchemeSelector: "[data-theme='%s']"` makes MUI emit its palette
-// variables under `:root, [data-theme="light"]` (the default) and
-// `[data-theme="dark"]` — `%s` is substituted with each scheme name. (MUI also
-// accepts the shorthand `'data-theme'`, which it expands to the same selector;
-// the explicit `%s` form is spelled out here to match MUI's documented API.) Two
-// independent things key off that one selector, and MUI owns both:
-//   - the editor's own light/dark/system choice, which `useColorScheme` writes
-//     onto <html data-theme> for the whole application;
-//   - a page's chosen scheme, which `ColorSchemeScope` sets on a wrapping
-//     element so its subtree (the public page, or a preview nested in the
-//     editor) resolves to that scheme, overriding the document's.
-// Because the variables cascade, a scoped subtree simply re-resolves them — no
-// manual attribute juggling or per-container text-colour restatement is needed.
+const SYSTEM_FONT_STACK = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
 
-// Shared type scale (px → rem against the 16px root). The variants map onto the
-// roles the design already used: h1 the band name, h2 a release title, h3 a
-// section heading, body1 a card label, and so on. Sizes match the previous
-// stylesheet so the visual rhythm is preserved while MUI now owns typography.
 const typography = {
-  fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  fontFamily: `var(--lb-page-font, ${SYSTEM_FONT_STACK})`,
   htmlFontSize: 16,
   fontWeightMedium: 500,
   h1: { fontSize: '2.125rem', fontWeight: 600, lineHeight: 1.15 }, // band name (34px)
@@ -41,25 +21,7 @@ const typography = {
   button: { textTransform: 'none', fontWeight: 600 },
 }
 
-// Named surfaces beyond MUI's own palette. `surface.*` carry the pill / scroll /
-// hairline tones the cards rely on. Components reference them through the `sx`
-// prop (e.g. bgcolor: 'surface.s2') and theme.vars.palette.surface.*, and MUI
-// emits them as `--mui-palette-surface-*` variables per colour scheme.
-//
-// `surface.canvas` is the *page* backdrop — what `ColorSchemeScope` paints
-// behind the public page and its editor preview. It sits two tone steps (−8 per
-// channel each) below `background.default`, the application/editor backdrop, so
-// the page's content card reads as a lifted surface against it.
-// Categorical chart slots (`palette.chart.c1…c8`, emitted as
-// `--mui-palette-chart-c*`). The two columns are the same eight hues stepped for
-// their own surface — not an automatic flip — and the *order* is the
-// colour-blind-safety mechanism: neighbouring slots are the pairs a stacked bar
-// or a pie puts side by side, and this order clears the adjacent-pair gates
-// (CVD ΔE ≥ 8, normal-vision ΔE ≥ 15) against the card surfaces of both schemes.
-// Assign slots by category identity, never by rank, so a quiet day can't repaint
-// the series. Several slots sit under 3:1 against their surface, so every chart
-// using them ships readable relief: a legend, value labels, or the exact-count
-// table beside it.
+
 const chartLight = {
   c1: '#2a78d6', c2: '#eb6834', c3: '#1baf7a', c4: '#eda100',
   c5: '#e87ba4', c6: '#008300', c7: '#4a3aa7', c8: '#e34948',
@@ -98,20 +60,19 @@ const baseTheme = createTheme({
     light: { palette: lightPalette },
     dark: { palette: darkPalette },
   },
-  // Semantic corner radii beyond the base card radius. `borderRadius` is the
-  // card/panel default MUI applies to surfaces; `pill` fully rounds add-buttons,
-  // range toggles and stat bars; `preview` frames the editor's public-page
-  // preview; `item` rounds the smaller nested rows (a widget in the section
-  // editor). Reference them as `theme.shape.*` — in `sx`, string-suffix with
-  // `px` (e.g. borderRadius: `${theme.shape.preview}px`), since the numeric
-  // `borderRadius` shorthand multiplies by the base radius.
   shape: { borderRadius: 18, pill: 999, preview: 24, item: 10 },
   typography,
   components: {
+    // The self-hosted faces a page may select, declared once for the whole app.
+    // A browser fetches a .woff2 only when rendered text uses that family, so
+    // this costs a little CSS and a page renders exactly the one font it picked.
+    // These overrides are a CSS string, not style objects, because several
+    // `@font-face` rules can't share one object key — see PAGE_FONT_FACE_CSS.
     MuiCssBaseline: {
-      styleOverrides: {
-        body: { WebkitFontSmoothing: 'antialiased' },
-      },
+      styleOverrides: `
+${PAGE_FONT_FACE_CSS}
+body{-webkit-font-smoothing:antialiased;}
+`,
     },
     // The card surface the whole design is built on: rounded, a hairline-soft
     // drop shadow on light, and — where that shadow all but disappears — a
