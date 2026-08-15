@@ -1,0 +1,79 @@
+import Box from '@mui/material/Box'
+import Stack from '@mui/material/Stack'
+import Card from '@mui/material/Card'
+import CardActionArea from '@mui/material/CardActionArea'
+import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
+import { PLATFORM_ICON_COMPONENTS } from '../icons.js'
+import Thumb from '../Thumb.js'
+import CardLabel from '../CardLabel.js'
+import type { LinkClickHandler, ResolvedSongWidget } from '../../types.js'
+
+const OtherPlatformIcon = PLATFORM_ICON_COMPONENTS.other
+
+export default function SongWidget({ widget, onLinkClick }: { widget: ResolvedSongWidget; onLinkClick: LinkClickHandler }) {
+  const primary = widget.links[0]
+  const extras = widget.links.slice(1)
+  // The row links to the first platform — show its icon so the destination is visible.
+  const PrimaryIcon = primary.platform ? PLATFORM_ICON_COMPONENTS[primary.platform.id] : OtherPlatformIcon
+  return (
+    <Card sx={{ p: '10px 14px' }}>
+      <CardActionArea
+        component="a"
+        href={primary.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => onLinkClick(`song:${primary.label || 'listen'}`)}
+        sx={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '8px' }}
+      >
+        <Thumb src={widget.coverUrl} />
+        <CardLabel label={widget.title} sublabel={widget.artist} />
+        <Box
+          component="span"
+          title={primary.platform?.label}
+          sx={{ width: 56, flexShrink: 0, display: 'inline-flex', justifyContent: 'center' }}
+        >
+          <PrimaryIcon size={26} />
+        </Box>
+      </CardActionArea>
+      {extras.length > 0 && (
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: 'center', pt: '10px', px: '4px' }}>
+          {extras.map((link) => {
+            // A known platform renders as its icon; anything else a text pill.
+            const platform = link.platform
+            const platformId = platform && platform.id !== 'other' ? platform.id : null
+            const Icon = platformId ? PLATFORM_ICON_COMPONENTS[platformId] : null
+            return Icon ? (
+              <IconButton
+                key={link.url}
+                component="a"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={platform?.label}
+                title={platform?.label}
+                onClick={() => onLinkClick(`platform:${platformId}`)}
+                sx={{ color: 'text.primary', borderRadius: '10px', '&:hover': { bgcolor: 'surface.s2' } }}
+              >
+                <Icon size={26} />
+              </IconButton>
+            ) : (
+              <Chip
+                key={link.url}
+                component="a"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                clickable
+                size="small"
+                label={link.label || 'Listen'}
+                onClick={() => onLinkClick(`song:${link.label || 'listen'}`)}
+                sx={{ bgcolor: 'surface.s2', '&:hover': { bgcolor: 'surface.s3' } }}
+              />
+            )
+          })}
+        </Stack>
+      )}
+    </Card>
+  )
+}

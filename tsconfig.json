@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": false,
+    "allowJs": false,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
@@ -14,12 +13,5 @@
     "strict": true,
     "target": "ES2022"
   },
-  "include": [
-    "server/**/*",
-    "shared/**/*",
-    "src/**/*",
-    "test/**/*",
-    "vite.config.js",
-    "vitest.browser.config.js"
-  ]
+  "include": ["src/**/*"]
 }

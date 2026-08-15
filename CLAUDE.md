@@ -43,18 +43,18 @@ may import a feature (`PreviewContent` is the one deliberate exception, below),
 and features don't import each other.
 
 ```
-src/main.jsx              Vite entry: ThemeProvider + CssBaseline + <App/>
-src/app/App.jsx           path-based routing, no router
+src/main.tsx              Vite entry: ThemeProvider + CssBaseline + <App/>
+src/app/App.tsx           path-based routing, no router
 src/app/routes/           BandPage · ReleasePage · Editor · Privacy
 src/components/           shared UI (below)
 src/features/<name>/       components/ · hooks/ · utils/ — only what that feature owns
-src/lib/                  api.js · theme.js · pageBackgrounds.js
+src/lib/                  api.ts · theme.ts · pageBackgrounds.ts
 src/utils/                pure helpers: format · socials · pathSlug · trimChars
 ```
 
 **Visitor-facing rendering** — two page kinds, two routes, no shared branch.
-`app/routes/BandPage.jsx` renders `features/public-links-card/` (`LinksCard` +
-`BandHeader`/`BandTitle`/`BandBanner`) and `app/routes/ReleasePage.jsx` renders
+`app/routes/BandPage.tsx` renders `features/public-links-card/` (`LinksCard` +
+`BandHeader`/`BandTitle`/`BandBanner`) and `app/routes/ReleasePage.tsx` renders
 `features/smart-link/` (`SmartLinkPage` + `ReleaseArt`/`ReleaseInfo`). Each owns
 its own chrome end to end — share-button placement, the GigBuddy attribution,
 the footer, viewport spacing — because the two designs are genuinely different:
@@ -66,7 +66,7 @@ beacons), `PageStatus` (loading/not-found/error), `PageScope` (payload → colou
 scheme + background artwork), `PrivacyNote`.
 
 Keep both shells presentational: data arrives resolved from `server/resolve.js`,
-and `onLinkClick` is the only outbound side effect. `components/PreviewContent.jsx`
+and `onLinkClick` is the only outbound side effect. `components/PreviewContent.tsx`
 picks the same shell for the editor's Preview tab, minus the chrome; it lives in
 `components/` — reaching *down* into two features — only because `features/editor`
 may not import another feature. Don't copy that pattern elsewhere.
@@ -76,31 +76,31 @@ plus the widget forms `WidgetEditors` and the `NewReleaseForm` dialog), `hooks/`
 (`useEditorSession` = handoff/session/page list, `useLayoutEditor` = draft
 layout + debounced autosave, `useDragReorder` = widget drag/keyboard reordering,
 owned by `LayoutBuilder` because a widget can be dragged between sections),
-`utils/` (`editorUtils.js`, and `widgetModel.js`
+`utils/` (`editorUtils.ts`, and `widgetModel.ts`
 = the pure vocabulary for creating/labelling widgets). Its root is the
-`app/routes/Editor.jsx` route, which owns the session and composes the tabs.
+`app/routes/Editor.tsx` route, which owns the session and composes the tabs.
 
 **`src/components/`** — everything shared. `Section` renders a section's widgets
-through the `WIDGETS` map in `widgets/index.js` (one renderer per file); widgets
+through the `WIDGETS` map in `widgets/index.ts` (one renderer per file); widgets
 live here rather than in a feature because `server/layout.js` allows any type on
 either page kind. Alongside them: `SocialLinks`, `Thumb`, `CardLabel`,
 `SectionTitle`, `PlayPill`, and the app-wide `ColorSchemeScope` (+
 `useScopedPortalProps`), `ColorModeToggle`, `ShareButton`, `CenteredStatus`,
-`icons.jsx`, `embeds.jsx`.
+`icons.tsx`, `embeds.tsx`.
 
 **`shared/`** — allow-lists that the server validates against and the client
 renders from: `linkIcons.js`, `platforms.js`, `pageBackgrounds.js`,
 `pageFonts.js`. When you add a background, font, icon or platform, edit the
 `shared/` list first; both sides import it, so they can't drift. The
-artwork/asset maps live client-side (`components/icons.jsx`,
-`lib/pageBackgrounds.js`, `lib/pageFonts.js`).
+artwork/asset maps live client-side (`components/icons.tsx`,
+`lib/pageBackgrounds.ts`, `lib/pageFonts.ts`).
 
 ## Invariants
 
 - **Privacy (don't break).** Third-party embeds never load on page view:
   visitors get a click-to-play facade, and the iframe mounts only after
   interaction, inside a closable overlay that unmounts it on close
-  (`src/components/embeds.jsx`, `server/embeds.js`). The public page sets no cookies and
+  (`src/components/embeds.tsx`, `server/embeds.js`). The public page sets no cookies and
   stores nothing on the device. See `PRIVACY.md`.
 - **Client input is untrusted.** `server/layout.js` whitelists field-by-field:
   unknown widget types rejected, unknown fields dropped, strings capped, URLs
@@ -122,14 +122,14 @@ artwork/asset maps live client-side (`components/icons.jsx`,
 Everything is **MUI v9** components styled with the **`sx` prop** and the theme.
 There is **no CSS file** — do not add one.
 
-- `src/lib/theme.js` is the single source of truth: `cssVariables` with
+- `src/lib/theme.ts` is the single source of truth: `cssVariables` with
   `colorSchemeSelector: 'data-theme'`, both colour schemes, `responsiveFontSizes`,
   and component defaults. Custom tokens `palette.surface.{s2,s3,border,field}`
   (`sx={{ bgcolor: 'surface.s2' }}`) and `palette.chart.c1…c8`.
 - **Fonts** are self-hosted and bundled (`@fontsource*` `.woff2` files imported
-  in `lib/pageFonts.js`, which Vite hashes into `dist/assets`) — never a font
+  in `lib/pageFonts.ts`, which Vite hashes into `dist/assets`) — never a font
   CDN, which would make a public page view hit a third party. Their `@font-face`
-  rules are a **CSS string** in `theme.js`'s `MuiCssBaseline.styleOverrides`
+  rules are a **CSS string** in `theme.ts`'s `MuiCssBaseline.styleOverrides`
   (several `@font-face` rules can't share one style-object key — as objects they
   collapse into a single rule and only the last family survives). A *page* picks
   a face by key: `typography.fontFamily` is `var(--lb-page-font, <system stack>)`,
@@ -137,7 +137,7 @@ There is **no CSS file** — do not add one.
   page subtree re-resolves while the editor chrome — where the variable is unset
   — stays on the system stack.
 - **Charts** (`@mui/x-charts`, community only) live in the stats tab, which
-  `Editor.jsx` lazy-loads so the public-page bundle doesn't carry the library.
+  `Editor.tsx` lazy-loads so the public-page bundle doesn't carry the library.
   Series colours come from `palette.chart.*` as `var(--mui-palette-chart-c1)` so
   they follow the colour scheme; the slot *order* is colour-blind-validated, so
   assign slots by category identity and never by rank. x-charts class names are
@@ -156,7 +156,7 @@ There is **no CSS file** — do not add one.
   the *page* scheme (an Appearance-tab light/dark toggle stored on the layout,
   `layout.theme`; `null`/"auto" falls back to dark for release pages, light for
   the main page — see `normalizeTheme` in `server/resolve.js`) inside
-  `ColorSchemeScope.jsx`, which the public page and the editor preview both
+  `ColorSchemeScope.tsx`, which the public page and the editor preview both
   wrap their content in. Changing one never affects the other.
 - **Portals must opt in:** Menu/Popover/Select/Tooltip/Dialog inside a scope
   escape it unless you spread `useScopedPortalProps()` (see `ShareButton`).

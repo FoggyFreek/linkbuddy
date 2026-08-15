@@ -19,7 +19,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text-summary', 'lcov'],
       reportsDirectory: 'coverage',
-      include: ['server/**/*.js', 'src/**/*.{js,jsx}', 'shared/**/*.js'],
+      include: ['server/**/*.js', 'src/**/*.{ts,tsx}', 'shared/**/*.js'],
     },
   },
 })

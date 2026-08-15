@@ -1,6 +1,6 @@
 # Privacy requirements — link page statistics
 
-The visitor-facing privacy notice lives at `/privacy` (`src/Privacy.jsx`);
+The visitor-facing privacy notice lives at `/privacy` (`src/app/routes/Privacy.tsx`);
 keep the two in sync. This document states the **hard rules** the
 implementation must uphold, and what an operator (data controller) needs to
 know. The design goal: visit and conversion statistics that are useful to
