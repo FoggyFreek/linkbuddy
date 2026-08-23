@@ -1,15 +1,19 @@
+import { useState } from 'react'
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
-import Typography from '@mui/material/Typography'
-import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import TextField from '@mui/material/TextField'
+import IconButton from '@mui/material/IconButton'
+import Tooltip from '@mui/material/Tooltip'
+import Menu from '@mui/material/Menu'
+import MenuItem from '@mui/material/MenuItem'
+import AddIcon from '@mui/icons-material/Add'
 import ItemOrderActions from './ItemOrderActions.js'
 import WidgetListItem from './WidgetListItem.js'
 import type useDragReorder from '../hooks/useDragReorder.js'
 import type { ContentSnapshot, DraftSection, DraftWidget, PageType, UnfurlResult, WidgetType } from '../../../types.js'
 
-// The widget types the "Add:" row offers, and the content each one needs before
+// The widget types the add menu offers, and the content each one needs before
 // it can be added (a song/platforms widget needs songs, merch needs products).
 // `releaseOnly` types are hidden on the main link page: platform buttons point
 // at one release's streaming links, so they only make sense on a release page.
@@ -24,7 +28,7 @@ const ADD_TYPES: AddType[] = [
 ]
 
 // One section card: its title field, ordering/delete controls, the list of
-// widget rows, and the "Add:" palette. It owns the immutable widget-list
+// widget rows, and the add menu. It owns the immutable widget-list
 // transforms (remove/replace) and reports the resulting widget array up through
 // `onUpdate`; section-level operations, and widget reordering (which can cross
 // sections, so it can't be owned here), are callbacks from LayoutBuilder.
@@ -63,6 +67,7 @@ export default function SectionEditor({
 }) {
   const updateWidgets = (widgets: DraftWidget[]) => onUpdate({ widgets })
   const addTypes = ADD_TYPES.filter((t) => !(t.releaseOnly && pageType === 'main'))
+  const [addAnchor, setAddAnchor] = useState<HTMLElement | null>(null)
 
   return (
     <Card variant="panel">
@@ -116,14 +121,27 @@ export default function SectionEditor({
         )}
       </Stack>
 
-      <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', mt: 1.5 }}>
-        <Typography variant="body2" color="text.secondary">Add:</Typography>
-        {addTypes.map((t) => (
-          <Button key={t.type} size="small" variant="pill" onClick={() => onAddWidget(t.type)} disabled={!canAdd(t.needs)}>
-            {t.label}
-          </Button>
-        ))}
-      </Stack>
+      <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'center' }}>
+        <Tooltip title="Add">
+          <IconButton size="small" aria-label="Add" onClick={(e) => setAddAnchor(e.currentTarget)}>
+            <AddIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Menu anchorEl={addAnchor} open={Boolean(addAnchor)} onClose={() => setAddAnchor(null)}>
+          {addTypes.map((t) => (
+            <MenuItem
+              key={t.type}
+              disabled={!canAdd(t.needs)}
+              onClick={() => {
+                setAddAnchor(null)
+                onAddWidget(t.type)
+              }}
+            >
+              {t.label}
+            </MenuItem>
+          ))}
+        </Menu>
+      </Box>
     </Card>
   )
 }

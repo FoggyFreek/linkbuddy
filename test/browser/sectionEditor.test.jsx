@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
+import { userEvent } from 'vitest/browser'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import theme from '../../src/lib/theme.js'
 import SectionEditor from '../../src/features/editor/components/SectionEditor.jsx'
 
 // SectionEditor became a standalone component in the editor refactor. These
-// tests exercise its immutable widget-list transforms and the "Add:" palette
+// tests exercise its immutable widget-list transforms and the add menu
 // directly — the payload it hands back up through onUpdate/onAddWidget — without
 // booting the whole Editor (session, autosave, tabs).
 
@@ -86,16 +87,39 @@ describe('SectionEditor (extracted editor component)', () => {
     expect(handlers.onUpdate).toHaveBeenCalledWith({ title: 'Merch' })
   })
 
-  it('adds a widget of the requested type via the palette', async () => {
+  it('adds a widget of the requested type from the add menu', async () => {
     const { screen, handlers } = await renderSection()
-    await screen.getByRole('button', { name: 'Custom link', exact: true }).click()
+    await screen.getByRole('button', { name: 'Add' }).click()
+    await screen.getByRole('menuitem', { name: 'Custom link' }).click()
     expect(handlers.onAddWidget).toHaveBeenCalledWith('link')
   })
 
-  it('disables add buttons whose required content is missing', async () => {
+  it('offers every widget type in the add menu', async () => {
     const { screen } = await renderSection()
+    await screen.getByRole('button', { name: 'Add' }).click()
+    for (const label of ['Song', 'Platform buttons', 'Gigs', 'Merch', 'Custom link', 'Embed']) {
+      await expect.element(screen.getByRole('menuitem', { name: label })).toBeInTheDocument()
+    }
+  })
+
+  it('hides release-only widget types on the main page', async () => {
+    const { screen } = await renderSection({ pageType: 'main' })
+    await screen.getByRole('button', { name: 'Add' }).click()
+    await expect.element(screen.getByRole('menuitem', { name: 'Custom link' })).toBeInTheDocument()
+    expect(screen.getByRole('menuitem', { name: 'Platform buttons' }).elements()).toHaveLength(0)
+  })
+
+  it('disables menu items whose required content is missing', async () => {
+    const { screen } = await renderSection()
+    await screen.getByRole('button', { name: 'Add' }).click()
     // No products synced, so Merch is gated; Custom link is always available.
-    await expect.element(screen.getByRole('button', { name: 'Merch', exact: true })).toBeDisabled()
-    await expect.element(screen.getByRole('button', { name: 'Custom link', exact: true })).toBeEnabled()
+    await expect.element(screen.getByRole('menuitem', { name: 'Merch' })).toHaveAttribute('aria-disabled', 'true')
+    await expect.element(screen.getByRole('menuitem', { name: 'Custom link' })).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('shows the "Add" tooltip on the add button', async () => {
+    const { screen } = await renderSection()
+    await userEvent.hover(screen.getByRole('button', { name: 'Add' }))
+    await expect.element(screen.getByRole('tooltip')).toHaveTextContent('Add')
   })
 })

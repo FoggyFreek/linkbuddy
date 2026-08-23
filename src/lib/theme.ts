@@ -68,10 +68,12 @@ const baseTheme = createTheme({
     // this costs a little CSS and a page renders exactly the one font it picked.
     // These overrides are a CSS string, not style objects, because several
     // `@font-face` rules can't share one object key — see PAGE_FONT_FACE_CSS.
+    // The body also takes the darker `surface.canvas` backdrop the app's paper
+    // column (AppShell) and the public page's card sit on, in both schemes.
     MuiCssBaseline: {
       styleOverrides: `
 ${PAGE_FONT_FACE_CSS}
-body{-webkit-font-smoothing:antialiased;}
+body{-webkit-font-smoothing:antialiased;background-color:var(--mui-palette-surface-canvas);}
 `,
     },
     // The card surface the whole design is built on: rounded, a hairline-soft

@@ -22,7 +22,6 @@ function Swatch({ option, mode, selected, onSelect }: { option: FontOption; mode
         onClick={onSelect}
         aria-pressed={selected}
         aria-label={`Font: ${option.label}`}
-        title={option.description}
         sx={(theme) => ({
           display: 'block', width: '100%', overflow: 'hidden',
           borderRadius: `${theme.shape.item}px`,

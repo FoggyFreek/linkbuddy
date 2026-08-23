@@ -26,7 +26,7 @@ import markerWoff2 from '@fontsource/permanent-marker/files/permanent-marker-lat
 import type { Theme } from '@mui/material/styles'
 import type { SystemStyleObject } from '@mui/system'
 
-interface FontDefinition { label: string; description: string; family: string; fallback: string; weight: string; src: string }
+interface FontDefinition { label: string; family: string; fallback: string; weight: string; src: string }
 
 // `weight` is the @font-face weight *range*. For the variable faces it's the
 // font's real wght axis; for the single-weight display faces it's deliberately
@@ -35,52 +35,42 @@ interface FontDefinition { label: string; description: string; family: string; f
 const FONTS: Record<string, FontDefinition> = {
   inter: {
     label: 'Inter',
-    description: 'Clean and neutral. The safe choice for long text.',
     family: 'Inter', fallback: 'sans-serif', weight: '100 900', src: interWoff2,
   },
   manrope: {
     label: 'Manrope',
-    description: 'Rounded modern sans with a friendly feel.',
     family: 'Manrope', fallback: 'sans-serif', weight: '200 800', src: manropeWoff2,
   },
   montserrat: {
     label: 'Montserrat',
-    description: 'Geometric and wide. Confident headings.',
     family: 'Montserrat', fallback: 'sans-serif', weight: '100 900', src: montserratWoff2,
   },
   oswald: {
     label: 'Oswald',
-    description: 'Tall and condensed, like a gig poster.',
     family: 'Oswald', fallback: 'sans-serif', weight: '200 700', src: oswaldWoff2,
   },
   bebas: {
     label: 'Bebas Neue',
-    description: 'All-caps display face. Loud and punchy.',
     family: 'Bebas Neue', fallback: 'sans-serif', weight: '100 900', src: bebasWoff2,
   },
   anton: {
     label: 'Anton',
-    description: 'Heavy condensed poster type. Maximum impact.',
     family: 'Anton', fallback: 'sans-serif', weight: '100 900', src: antonWoff2,
   },
   lora: {
     label: 'Lora',
-    description: 'A warm serif. Classic without feeling stiff.',
     family: 'Lora', fallback: 'serif', weight: '400 700', src: loraWoff2,
   },
   playfair: {
     label: 'Playfair Display',
-    description: 'High-contrast serif with an editorial edge.',
     family: 'Playfair Display', fallback: 'serif', weight: '400 900', src: playfairWoff2,
   },
   'space-grotesk': {
     label: 'Space Grotesk',
-    description: 'Technical and slightly odd. Electronic leaning.',
     family: 'Space Grotesk', fallback: 'sans-serif', weight: '300 700', src: spaceGroteskWoff2,
   },
   marker: {
     label: 'Permanent Marker',
-    description: 'Hand-drawn marker pen. Best on short pages.',
     family: 'Permanent Marker', fallback: 'cursive', weight: '100 900', src: markerWoff2,
   },
 }
@@ -114,8 +104,8 @@ export const PAGE_FONT_FACE_CSS = PAGE_FONT_FACES.map(
 // would reject. `system` carries no face of its own — it *is* the theme default.
 export const PAGE_FONT_OPTIONS = PAGE_FONT_KEYS.map((key) =>
   key === DEFAULT_PAGE_FONT
-    ? { key, label: 'System', description: "The reader's own device font. Loads nothing." }
-    : { key, label: FONTS[key].label, description: FONTS[key].description },
+    ? { key, label: 'System' }
+    : { key, label: FONTS[key].label },
 )
 
 // The page's chosen face as a scope-local override of the theme's font variable.

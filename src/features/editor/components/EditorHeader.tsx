@@ -6,9 +6,6 @@ import ShareButton from '../../../components/ShareButton.js'
 import ColorModeToggle from '../../../components/ColorModeToggle.js'
 import type { EditorPage } from '../../../types.js'
 
-// The page header: save status and the per-page actions (theme toggle, share,
-// refresh, delete, publish) on the top row, with the current page's title
-// centred below. `title` is the visitor-facing page label the parent computes.
 export default function EditorHeader({
   page,
   title,
@@ -27,7 +24,10 @@ export default function EditorHeader({
   onPublish: () => void | Promise<void>
 }) {
   return (
-    <Box>
+    <Box component="header">
+      <Typography variant="h6" sx={{ textAlign: 'center', mb: 1 }}>
+        linkBuddy
+      </Typography>
       <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <Typography variant="caption" color="text.secondary" sx={{ mr: 'auto' }}>{saveLabel}</Typography>
         <ColorModeToggle />
@@ -36,8 +36,13 @@ export default function EditorHeader({
         {page.pageType === 'release' && <Button variant="outlined" onClick={onDelete}>Delete page</Button>}
         <Button variant="contained" onClick={onPublish}>{publishedAt ? 'Publish changes' : 'Publish'}</Button>
       </Stack>
-      <Typography variant="h2" component="h1" sx={{ mt: 2, textAlign: 'center' }}>
-        {title} — {page.pageType === 'release' ? 'release page' : 'link page'}
+       
+        <Typography variant="h1" component="h1" sx={{ mt: 2, textAlign: 'center' }}>
+          {title}
+        </Typography>
+      
+      <Typography variant="h3" component="h1" sx={{ mt: 2, textAlign: 'center' }}>
+        {page.pageType === 'release' ? 'release page' : 'link page'}
       </Typography>
     </Box>
   )

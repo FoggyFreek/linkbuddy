@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
+import Box from '@mui/material/Box'
 import CssBaseline from '@mui/material/CssBaseline'
 import theme from '../../src/lib/theme.js'
 import PagePreview from '../../src/features/editor/components/PagePreview.jsx'
+import BandLogo from '../../src/components/BandLogo.js'
 
 // The band logo swap (BandTitle in features/public-links-card) picks `logoUrl` on a light
 // page and `logoDarkUrl` on a dark one — where "the page" means the enclosing
@@ -112,5 +114,51 @@ describe('band logo follows the page scheme, not the document scheme', () => {
     const screen2 = await renderPreview({ theme: 'dark', sections: [], band: { name: 'The Testers', logoUrl: LOGO } }, 'light')
     await expect.element(screen2.getByRole('heading', { level: 1 })).toBeInTheDocument()
     expect(await shownLogo()).toBe(LOGO)
+  })
+})
+
+// `width` scales the logo down while the browser keeps its aspect ratio: it
+// drives the width and the height follows, so the default `maxHeight` cap —
+// which would clamp height independently against a now definite width and
+// squash the artwork — steps aside once a width is given. The fixture is
+// 200x100, a 2:1 ratio, inside a 400px box.
+describe('BandLogo width', () => {
+  const FIXTURE = `data:image/svg+xml,${encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='200' height='100'/>")}`
+  const band = { name: 'The Testers', logoUrl: FIXTURE }
+
+  it('defaults to auto and otherwise scales to the given width', async () => {
+    await render(
+      <ThemeProvider theme={theme}>
+        {[undefined, 120, '25%'].map((width, i) => (
+          <Box key={i} data-case={String(width)} sx={{ width: 400 }}>
+            <BandLogo band={band} width={width} />
+          </Box>
+        ))}
+      </ThemeProvider>,
+    )
+
+    const measure = (value) => vi.waitFor(() => {
+      const img = document.querySelector(`[data-case="${value}"] img`)
+      expect(img.naturalWidth).toBe(200)
+      const { width, height } = img.getBoundingClientRect()
+      return { width, height, maxHeight: getComputedStyle(img).maxHeight }
+    })
+
+    // Unset: natural size, capped by maxHeight — 83px tall, so 166px wide.
+    const auto = await measure('undefined')
+    expect(auto.maxHeight).toBe('83px')
+    expect(auto.height).toBeCloseTo(83, 0)
+    expect(auto.width).toBeCloseTo(166, 0)
+
+    // A number is px, and the height follows the 2:1 ratio rather than the cap.
+    const fixed = await measure('120')
+    expect(fixed.maxHeight).toBe('none')
+    expect(fixed.width).toBeCloseTo(120, 0)
+    expect(fixed.height).toBeCloseTo(60, 0)
+
+    // Any CSS width works, ratio still intact.
+    const relative = await measure('25%')
+    expect(relative.width).toBeCloseTo(100, 0)
+    expect(relative.height).toBeCloseTo(50, 0)
   })
 })

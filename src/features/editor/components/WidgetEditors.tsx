@@ -39,6 +39,8 @@ export function SongSelect({ value, songs, onChange, label = 'Song' }: { value: 
     <TextField
       select
       size="small"
+      variant="standard"
+      sx={{ pl: 3 }}
       fullWidth
       label={label}
       value={value}
@@ -55,14 +57,26 @@ export function SongSelect({ value, songs, onChange, label = 'Song' }: { value: 
 }
 
 function SongWidgetEditor({ widget, songs, onChange }: { widget: SongWidgetDraft; songs: Song[]; onChange: (widget: SongWidgetDraft) => void }) {
-  return <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId })} />
+  return (
+  <Stack spacing={1}>
+  <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
+        Fetches the album art and any streaming links for the selected song from gigBuddy and displays them in a row with platform icons. 
+  </Typography>
+  <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId })} />
+  </Stack>
+  )
 }
 
 function PlatformsWidgetEditor({ widget, songs, onChange }: { widget: PlatformsWidgetDraft; songs: Song[]; onChange: (widget: PlatformsWidgetDraft) => void }) {
   return (
     <Stack spacing={1}>
+      <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
+        Fetches the album art and any streaming links for the selected song from gigBuddy and displays them in a list.  
+      </Typography>
       <TextField
         size="small"
+        variant="standard"
+        sx={{ pl: 3 }}
         fullWidth
         label="Title (optional)"
         value={widget.title || ''}
@@ -77,8 +91,13 @@ function PlatformsWidgetEditor({ widget, songs, onChange }: { widget: PlatformsW
 function GigsWidgetEditor({ widget, onChange }: { widget: GigsWidgetDraft; onChange: (widget: GigsWidgetDraft) => void }) {
   return (
     <Stack spacing={1}>
+      <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
+        Fetches only the announced gigs from gigBuddy and displays them in a list. Ticket links are included if available. The list is automatically updated when new gigs are announced. 
+      </Typography>
       <TextField
         size="small"
+        variant="standard"
+        sx={{ pl: 3 }}
         fullWidth
         label="Title (Upcoming Gigs)"
         value={widget.title || ''}
@@ -87,11 +106,12 @@ function GigsWidgetEditor({ widget, onChange }: { widget: GigsWidgetDraft; onCha
       <TextField
         type="number"
         size="small"
+        variant="standard"
         label="Max gigs"
         value={widget.limit}
         onChange={(e) => onChange({ ...widget, limit: Number(e.target.value) || 10 })}
         slotProps={{ htmlInput: { min: 1, max: 50 } }}
-        sx={{ width: 120 }}
+        sx={{ pl: 3, width: 120 }}
       />
     </Stack>
   )
@@ -115,6 +135,8 @@ function MerchWidgetEditor({ widget, products, onChange }: { widget: MerchWidget
     <Stack spacing={1}>
       <TextField
         size="small"
+        variant="standard"
+        sx={{ pl: 3 }}
         fullWidth
         label="Title (e.g. Album CDs and LPs)"
         value={widget.title || ''}
@@ -122,6 +144,8 @@ function MerchWidgetEditor({ widget, products, onChange }: { widget: MerchWidget
       />
       <TextField
         size="small"
+        variant="standard"
+        sx={{ pl: 3 }}
         fullWidth
         label="Shop URL the items link to (optional)"
         value={widget.shopUrl || ''}
@@ -140,6 +164,8 @@ function MerchWidgetEditor({ widget, products, onChange }: { widget: MerchWidget
                 <Stack direction="row" spacing={1} sx={{ ml: '24px', mt: 0.5, mb: 0.5 }}>
                   <TextField
                     size="small"
+                    variant="standard"
+                    sx={{ pl: 3 }}
                     fullWidth
                     label="Image URL (optional)"
                     value={item.imageUrl || ''}
@@ -147,6 +173,8 @@ function MerchWidgetEditor({ widget, products, onChange }: { widget: MerchWidget
                   />
                   <TextField
                     size="small"
+                    variant="standard"
+                    sx={{ pl: 3 }}
                     label="Badge (e.g. NEW)"
                     value={item.badge || ''}
                     onChange={(e) => updateItem(product.id, { badge: e.target.value || null })}
@@ -190,17 +218,18 @@ function LinkWidgetEditor({ widget, onChange, onUnfurl }: UnfurlEditorProps<Link
   }
   return (
     <Stack spacing={1}>
-      <TextField size="small" fullWidth label="Label" value={widget.label || ''} onChange={(e) => onChange({ ...widget, label: e.target.value })} />
-      <TextField size="small" fullWidth label="https://…" value={widget.url || ''} onChange={(e) => onChange({ ...widget, url: e.target.value })} />
-      <TextField size="small" fullWidth label="Sublabel (optional)" value={widget.sublabel || ''} onChange={(e) => onChange({ ...widget, sublabel: e.target.value || null })} />
-      <TextField size="small" fullWidth label="Thumbnail image URL (optional)" value={widget.imageUrl || ''} onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })} />
+      <TextField size="small" variant="standard" sx={{ pl: 3 }} fullWidth label="Label" value={widget.label || ''} onChange={(e) => onChange({ ...widget, label: e.target.value })} />
+      <TextField size="small" variant="standard" sx={{ pl: 3 }} fullWidth label="https://…" value={widget.url || ''} onChange={(e) => onChange({ ...widget, url: e.target.value })} />
+      <TextField size="small" variant="standard" sx={{ pl: 3 }} fullWidth label="Sublabel (optional)" value={widget.sublabel || ''} onChange={(e) => onChange({ ...widget, sublabel: e.target.value || null })} />
+      <TextField size="small" variant="standard" sx={{ pl: 3 }} fullWidth label="Thumbnail image URL (optional)" value={widget.imageUrl || ''} onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })} />
       <TextField
         select
         size="small"
+        variant="standard"
         label="Icon"
         value={widget.icon}
         onChange={(e) => onChange({ ...widget, icon: e.target.value })}
-        sx={{ width: 110 }}
+        sx={{ pl: 3, width: 110 }}
         slotProps={{ select: { renderValue: (icon: unknown) => <IconOption icon={String(icon)} /> } }}
       >
         {ICON_OPTIONS.map((icon) => (
@@ -209,7 +238,7 @@ function LinkWidgetEditor({ widget, onChange, onUnfurl }: UnfurlEditorProps<Link
       </TextField>
       <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
         <Button variant="outlined" onClick={fill} disabled={fetching || !widget.url}>
-          {fetching ? 'Fetching…' : 'Fetch image & info from link'}
+          {fetching ? 'Fetching…' : 'Try fetch image & info from link'}
         </Button>
         {fetchError && <Typography variant="caption" color="error">{fetchError}</Typography>}
       </Stack>
@@ -243,24 +272,28 @@ function EmbedWidgetEditor({ widget, onChange, onUnfurl }: UnfurlEditorProps<Emb
   }
   return (
     <Stack spacing={1}>
+      <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
+        Embed widget works with any Open Graph tags site and will render as a player if the link is supported, otherwise it will render as a rich link card.
+      </Typography>
       <TextField
         size="small"
+        variant="standard"
+        sx={{ pl: 3 }}
         fullWidth
-        label="Paste a Spotify, YouTube, SoundCloud or any other URL"
+        label="Paste a URL (Spotify, YouTube, Bandcamp, etc.)"
         value={widget.url || ''}
         onChange={(e) => onChange({ ...widget, url: e.target.value })}
       />
       <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
         <Button variant="outlined" onClick={load} disabled={fetching || !widget.url}>
-          {fetching ? 'Fetching…' : 'Load info from link'}
+          {fetching ? 'Fetching…' : 'Load info'}
         </Button>
         {provider && <Hint>Renders as: {provider}</Hint>}
         {fetchError && <Typography variant="caption" color="error">{fetchError}</Typography>}
       </Stack>
-      <TextField size="small" fullWidth label="Title" value={widget.title || ''} onChange={(e) => onChange({ ...widget, title: e.target.value || null })} />
-      <TextField size="small" fullWidth label="Description (optional)" value={widget.description || ''} onChange={(e) => onChange({ ...widget, description: e.target.value || null })} />
-      <TextField size="small" fullWidth label="Image URL (auto-filled from the link)" value={widget.imageUrl || ''} onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })} />
-      <Hint>Spotify/SoundCloud play inline, YouTube opens in an overlay — always click-to-play.</Hint>
+      <TextField size="small" variant="standard" sx={{ pl: 3 }} fullWidth label="Title" value={widget.title || ''} onChange={(e) => onChange({ ...widget, title: e.target.value || null })} />
+      <TextField size="small" variant="standard" sx={{ pl: 3 }} fullWidth label="Description" value={widget.description || ''} onChange={(e) => onChange({ ...widget, description: e.target.value || null })} />
+      <TextField size="small" variant="standard" sx={{ pl: 3 }} fullWidth label="Image URL" value={widget.imageUrl || ''} onChange={(e) => onChange({ ...widget, imageUrl: e.target.value || null })} />
     </Stack>
   )
 }

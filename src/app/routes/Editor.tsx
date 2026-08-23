@@ -1,7 +1,7 @@
 import { Suspense, lazy, useCallback, useRef, useState, type SyntheticEvent } from 'react'
-import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Link from '@mui/material/Link'
+import AppShell from '../../components/AppShell.js'
 import CenteredStatus from '../../components/CenteredStatus.js'
 import {
   unfurlUrl,
@@ -216,7 +216,7 @@ export default function Editor() {
   const canAdd = (needs?: 'songs' | 'products') => !needs || Array.isArray(content[needs]) && content[needs].length > 0
 
   return (
-    <Box sx={{ maxWidth: 760, mx: 'auto', px: 2, pt: 3, pb: 10 }}>
+    <AppShell sx={{ px: 2, pt: 3, pb: 10 }}>
       <EditorHeader
         page={page}
         title={title}
@@ -297,6 +297,6 @@ export default function Editor() {
           onCancel={() => setCreatingRelease(false)}
         />
       )}
-    </Box>
+    </AppShell>
   )
 }

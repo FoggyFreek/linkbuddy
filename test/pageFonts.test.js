@@ -10,11 +10,15 @@ describe('page fonts', () => {
     expect(PAGE_FONT_OPTIONS.map((o) => o.key)).toEqual(PAGE_FONT_KEYS)
   })
 
-  it('labels every option', () => {
+  // The picker identifies a face by its swatch plus this one label — there is no
+  // second line of prose — so every option needs a label, and two faces must
+  // never share one.
+  it('labels every option distinctly', () => {
     for (const option of PAGE_FONT_OPTIONS) {
       expect(option.label, option.key).toBeTruthy()
-      expect(option.description, option.key).toBeTruthy()
     }
+    const labels = PAGE_FONT_OPTIONS.map((o) => o.label)
+    expect(new Set(labels).size).toBe(labels.length)
   })
 
   it('includes the default in the allow-list and loads nothing for it', () => {

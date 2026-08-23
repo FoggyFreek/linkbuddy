@@ -56,8 +56,30 @@ export default function AppearancePanel({
   return (
     <Stack spacing={2}>
       <AppearanceSection
+        title="Banner image"
+        hint={
+          bannerUrl
+            ? 'Shows your GigBuddy banner across the top of the page, with your profile picture overlapping it.'
+            : 'Set a banner image in GigBuddy to enable this.'
+        }
+      >
+        <FormControlLabel
+          disabled={!bannerUrl}
+          control={<Switch checked={!!bannerUrl && showBanner} onChange={(e) => onSetShowBanner(e.target.checked)} />}
+          label="Show band banner"
+        />
+        {bannerUrl && (
+          <Box
+            component="img"
+            src={bannerUrl}
+            alt=""
+            sx={{ mt: 1.5, width: '100%', maxWidth: 420, height: 140, objectFit: 'cover', borderRadius: 1, display: 'block' }}
+          />
+        )}
+      </AppearanceSection>
+      <AppearanceSection
         title="Theme"
-        hint={`Light or dark surfaces for this page's card and content. Auto picks ${autoTheme} for this page.`}
+        hint={`Determines light or dark theme colors for this page's card and content. Auto picks ${autoTheme} for this page.`}
       >
         <ToggleButtonGroup
           value={theme || 'auto'}
@@ -85,28 +107,7 @@ export default function AppearancePanel({
         <FontPicker value={font} mode={schemeMode} onChange={onSetFont} />
       </AppearanceSection>
 
-      <AppearanceSection
-        title="Banner image"
-        hint={
-          bannerUrl
-            ? 'Shows your GigBuddy banner across the top of the page, with your profile picture overlapping it.'
-            : 'Set a banner image in GigBuddy to enable this.'
-        }
-      >
-        <FormControlLabel
-          disabled={!bannerUrl}
-          control={<Switch checked={!!bannerUrl && showBanner} onChange={(e) => onSetShowBanner(e.target.checked)} />}
-          label="Show band banner"
-        />
-        {bannerUrl && (
-          <Box
-            component="img"
-            src={bannerUrl}
-            alt=""
-            sx={{ mt: 1.5, width: '100%', maxWidth: 360, height: 90, objectFit: 'cover', borderRadius: 1, display: 'block' }}
-          />
-        )}
-      </AppearanceSection>
+      
     </Stack>
   )
 }
