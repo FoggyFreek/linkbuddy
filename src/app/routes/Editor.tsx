@@ -26,8 +26,8 @@ import { useLayoutEditor } from '../../features/editor/hooks/useLayoutEditor.js'
 import NewReleaseForm from '../../features/editor/components/NewReleaseForm.js'
 import { makeWidget } from '../../features/editor/utils/widgetModel.js'
 import { moveItem, moveWidget, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
-import { DEFAULT_PAGE_BACKGROUND } from '../../../shared/pageBackgrounds.js'
-import { DEFAULT_PAGE_FONT } from '../../../shared/pageFonts.js'
+import { DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
+import { DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
 import type {
   ContentSnapshot, DragLocation, DraftSection, DraftTheme, EditorPage, EditorTab,
   Layout, PageListEntry, ResolvedPage, WidgetType,
@@ -102,9 +102,10 @@ export default function Editor() {
     try {
       await deleteEditorPage(currentSession(), page.id)
       const remaining = pages.filter((p) => p.id !== page.id)
-      setPages(remaining)
       const main = remaining.find((p) => p.pageType === 'main') || remaining[0]
-      adoptPage(await getEditorPage(currentSession(), main.id))
+      const loaded = await getEditorPage(currentSession(), main.id)
+      setPages(remaining)
+      adoptPage(loaded)
     } catch (err) {
       setFatal(errorMessage(err))
     }

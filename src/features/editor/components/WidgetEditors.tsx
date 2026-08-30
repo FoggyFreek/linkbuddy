@@ -12,7 +12,7 @@ import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Typography from '@mui/material/Typography'
-import { LINK_ICON_KEYS } from '../../../../shared/linkIcons.js'
+import { LINK_ICON_KEYS } from '../../../../shared/features/links/linkIcons.js'
 import { LINK_ICON_COMPONENTS } from '../../../components/icons.js'
 import type {
   ContentSnapshot, DraftWidget, EmbedWidgetDraft, GigsWidgetDraft, LinkWidgetDraft,
@@ -43,7 +43,7 @@ export function SongSelect({ value, songs, onChange, label = 'Song' }: { value: 
       sx={{ pl: 3 }}
       fullWidth
       label={label}
-      value={value}
+      value={songs.some((song) => song.id === value) ? value : ''}
       onChange={(e) => onChange(Number(e.target.value))}
     >
       {songs.map((song) => (

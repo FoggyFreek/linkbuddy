@@ -7,7 +7,7 @@ import express from 'express'
 import 'dotenv/config'
 import { createPool } from './db.js'
 import { createApp } from './app.js'
-import { purgeOldViews, normalizeRetentionDays } from './statsRepo.js'
+import { purgeOldViews, normalizeRetentionDays } from './features/statistics/statsRepo.js'
 
 const pool = createPool()
 const app = createApp(pool)

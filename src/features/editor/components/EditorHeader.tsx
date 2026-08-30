@@ -2,9 +2,24 @@ import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
+import { useColorScheme } from '@mui/material/styles'
 import ShareButton from '../../../components/ShareButton.js'
 import ColorModeToggle from '../../../components/ColorModeToggle.js'
 import type { EditorPage } from '../../../types.js'
+
+function LinkBuddyLogo() {
+  const { mode, systemMode } = useColorScheme()
+  const effectiveMode = mode === 'system' ? systemMode : mode
+
+  return (
+    <Box
+      component="img"
+      src={`/icons/${effectiveMode === 'dark' ? 'lb_blue_drk_txt_600' : 'lb_blue_txt_600'}.png`}
+      alt="linkBuddy"
+      sx={{ display: 'block', width: '120px', height: 'auto', mx: 'auto', mb: 1 }}
+    />
+  )
+}
 
 export default function EditorHeader({
   page,
@@ -25,9 +40,7 @@ export default function EditorHeader({
 }) {
   return (
     <Box component="header">
-      <Typography variant="h6" sx={{ textAlign: 'center', mb: 1 }}>
-        linkBuddy
-      </Typography>
+      <LinkBuddyLogo />
       <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <Typography variant="caption" color="text.secondary" sx={{ mr: 'auto' }}>{saveLabel}</Typography>
         <ColorModeToggle />

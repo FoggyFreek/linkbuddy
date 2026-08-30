@@ -4,8 +4,8 @@
 // binding a port.
 import express from 'express'
 import crypto from 'node:crypto'
-import { signPayload, verifyPayload } from './tokens.js'
-import { fetchExport, gigbuddyWebOrigin } from './gigbuddy.js'
+import { signPayload, verifyPayload } from './features/editor/tokens.js'
+import { fetchExport, gigbuddyWebOrigin } from './features/integrations/gigbuddy.js'
 import {
   getPageBySlug,
   getPageForTenant,
@@ -16,18 +16,18 @@ import {
   saveDraftLayout,
   publishDraft,
   saveContentForNamespace,
-} from './pagesRepo.js'
-import { getTenantNamespace } from './namespacesRepo.js'
-import { ensureTenantMainPage, migrateTenantNamespace, NamespaceError } from './namespaceService.js'
-import { MAIN_SLUG_RE, RELEASE_TAIL_RE, slugFromSegments, mainSlugOf } from './slugs.js'
-import { insertView, insertClick, aggregateStats, summaryStats } from './statsRepo.js'
-import { classifyDevice, classifySource, resolveCountry, visitorHash } from './classify.js'
-import { validateLayout } from './layout.js'
-import { resolvePage } from './resolve.js'
-import { sanitizeClickTarget } from './platforms.js'
-import { pageEntitlements, DEFAULT_STATS_RETENTION_DAYS } from './entitlements.js'
-import { fetchLinkMetadata } from './unfurl.js'
-import { createConcurrencyGate } from './concurrencyGate.js'
+} from './features/pages/pagesRepo.js'
+import { getTenantNamespace } from './features/pages/namespacesRepo.js'
+import { ensureTenantMainPage, migrateTenantNamespace, NamespaceError } from './features/pages/namespaceService.js'
+import { MAIN_SLUG_RE, RELEASE_TAIL_RE, slugFromSegments, mainSlugOf } from './features/pages/slugs.js'
+import { insertView, insertClick, aggregateStats, summaryStats } from './features/statistics/statsRepo.js'
+import { classifyDevice, classifySource, resolveCountry, visitorHash } from './features/statistics/classify.js'
+import { validateLayout } from './features/editor/layout.js'
+import { resolvePage } from './features/public-pages/resolve.js'
+import { sanitizeClickTarget } from './features/public-pages/platforms.js'
+import { pageEntitlements, DEFAULT_STATS_RETENTION_DAYS } from './features/editor/entitlements.js'
+import { fetchLinkMetadata } from './features/unfurl/unfurl.js'
+import { createConcurrencyGate } from './features/unfurl/concurrencyGate.js'
 
 // Bound concurrent editor unfurls: at most a few in flight globally and a
 // couple per tenant, so the endpoint's remote fetches can't fan out into

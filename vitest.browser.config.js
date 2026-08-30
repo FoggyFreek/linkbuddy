@@ -17,14 +17,15 @@ const launchOptions = existsSync(PREINSTALLED_CHROMIUM)
 export default defineConfig({
   plugins: [react()],
   test: {
-    include: ['test/browser/**/*.test.jsx'],
-    setupFiles: ['test/browser/setup.js'],
+    include: ['src/**/__tests__/**/*.test.jsx'],
+    setupFiles: ['src/__tests__/browser.setup.js'],
     // Reported separately from the node run; Sonar merges both lcov files.
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'lcov'],
       reportsDirectory: 'coverage-browser',
-      include: ['src/**/*.{js,jsx}', 'shared/**/*.js'],
+      include: ['src/**/*.{ts,tsx}', 'shared/**/*.js'],
+      exclude: ['**/__tests__/**', '**/*.d.ts'],
     },
     browser: {
       enabled: true,

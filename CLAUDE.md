@@ -19,23 +19,21 @@ page (`BandPage`), `/<mainSlug>/<tail>` a release smart link (`ReleasePage`).
 - `npm run dev` — API (`:3010`) + Vite (`:5175`, proxies `/api`).
 - `npm run build` — client bundle to `dist/`, served by `server/index.js`.
 - `npm run migrate` — apply `server/migrations/*.sql` (run on deploy).
-- `npm test` — Node/unit tests (Vitest, `test/**/*.test.js`): backend + pure logic.
+- `npm test` — Node/unit tests (Vitest, co-located `**/__tests__/*.test.js`):
+  backend + pure logic.
 - `npm run test:browser` — real-browser component tests (Vitest browser mode +
-  Playwright, `test/browser/**/*.test.jsx`).
+  Playwright, co-located `src/**/__tests__/*.test.jsx`).
 
 ## Map
 
-**Server** — `app.js` (all routes: public page + view/click beacons, the
-session-authenticated `/api/editor/*`, and the shared-secret
-`/api/integrations/gigbuddy/*` routes — slug sync, plus the page list and a
-summary-only stats read backing GigBuddy's dashboard tile),
-`namespaceService.js`/`namespacesRepo.js` (revisioned tenant namespace moves),
-`pagesRepo.js`/`statsRepo.js` (SQL, executor-first), `layout.js` (validate +
-normalize submitted layouts),
-`resolve.js` (stored layout × content snapshot → public payload),
-`gigbuddy.js` (content export pull), `tokens.js` (HMAC handoff/session),
-`classify.js` (device/source/country, no IPs), `unfurl.js` + `safeFetch.js`
-(SSRF-hardened link enrichment), `entitlements.js` (plan gating).
+**Server** — `app.js` composes all routes; `index.js`, `db.js`, `migrate.js`, and
+`migrations/` are runtime infrastructure. Business code is grouped under
+`features/`: `editor/` (layout validation, plan gating, sessions),
+`integrations/` (GigBuddy content export), `pages/` (repositories, namespace
+moves, slugs), `statistics/` (anonymous dimensions and aggregation),
+`public-pages/` (stored layout × content snapshot → public payload), and
+`unfurl/` (SSRF-hardened link enrichment). Each feature owns its Node tests in
+`__tests__/`.
 
 **Client** — feature-based, one direction only: `app/` → `features/` →
 `components/` → `lib/`+`utils/`. Nothing in `components/`, `lib/` or `utils/`
@@ -47,7 +45,7 @@ src/main.tsx              Vite entry: ThemeProvider + CssBaseline + <App/>
 src/app/App.tsx           path-based routing, no router
 src/app/routes/           BandPage · ReleasePage · Editor · Privacy
 src/components/           shared UI (below)
-src/features/<name>/       components/ · hooks/ · utils/ — only what that feature owns
+src/features/<name>/       components/ · hooks/ · utils/ · __tests__/ — only what that feature owns
 src/lib/                  api.ts · theme.ts · pageBackgrounds.ts
 src/utils/                pure helpers: format · socials · pathSlug · trimChars
 ```
@@ -65,7 +63,8 @@ component. What they *do* share is extracted: `usePublicPage` (fetch + view/clic
 beacons), `PageStatus` (loading/not-found/error), `PageScope` (payload → colour
 scheme + background artwork), `PrivacyNote`.
 
-Keep both shells presentational: data arrives resolved from `server/resolve.js`,
+Keep both shells presentational: data arrives resolved from
+`server/features/public-pages/resolve.js`,
 and `onLinkClick` is the only outbound side effect. `components/PreviewContent.tsx`
 picks the same shell for the editor's Preview tab, minus the chrome; it lives in
 `components/` — reaching *down* into two features — only because `features/editor`
@@ -82,16 +81,16 @@ owned by `LayoutBuilder` because a widget can be dragged between sections),
 
 **`src/components/`** — everything shared. `Section` renders a section's widgets
 through the `WIDGETS` map in `widgets/index.ts` (one renderer per file); widgets
-live here rather than in a feature because `server/layout.js` allows any type on
+live here rather than in a feature because `server/features/editor/layout.js` allows any type on
 either page kind. Alongside them: `SocialLinks`, `Thumb`, `CardLabel`,
 `SectionTitle`, `PlayPill`, and the app-wide `ColorSchemeScope` (+
 `useScopedPortalProps`), `ColorModeToggle`, `ShareButton`, `CenteredStatus`,
 `icons.tsx`, `embeds.tsx`.
 
-**`shared/`** — allow-lists that the server validates against and the client
-renders from: `linkIcons.js`, `platforms.js`, `pageBackgrounds.js`,
-`pageFonts.js`. When you add a background, font, icon or platform, edit the
-`shared/` list first; both sides import it, so they can't drift. The
+**`shared/features/`** — cross-runtime contracts grouped by ownership:
+`appearance/` (backgrounds and fonts), `links/` (icons and platforms), and
+`branding/` (GigBuddy image assets). When you add a background, font, icon or
+platform, edit the shared feature first; both sides import it, so they can't drift. The
 artwork/asset maps live client-side (`components/icons.tsx`,
 `lib/pageBackgrounds.ts`, `lib/pageFonts.ts`).
 
@@ -100,9 +99,9 @@ artwork/asset maps live client-side (`components/icons.tsx`,
 - **Privacy (don't break).** Third-party embeds never load on page view:
   visitors get a click-to-play facade, and the iframe mounts only after
   interaction, inside a closable overlay that unmounts it on close
-  (`src/components/embeds.tsx`, `server/embeds.js`). The public page sets no cookies and
+  (`src/components/embeds.tsx`, `server/features/public-pages/embeds.js`). The public page sets no cookies and
   stores nothing on the device. See `PRIVACY.md`.
-- **Client input is untrusted.** `server/layout.js` whitelists field-by-field:
+- **Client input is untrusted.** `server/features/editor/layout.js` whitelists field-by-field:
   unknown widget types rejected, unknown fields dropped, strings capped, URLs
   http(s) only. Iframe sources are recomputed server-side from stored URLs —
   clients never dictate them.
@@ -155,7 +154,7 @@ There is **no CSS file** — do not add one.
   inline anti-flash script in `index.html` in sync with the theme's keys), and
   the *page* scheme (an Appearance-tab light/dark toggle stored on the layout,
   `layout.theme`; `null`/"auto" falls back to dark for release pages, light for
-  the main page — see `normalizeTheme` in `server/resolve.js`) inside
+  the main page — see `normalizeTheme` in `server/features/public-pages/resolve.js`) inside
   `ColorSchemeScope.tsx`, which the public page and the editor preview both
   wrap their content in. Changing one never affects the other.
 - **Portals must opt in:** Menu/Popover/Select/Tooltip/Dialog inside a scope

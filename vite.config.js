@@ -14,12 +14,17 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['test/**/*.test.js'],
+    include: [
+      'server/**/__tests__/**/*.test.js',
+      'src/**/__tests__/**/*.test.js',
+      'shared/**/__tests__/**/*.test.js',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text-summary', 'lcov'],
       reportsDirectory: 'coverage',
       include: ['server/**/*.js', 'src/**/*.{ts,tsx}', 'shared/**/*.js'],
+      exclude: ['**/__tests__/**', '**/*.d.ts'],
     },
   },
 })

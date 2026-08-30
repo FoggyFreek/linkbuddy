@@ -24,7 +24,7 @@
 // scene. They declare a `tile` size and repeat across the page instead of being
 // scaled to `cover`, and they stay deliberately low-contrast — quiet texture on
 // a canvas near the theme's own, not artwork.
-import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../shared/pageBackgrounds.js'
+import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../shared/features/appearance/pageBackgrounds.js'
 import { SQUARES_TILE, HEXAGONS_TILE, TOPOGRAPHY_TILE } from './patternTiles.js'
 import { FLUID_SHAPES } from './fluidShapes.js'
 import type { Theme } from '@mui/material/styles'

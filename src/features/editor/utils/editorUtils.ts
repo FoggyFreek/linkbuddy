@@ -64,7 +64,7 @@ export function pageLabel(page: PageListEntry, content: ContentSnapshot): string
 
 // The colour scheme this page's content will be rendered in — what the public
 // page and the Preview tab force via ColorSchemeScope. Mirrors the server's
-// `normalizeTheme` (server/resolve.js): the draft layout's explicit opt-in
+// `normalizeTheme` (server/features/public-pages/resolve.js): the draft layout's explicit opt-in
 // when it made one, otherwise dark for a release page's artwork-led layout and
 // light for the main page. Used by editor chrome that has to show page-scheme
 // artwork (the background swatches) before a preview has been loaded.

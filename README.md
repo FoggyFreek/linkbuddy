@@ -158,7 +158,7 @@ artwork ("Fetch image & info from link") — visitors never trigger third-party
 fetches, and embed players are strictly click-to-play (see PRIVACY.md).
 
 Because this is the one place the server fetches a user-supplied URL, it is
-SSRF-hardened (`server/safeFetch.js`): only http(s) on standard ports, no
+SSRF-hardened (`server/features/unfurl/safeFetch.js`): only http(s) on standard ports, no
 embedded credentials, redirects followed manually and re-validated per hop,
 and — the load-bearing control — a connection-time DNS lookup that validates
 every resolved address (rejecting private, loopback, link-local, unique-local,
@@ -200,10 +200,14 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
   and revision are authoritative; `oldSlug` is diagnostic only.
 
 Tokens are compact `base64url(json) + '.' + base64url(hmac)` — see
-`server/tokens.js` (mirrored in gigbuddy's `server/security/linkpageTokens.js`).
+`server/features/editor/tokens.js` (mirrored in gigbuddy's `server/security/linkpageTokens.js`).
 
 ## Tests
 
 ```
-npm test   # vitest: classifiers, layout validation, resolution, tokens
+npm test               # Node and pure-logic tests
+npm run test:browser   # browser component tests
+npm run test:coverage  # both suites plus Sonar LCOV reports
 ```
+
+Tests are co-located with their owning feature or shared layer in `__tests__/`.
