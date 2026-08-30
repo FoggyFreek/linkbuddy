@@ -5,7 +5,7 @@ import type { Release } from '../../../types.js'
 
 // The cover sits on a blurred, stretched copy of itself so the wide desktop
 // view fills the space beside it; the blurred layer is hidden when narrow.
-export default function ReleaseArt({ release }: { release: Release }) {
+export default function ReleaseArt({ release }: Readonly<{ release: Release }>) {
   const coverSx = (theme: Theme): SystemStyleObject<Theme> => ({
     width: 'var(--cover-w)', height: 'var(--cover-w)', borderRadius: 0, objectFit: 'cover',
     boxShadow: '0 10px 30px rgb(20 22 26 / 0.18)', bgcolor: '#0c0d0f',

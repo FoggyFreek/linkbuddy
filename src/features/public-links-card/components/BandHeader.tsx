@@ -7,7 +7,7 @@ import type { Band, LinkClickHandler } from '../../../types.js'
 
 const AVATAR_SIZE = 128
 
-export default function BandHeader({ band, onLinkClick, bannerShown = false }: { band: Band | null; onLinkClick: LinkClickHandler; bannerShown?: boolean }) {
+export default function BandHeader({ band, onLinkClick, bannerShown = false }: Readonly<{ band: Band | null; onLinkClick: LinkClickHandler; bannerShown?: boolean }>) {
   if (!band) return null
   return (
     <Box component="header" sx={{ textAlign: 'center', mb: '18px' }}>

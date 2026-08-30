@@ -5,7 +5,7 @@ import { CARD_PAD_TOP, CARD_PAD_X } from '../constants.js'
 // margins cancelling the card's own padding; the card's `overflow: hidden`
 // clips its square corners. Shown at full height rather than cropped, with no
 // bottom margin — the avatar then pulls up over its bottom edge.
-export default function BandBanner({ src }: { src: string }) {
+export default function BandBanner({ src }: Readonly<{ src: string }>) {
   return (
     <Box
       component="img"

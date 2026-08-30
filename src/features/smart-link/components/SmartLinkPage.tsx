@@ -9,11 +9,11 @@ import ReleaseInfo from './ReleaseInfo.js'
 import type { ReactNode } from 'react'
 import type { LinkClickHandler, Release, ResolvedPage } from '../../../types.js'
 
-export default function SmartLinkPage({ page, onLinkClick, footer = null }: {
+export default function SmartLinkPage({ page, onLinkClick, footer = null }: Readonly<{
   page: ResolvedPage & { release: Release }
   onLinkClick: LinkClickHandler
   footer?: ReactNode
-}) {
+}>) {
   return (
     <Box sx={{ containerType: 'inline-size', '--cover-w': 'min(320px, 78vw)' }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', '@container (min-width:840px)': { flexDirection: 'row', alignItems: 'stretch', minHeight: '100vh', m: '-40px -16px -24px' } }}>

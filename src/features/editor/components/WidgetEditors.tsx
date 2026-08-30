@@ -25,16 +25,16 @@ const ICON_OPTIONS = LINK_ICON_KEYS
 
 // The icon picker shows the glyph itself rather than its key. The SVGs are
 // aria-hidden, so each option carries the key as its accessible name.
-function IconOption({ icon }: { icon: string }) {
+function IconOption({ icon }: Readonly<{ icon: string }>) {
   const Icon = LINK_ICON_COMPONENTS[icon] || LINK_ICON_COMPONENTS.globe
   return <Box sx={{ display: 'flex', color: 'text.primary' }} aria-label={icon}><Icon size={20} /></Box>
 }
 
-const Hint = ({ children }: { children: ReactNode }) => (
+const Hint = ({ children }: Readonly<{ children: ReactNode }>) => (
   <Typography variant="caption" color="text.secondary">{children}</Typography>
 )
 
-export function SongSelect({ value, songs, onChange, label = 'Song' }: { value: number; songs: Song[]; onChange: (id: number) => void; label?: string }) {
+export function SongSelect({ value, songs, onChange, label = 'Song' }: Readonly<{ value: number; songs: Song[]; onChange: (id: number) => void; label?: string }>) {
   return (
     <TextField
       select
@@ -56,7 +56,7 @@ export function SongSelect({ value, songs, onChange, label = 'Song' }: { value: 
   )
 }
 
-function SongWidgetEditor({ widget, songs, onChange }: { widget: SongWidgetDraft; songs: Song[]; onChange: (widget: SongWidgetDraft) => void }) {
+function SongWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: SongWidgetDraft; songs: Song[]; onChange: (widget: SongWidgetDraft) => void }>) {
   return (
   <Stack spacing={1}>
   <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
@@ -67,7 +67,7 @@ function SongWidgetEditor({ widget, songs, onChange }: { widget: SongWidgetDraft
   )
 }
 
-function PlatformsWidgetEditor({ widget, songs, onChange }: { widget: PlatformsWidgetDraft; songs: Song[]; onChange: (widget: PlatformsWidgetDraft) => void }) {
+function PlatformsWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: PlatformsWidgetDraft; songs: Song[]; onChange: (widget: PlatformsWidgetDraft) => void }>) {
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
@@ -88,7 +88,7 @@ function PlatformsWidgetEditor({ widget, songs, onChange }: { widget: PlatformsW
   )
 }
 
-function GigsWidgetEditor({ widget, onChange }: { widget: GigsWidgetDraft; onChange: (widget: GigsWidgetDraft) => void }) {
+function GigsWidgetEditor({ widget, onChange }: Readonly<{ widget: GigsWidgetDraft; onChange: (widget: GigsWidgetDraft) => void }>) {
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
@@ -117,7 +117,7 @@ function GigsWidgetEditor({ widget, onChange }: { widget: GigsWidgetDraft; onCha
   )
 }
 
-function MerchWidgetEditor({ widget, products, onChange }: { widget: MerchWidgetDraft; products: Product[]; onChange: (widget: MerchWidgetDraft) => void }) {
+function MerchWidgetEditor({ widget, products, onChange }: Readonly<{ widget: MerchWidgetDraft; products: Product[]; onChange: (widget: MerchWidgetDraft) => void }>) {
   const included = new Map(widget.items.map((item) => [item.productId, item]))
   const toggle = (productId: number) => {
     const items = included.has(productId)
@@ -196,7 +196,7 @@ interface UnfurlEditorProps<T extends LinkWidgetDraft | EmbedWidgetDraft> {
   onUnfurl: (url: string) => Promise<UnfurlResult>
 }
 
-function LinkWidgetEditor({ widget, onChange, onUnfurl }: UnfurlEditorProps<LinkWidgetDraft>) {
+function LinkWidgetEditor({ widget, onChange, onUnfurl }: Readonly<UnfurlEditorProps<LinkWidgetDraft>>) {
   const [fetching, setFetching] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const fill = async () => {
@@ -248,7 +248,7 @@ function LinkWidgetEditor({ widget, onChange, onUnfurl }: UnfurlEditorProps<Link
 
 // Embed widget: paste a URL, load its metadata (oEmbed / Open Graph), and it
 // renders as a player (Spotify inline, YouTube overlay) or a rich link card.
-function EmbedWidgetEditor({ widget, onChange, onUnfurl }: UnfurlEditorProps<EmbedWidgetDraft>) {
+function EmbedWidgetEditor({ widget, onChange, onUnfurl }: Readonly<UnfurlEditorProps<EmbedWidgetDraft>>) {
   const [fetching, setFetching] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [provider, setProvider] = useState<string | null>(null)
@@ -299,12 +299,12 @@ function EmbedWidgetEditor({ widget, onChange, onUnfurl }: UnfurlEditorProps<Emb
 }
 
 // Dispatches to the editor for `widget.type`; unknown types render nothing.
-export function WidgetEditor({ widget, content, onChange, onUnfurl }: {
+export function WidgetEditor({ widget, content, onChange, onUnfurl }: Readonly<{
   widget: DraftWidget
   content: ContentSnapshot
   onChange: (widget: DraftWidget) => void
   onUnfurl: (url: string) => Promise<UnfurlResult>
-}) {
+}>) {
   switch (widget.type) {
     case 'song':
       return <SongWidgetEditor widget={widget} songs={content.songs || []} onChange={onChange} />

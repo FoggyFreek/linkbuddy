@@ -10,7 +10,7 @@ import { CalendarIcon } from '../icons.js'
 import { formatGigDate } from '../../utils/format.js'
 import type { LinkClickHandler, ResolvedGigsWidget } from '../../types.js'
 
-export default function GigsWidget({ widget, onLinkClick }: { widget: ResolvedGigsWidget; onLinkClick: LinkClickHandler }) {
+export default function GigsWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedGigsWidget; onLinkClick: LinkClickHandler }>) {
   return (
     <Accordion
       // Open on arrival — the list is the point; visitors can still collapse it.

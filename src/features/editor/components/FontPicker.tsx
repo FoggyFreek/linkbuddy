@@ -14,7 +14,7 @@ type FontOption = (typeof PAGE_FONT_OPTIONS)[number]
 // the *page's* scheme — so the sample reads exactly as the page will, whichever
 // light/dark mode the editor happens to be in. `system` sets no variable, so the
 // sample falls back to the theme stack: what an unset font looks like.
-function Swatch({ option, mode, selected, onSelect }: { option: FontOption; mode: PageTheme; selected: boolean; onSelect: () => void }) {
+function Swatch({ option, mode, selected, onSelect }: Readonly<{ option: FontOption; mode: PageTheme; selected: boolean; onSelect: () => void }>) {
   const fontSx = pageFontSx(option.key)
   return (
     <Stack spacing={0.5}>
@@ -61,7 +61,7 @@ function Swatch({ option, mode, selected, onSelect }: { option: FontOption; mode
 // (`system` plus the self-hosted faces in src/lib/pageFonts.ts). Adding a font is
 // a one-place change there — the grid auto-fills and wraps. The chosen key is
 // stored on the layout, so it autosaves and publishes with everything else.
-export default function FontPicker({ value, mode, onChange }: { value: string; mode: PageTheme; onChange: (value: string) => void }) {
+export default function FontPicker({ value, mode, onChange }: Readonly<{ value: string; mode: PageTheme; onChange: (value: string) => void }>) {
   return (
     <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: 'repeat(auto-fill, minmax(104px, 1fr))' }}>
       {PAGE_FONT_OPTIONS.map((option) => (

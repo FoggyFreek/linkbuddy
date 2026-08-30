@@ -11,7 +11,7 @@ const OtherPlatformIcon = PLATFORM_ICON_COMPONENTS.other
 
 // "Choose your platform": one full-width row per streaming link, iconed by
 // detected platform, the whole row linking out to the platform's app/site.
-export default function PlatformsWidget({ widget, onLinkClick }: { widget: ResolvedPlatformsWidget; onLinkClick: LinkClickHandler }) {
+export default function PlatformsWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedPlatformsWidget; onLinkClick: LinkClickHandler }>) {
   return (
     <Card sx={{ display: 'flex', flexDirection: 'column', gap: '6px', p: '8px 18px' }}>
       {widget.title && <SectionTitle>{widget.title}</SectionTitle>}

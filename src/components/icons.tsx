@@ -4,8 +4,8 @@ import { useId, type ComponentType, type ReactNode, type SVGProps } from 'react'
 import { PLATFORMS } from '../../shared/features/links/platforms.js'
 import { LINK_ICON_KEYS } from '../../shared/features/links/linkIcons.js'
 
-export interface IconProps { size?: number; mono?: boolean }
-type SvgProps = Omit<SVGProps<SVGSVGElement>, 'width' | 'height'> & { size?: number; children: ReactNode }
+export interface IconProps { readonly size?: number; readonly mono?: boolean }
+type SvgProps = Readonly<Omit<SVGProps<SVGSVGElement>, 'width' | 'height'> & { size?: number; children: ReactNode }>
 export type IconComponent = ComponentType<IconProps>
 
 function Svg({ size = 24, children, ...rest }: SvgProps) {

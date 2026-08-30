@@ -48,7 +48,7 @@ export default function SectionEditor({
   onRemove,
   onAddWidget,
   onUnfurl,
-}: {
+}: Readonly<{
   section: DraftSection
   content: ContentSnapshot
   index: number
@@ -64,7 +64,7 @@ export default function SectionEditor({
   onRemove: () => void
   onAddWidget: (type: WidgetType) => void
   onUnfurl: (url: string) => Promise<UnfurlResult>
-}) {
+}>) {
   const updateWidgets = (widgets: DraftWidget[]) => onUpdate({ widgets })
   const addTypes = ADD_TYPES.filter((t) => !(t.releaseOnly && pageType === 'main'))
   const [addAnchor, setAddAnchor] = useState<HTMLElement | null>(null)

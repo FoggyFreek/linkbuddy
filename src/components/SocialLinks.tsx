@@ -21,7 +21,7 @@ const SOCIAL_ICONS: Record<string, ComponentType<{ size: number; mono?: boolean 
 
 // The band's socials: plain icon buttons in the band header, circular outlined
 // ones in the smart link's footer. Renders nothing when none are set.
-export default function SocialLinks({ band, onLinkClick, variant = 'plain' }: { band: Band | null; onLinkClick: LinkClickHandler; variant?: 'plain' | 'circle' }) {
+export default function SocialLinks({ band, onLinkClick, variant = 'plain' }: Readonly<{ band: Band | null; onLinkClick: LinkClickHandler; variant?: 'plain' | 'circle' }>) {
   const items = SOCIALS.filter((s) => band?.socials?.[s.key])
   if (!items.length) return null
   const circle = variant === 'circle'

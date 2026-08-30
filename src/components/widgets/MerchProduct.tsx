@@ -5,7 +5,7 @@ import { formatEur } from '../../utils/format.js'
 import type { LinkClickHandler, ResolvedMerchProduct } from '../../types.js'
 
 // One tile in the merch carousel, clickable only when a shop URL is known.
-export default function MerchProduct({ product, shopUrl, onLinkClick }: { product: ResolvedMerchProduct; shopUrl?: string | null; onLinkClick: LinkClickHandler }) {
+export default function MerchProduct({ product, shopUrl, onLinkClick }: Readonly<{ product: ResolvedMerchProduct; shopUrl?: string | null; onLinkClick: LinkClickHandler }>) {
   const itemSx = {
     flex: '0 0 150px', display: 'flex', flexDirection: 'column',
     alignItems: 'stretch', justifyContent: 'flex-start',

@@ -12,7 +12,7 @@ import type { SxProps, Theme } from '@mui/material/styles'
 // because it stands alone there. Keep the pinned styles in step with ShareButton's.
 // `href` comes from the page payload (server GIGBUDDY_WEB_URL); without it there is
 // nothing to link to, so the badge stays away rather than guessing an origin.
-export default function PoweredByGigBuddy({ href, variant = 'corner' }: { href?: string; variant?: 'corner' | 'inline' }) {
+export default function PoweredByGigBuddy({ href, variant = 'corner' }: Readonly<{ href?: string; variant?: 'corner' | 'inline' }>) {
   const scopedPortalProps = useScopedPortalProps()
   if (!href) return null
 

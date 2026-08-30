@@ -11,7 +11,7 @@ import type { ResolvedPage } from '../../../types.js'
 // button, attribution, privacy footer, viewport spacing, click tracking). Its
 // scheme is independent of the editor's own (a dark editor can show a light
 // preview and vice-versa).
-export default function PagePreview({ preview }: { preview: ResolvedPage }) {
+export default function PagePreview({ preview }: Readonly<{ preview: ResolvedPage }>) {
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" align="center">Preview of the public page content.</Typography>

@@ -15,7 +15,7 @@ const OtherPlatformIcon = PLATFORM_ICON_COMPONENTS.other
 // A pasted URL. Embeddable platforms get a facade that opens the player in a
 // closable overlay (never on page view — see PRIVACY.md); anything else an
 // Open Graph link card.
-export default function EmbedWidget({ widget, onLinkClick }: { widget: ResolvedEmbedWidget; onLinkClick: LinkClickHandler }) {
+export default function EmbedWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedEmbedWidget; onLinkClick: LinkClickHandler }>) {
   const [playing, setPlaying] = useState<EmbedDescriptor | null>(null)
   const embed = widget.embed
   const label = widget.title || widget.url

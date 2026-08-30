@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography'
 import MerchProduct from './MerchProduct.js'
 import type { LinkClickHandler, ResolvedMerchWidget } from '../../types.js'
 
-export default function MerchWidget({ widget, onLinkClick }: { widget: ResolvedMerchWidget; onLinkClick: LinkClickHandler }) {
+export default function MerchWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedMerchWidget; onLinkClick: LinkClickHandler }>) {
   return (
     <Card sx={{ p: '16px 0 14px' }}>
       {widget.title && <Typography variant="h4" component="h3" sx={{ textAlign: 'center', mx: '16px', mb: '12px' }}>{widget.title}</Typography>}

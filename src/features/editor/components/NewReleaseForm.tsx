@@ -16,12 +16,12 @@ import { slugify } from '../utils/editorUtils.js'
 import type { Song } from '../../../types.js'
 import { errorMessage } from '../../../types.js'
 
-export default function NewReleaseForm({ songs, mainSlug, onCreate, onCancel }: {
+export default function NewReleaseForm({ songs, mainSlug, onCreate, onCancel }: Readonly<{
   songs: Song[]
   mainSlug: string
   onCreate: (songId: number, slug: string) => Promise<void>
   onCancel: () => void
-}) {
+}>) {
   const [songId, setSongId] = useState(songs[0]?.id ?? 0)
   const [slugTail, setSlugTail] = useState(songs[0] ? slugify(songs[0].title) : '')
   const [error, setError] = useState<string | null>(null)

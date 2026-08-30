@@ -12,14 +12,14 @@ const NEW_RELEASE = 'new-release'
 // that starts a new release page instead of selecting one. `labelFor` maps a
 // page-list entry to its visitor-facing name; `hasSongs` gates release creation
 // (a release needs a song with links).
-export default function PageSwitcher({ pages, currentId, hasSongs, labelFor, onSelect, onNewRelease }: {
+export default function PageSwitcher({ pages, currentId, hasSongs, labelFor, onSelect, onNewRelease }: Readonly<{
   pages: PageListEntry[]
   currentId: number
   hasSongs: boolean
   labelFor: (page: PageListEntry) => string
   onSelect: (pageId: number) => void
   onNewRelease: () => void
-}) {
+}>) {
   const change = (_event: SyntheticEvent, value: number | typeof NEW_RELEASE) => {
     if (value === NEW_RELEASE) onNewRelease()
     else onSelect(value)

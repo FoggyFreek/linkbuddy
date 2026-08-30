@@ -14,13 +14,13 @@ import type { LinkClickHandler, ResolvedPage } from '../../../types.js'
 // `corner` is a node pinned to the card (the band page's attribution and share
 // buttons), which is its positioned ancestor. `flush` runs the card's bottom
 // edge off the page — the band page sets it, the framed editor preview doesn't.
-export default function LinksCard({ page, onLinkClick, footer = null, corner = null, flush = false }: {
+export default function LinksCard({ page, onLinkClick, footer = null, corner = null, flush = false }: Readonly<{
   page: ResolvedPage
   onLinkClick: LinkClickHandler
   footer?: ReactNode
   corner?: ReactNode
   flush?: boolean
-}) {
+}>) {
   const bannerShown = !!(page.showBanner && page.band?.bannerUrl)
   return (
     <Card

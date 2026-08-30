@@ -64,7 +64,7 @@ interface ColorSchemeScopeProps extends Omit<BoxProps, 'children'> {
   children: ReactNode
 }
 
-export default function ColorSchemeScope({ mode, sx, children, ...props }: ColorSchemeScopeProps) {
+export default function ColorSchemeScope({ mode, sx, children, ...props }: Readonly<ColorSchemeScopeProps>) {
   const [node, setNode] = useState<HTMLElement | null>(null)
   // A function theme keeps MUI's ThemeProvider on its plain (non-CSS-vars) path:
   // it just merges into the outer theme, leaving the root provider's colour-scheme

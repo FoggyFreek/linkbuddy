@@ -22,13 +22,13 @@ const PLAYER_SCALE = 1.5
 // the iframe unmounts with the dialog, so closing genuinely stops the player.
 // `url` is the original link; the footer button opens it in a new window for
 // visitors who'd rather use the platform itself.
-export function EmbedOverlay({ embed, title, url, onOpenExternal, onClose }: {
+export function EmbedOverlay({ embed, title, url, onOpenExternal, onClose }: Readonly<{
   embed: EmbedDescriptor | null
   title?: string | null
   url?: string | null
   onOpenExternal?: MouseEventHandler<HTMLAnchorElement>
   onClose: () => void
-}) {
+}>) {
   const portalProps = useScopedPortalProps()
   const video = embed?.display === 'overlay'
   return (

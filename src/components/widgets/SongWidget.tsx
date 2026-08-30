@@ -11,7 +11,7 @@ import type { LinkClickHandler, ResolvedSongWidget } from '../../types.js'
 
 const OtherPlatformIcon = PLATFORM_ICON_COMPONENTS.other
 
-export default function SongWidget({ widget, onLinkClick }: { widget: ResolvedSongWidget; onLinkClick: LinkClickHandler }) {
+export default function SongWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedSongWidget; onLinkClick: LinkClickHandler }>) {
   const primary = widget.links[0]
   const extras = widget.links.slice(1)
   // The row links to the first platform — show its icon so the destination is visible.

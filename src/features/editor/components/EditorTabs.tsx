@@ -6,7 +6,7 @@ import type { EditorTab } from '../../../types.js'
 // The Build / Appearance / Preview / Statistics tab bar. Build is the page's
 // content, Appearance how it looks. Selecting Preview needs to (re)load the
 // preview, so the parent handles the change event rather than this owning it.
-export default function EditorTabs({ value, onChange }: { value: EditorTab; onChange: (event: SyntheticEvent, value: EditorTab) => void }) {
+export default function EditorTabs({ value, onChange }: Readonly<{ value: EditorTab; onChange: (event: SyntheticEvent, value: EditorTab) => void }>) {
   return (
     <Tabs value={value} onChange={onChange} sx={{ mt: 2.5, mb: 1.5, minHeight: 40 }} centered>
       <Tab value="build" label="Build" />

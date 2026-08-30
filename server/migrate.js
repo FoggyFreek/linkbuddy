@@ -13,7 +13,10 @@ export async function runMigrations(pool) {
   await pool.query(
     'CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())',
   )
-  const files = fs.readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort()
+  const files = fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith('.sql'))
+    .sort((a, b) => a.localeCompare(b))
   const { rows } = await pool.query('SELECT name FROM schema_migrations')
   const applied = new Set(rows.map((r) => r.name))
 

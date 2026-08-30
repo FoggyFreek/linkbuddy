@@ -6,7 +6,7 @@ import Thumb from '../Thumb.js'
 import CardLabel from '../CardLabel.js'
 import type { LinkClickHandler, ResolvedLinkWidget } from '../../types.js'
 
-export default function LinkWidget({ widget, onLinkClick }: { widget: ResolvedLinkWidget; onLinkClick: LinkClickHandler }) {
+export default function LinkWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedLinkWidget; onLinkClick: LinkClickHandler }>) {
   const Icon = LINK_ICON_COMPONENTS[widget.icon] || LINK_ICON_COMPONENTS.globe
   return (
     <Card>

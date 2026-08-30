@@ -29,7 +29,7 @@ export default function WidgetListItem({
   onDelete,
   onChange,
   onUnfurl,
-}: {
+}: Readonly<{
   widget: DraftWidget
   content: ContentSnapshot
   open: boolean
@@ -46,7 +46,7 @@ export default function WidgetListItem({
   onDelete: () => void
   onChange: (widget: DraftWidget) => void
   onUnfurl: (url: string) => Promise<UnfurlResult>
-}) {
+}>) {
   return (
     <Box
       component="li"

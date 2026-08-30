@@ -7,7 +7,7 @@ import type { PaperProps } from '@mui/material/Paper'
 // and it sits a step below the `background.paper` cards inside it — canvas →
 // column → card — which holds in both colour schemes because all three are
 // palette tokens.
-export default function AppShell({ maxWidth = 760, sx, children, ...props }: PaperProps & { maxWidth?: number }) {
+export default function AppShell({ maxWidth = 760, sx, children, ...props }: Readonly<PaperProps & { maxWidth?: number }>) {
   return (
     <Paper
       elevation={0}
