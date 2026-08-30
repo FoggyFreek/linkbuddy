@@ -2,7 +2,7 @@ import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Box from '@mui/material/Box'
 import { useScopedPortalProps } from './ColorSchemeScope.js'
-import logoUrl from '../../shared/icons/gb_whiteback_128.png'
+import logoUrl from '../../shared/features/branding/icons/gb_whiteback_128.png'
 import type { SxProps, Theme } from '@mui/material/styles'
 
 // The GigBuddy attribution badge — the top-left mirror of ShareButton on the

@@ -5,7 +5,7 @@ import GigsWidget from './GigsWidget.js'
 import MerchWidget from './MerchWidget.js'
 import LinkWidget from './LinkWidget.js'
 
-// Widget type → renderer. The types are the ones `server/layout.js` validates
+// Widget type → renderer. The types are the ones `server/features/editor/layout.js` validates
 // and `resolve.js` emits, and any of them is legal on either page kind.
 export const WIDGETS = {
   song: SongWidget,

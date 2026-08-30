@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import fallbackIconUrl from '../../../shared/icons/gb_whiteback_128.png'
+import fallbackIconUrl from '../../../shared/features/branding/icons/gb_whiteback_128.png'
 
 // The browser tab icon, written from the page payload the way document.title is:
 // each route passes the image that identifies it (a band's avatar, a release's

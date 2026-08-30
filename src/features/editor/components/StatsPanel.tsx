@@ -16,7 +16,7 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import { getStats } from '../../../lib/api.js'
 import CenteredStatus from '../../../components/CenteredStatus.js'
-import { PLATFORM_LABELS } from '../../../../shared/platforms.js'
+import { PLATFORM_LABELS } from '../../../../shared/features/links/platforms.js'
 import type { DailyStatsRow, Stats, StatsRow, TargetStatsRow } from '../../../types.js'
 import { errorMessage } from '../../../types.js'
 

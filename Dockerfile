@@ -14,7 +14,7 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts
 COPY server ./server
-# server/{layout,platforms,resolve}.js import the shared allow-lists — the
+# Server feature modules import the shared allow-lists — the
 # runtime needs them as much as the build does.
 COPY shared ./shared
 COPY --from=build /app/dist ./dist

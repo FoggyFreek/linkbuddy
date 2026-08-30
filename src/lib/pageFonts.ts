@@ -1,10 +1,10 @@
 // The client half of the page-font contract: the shared allow-list says *which*
-// keys exist (shared/pageFonts.js, what the server validates against), this
+// keys exist (shared/features/appearance/pageFonts.js, what the server validates against), this
 // module says what each one *is* — a family, the woff2 file behind it, and the
 // stack the page renders in.
 //
 // Every face is self-hosted: the .woff2 files ship inside the bundle (Vite
-// content-hashes them into dist/assets like the icons in shared/icons), so a
+// content-hashes them into dist/assets like the shared branding icons), so a
 // public page view never talks to a font CDN — see PRIVACY.md.
 //
 // How a font reaches the page: the theme declares its `fontFamily` as
@@ -12,7 +12,7 @@
 // through that one variable. `pageFontSx` sets it on the page's scope element and
 // the whole subtree re-renders in the chosen face; nothing outside a scope (the
 // editor's own chrome) is touched, because the variable is unset at :root.
-import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../../shared/pageFonts.js'
+import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../../shared/features/appearance/pageFonts.js'
 import interWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2'
 import manropeWoff2 from '@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2'
 import montserratWoff2 from '@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2'

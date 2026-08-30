@@ -13,12 +13,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "migrate": "node server/migrate.js",
-    "stats:purge": "node server/purgeStats.js",
-    "export:dump": "node server/dumpExport.js",
+    "stats:purge": "node server/features/statistics/purgeStats.js",
+    "export:dump": "node server/features/integrations/dumpExport.js",
     "type-check": "tsc --project tsconfig.json",
     "test": "vitest run",
     "test:browser": "vitest run --config vitest.browser.config.js",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage && vitest run --config vitest.browser.config.js --coverage"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

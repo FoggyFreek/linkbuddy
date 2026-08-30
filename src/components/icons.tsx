@@ -1,8 +1,8 @@
 // Inline SVG icons — no icon library, no external requests (the public page
 // must stay fully self-hosted). All take a `size` prop and inherit color.
 import { useId, type ComponentType, type ReactNode, type SVGProps } from 'react'
-import { PLATFORMS } from '../../shared/platforms.js'
-import { LINK_ICON_KEYS } from '../../shared/linkIcons.js'
+import { PLATFORMS } from '../../shared/features/links/platforms.js'
+import { LINK_ICON_KEYS } from '../../shared/features/links/linkIcons.js'
 
 export interface IconProps { size?: number; mono?: boolean }
 type SvgProps = Omit<SVGProps<SVGSVGElement>, 'width' | 'height'> & { size?: number; children: ReactNode }
