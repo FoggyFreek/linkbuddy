@@ -218,6 +218,24 @@ describe('editor handoff namespace repair', () => {
     expect(second).toMatchObject({ mainSlug: 'band', slugRevision: 2 })
   })
 
+  it('bootstraps a namespace from existing pages before applying the first handoff revision', async () => {
+    const { state, pool, repo } = harness({
+      pages: [page(1, 'old', 1), page(2, 'old/song', 1, 'release')],
+    })
+
+    const result = await ensureTenantMainPage(pool, {
+      tenantId: 1,
+      slug: 'new',
+      slugRevision: 1,
+    }, repo)
+
+    expect(result).toMatchObject({ mainSlug: 'new', slugRevision: 1 })
+    expect(state.pages.map((row) => row.slug)).toEqual(['new', 'new/song'])
+    expect(state.namespaces).toEqual([
+      { gigbuddy_tenant_id: 1, main_slug: 'new', slug_revision: 1 },
+    ])
+  })
+
   it('repairs a changed slug only with the next versioned handoff', async () => {
     const { state, pool, repo } = harness({
       pages: [page(1, 'old', 1), page(2, 'old/song', 1, 'release')],
@@ -241,5 +259,20 @@ describe('editor handoff namespace repair', () => {
       .rejects.toBeInstanceOf(NamespaceError)
     expect(state.pages[0].slug).toBe('current')
     expect(state.namespaces[0].slug_revision).toBe(8)
+  })
+
+  it('rejects a slug change that reuses the current handoff revision', async () => {
+    const { state, pool, repo } = harness({
+      pages: [page(1, 'current', 1)],
+      namespaces: [{ gigbuddy_tenant_id: 1, main_slug: 'current', slug_revision: 8 }],
+    })
+    const before = structuredClone(state)
+
+    await expect(ensureTenantMainPage(pool, {
+      tenantId: 1,
+      slug: 'different',
+      slugRevision: 8,
+    }, repo)).rejects.toMatchObject({ code: 'revision_conflict' })
+    expect(state).toEqual(before)
   })
 })

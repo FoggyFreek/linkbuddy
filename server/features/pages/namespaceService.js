@@ -93,6 +93,112 @@ function mapUniqueViolation(error) {
   return error
 }
 
+async function getOrCreateHandoffNamespace(client, repo, namespace, main, handoff) {
+  if (namespace) return namespace
+
+  const { tenantId, slug, slugRevision } = handoff
+  const initialSlug = main?.slug || slug
+  const initialRevision = main ? 0 : (slugRevision ?? 0)
+  await assertTargetsAvailable(client, repo, tenantId, initialSlug)
+  const inserted = await repo.insertTenantNamespace(
+    client,
+    tenantId,
+    initialSlug,
+    initialRevision,
+  )
+  return inserted ?? repo.getTenantNamespaceForUpdate(client, tenantId)
+}
+
+function handoffRevisionStatus(namespace, handoff) {
+  const { slug, slugRevision } = handoff
+  const currentRevision = revisionOf(namespace)
+  if (slugRevision === undefined) {
+    if (namespace.main_slug !== slug) {
+      throw new NamespaceError('namespace_sync_required', 'Legacy handoff does not match current namespace')
+    }
+    return { currentRevision, migrationRequired: false }
+  }
+  if (slugRevision < currentRevision) {
+    throw new NamespaceError('namespace_sync_required', 'Handoff revision is stale')
+  }
+  if (slugRevision === currentRevision && namespace.main_slug !== slug) {
+    throw new NamespaceError('revision_conflict', 'Handoff revision has a different slug')
+  }
+  return { currentRevision, migrationRequired: slugRevision > currentRevision }
+}
+
+function mainAfterMigration(main, slug, code) {
+  if (code !== 'applied') return main
+  return { ...main, slug }
+}
+
+async function synchronizeHandoffNamespace(client, repo, namespace, pages, main, handoff) {
+  const { tenantId, slug, slugRevision } = handoff
+  const status = handoffRevisionStatus(namespace, handoff)
+  if (!status.migrationRequired) return { namespace, main, currentRevision: status.currentRevision }
+
+  const migrated = await applyNextRevision(
+    client,
+    repo,
+    namespace,
+    pages,
+    tenantId,
+    slug,
+    slugRevision,
+  )
+  return {
+    namespace: migrated.namespace,
+    main: mainAfterMigration(main, slug, migrated.code),
+    currentRevision: revisionOf(migrated.namespace),
+  }
+}
+
+async function ensureMainPageMatchesNamespace(client, repo, namespace, main, tenantId) {
+  if (!main) {
+    const page = await repo.insertTenantMainPage(client, namespace.main_slug, tenantId)
+    if (!page) throw new NamespaceError('slug_conflict', 'Main page path is already in use')
+    return page
+  }
+  if (main.slug !== namespace.main_slug) {
+    throw new NamespaceError('invalid_namespace', 'Main page and namespace do not match')
+  }
+  return main
+}
+
+async function ensureTenantMainPageTransaction(client, repo, handoff) {
+  const { tenantId, slug } = handoff
+  const existingNamespace = await repo.getTenantNamespaceForUpdate(client, tenantId)
+  const pages = await repo.lockTenantPages(client, tenantId)
+  const { main } = inspectPages(pages, slug)
+  const namespace = await getOrCreateHandoffNamespace(
+    client,
+    repo,
+    existingNamespace,
+    main,
+    handoff,
+  )
+  const synchronized = await synchronizeHandoffNamespace(
+    client,
+    repo,
+    namespace,
+    pages,
+    main,
+    handoff,
+  )
+  const page = await ensureMainPageMatchesNamespace(
+    client,
+    repo,
+    synchronized.namespace,
+    synchronized.main,
+    tenantId,
+  )
+  return {
+    page,
+    mainSlug: synchronized.namespace.main_slug,
+    slugRevision: synchronized.currentRevision,
+  }
+}
+
 export async function migrateTenantNamespace(pool, command, repo = defaultRepo) {
   const { tenantId, newSlug, revision } = command
   if (!Number.isSafeInteger(tenantId) || tenantId <= 0) {
@@ -144,65 +250,10 @@ export async function ensureTenantMainPage(pool, handoff, repo = defaultRepo) {
   }
 
   try {
-    return await transaction(pool, async (client) => {
-      let namespace = await repo.getTenantNamespaceForUpdate(client, tenantId)
-      let pages = await repo.lockTenantPages(client, tenantId)
-      let { main } = inspectPages(pages, slug)
-
-      if (!namespace) {
-        const initialSlug = main?.slug || slug
-        const initialRevision = main ? 0 : (versioned ? slugRevision : 0)
-        await assertTargetsAvailable(client, repo, tenantId, initialSlug)
-        namespace = await repo.insertTenantNamespace(client, tenantId, initialSlug, initialRevision)
-        if (!namespace) namespace = await repo.getTenantNamespaceForUpdate(client, tenantId)
-      }
-
-      let currentRevision = revisionOf(namespace)
-      if (!versioned) {
-        if (namespace.main_slug !== slug) {
-          throw new NamespaceError('namespace_sync_required', 'Legacy handoff does not match current namespace')
-        }
-      } else if (slugRevision < currentRevision) {
-        throw new NamespaceError('namespace_sync_required', 'Handoff revision is stale')
-      } else if (slugRevision === currentRevision) {
-        if (namespace.main_slug !== slug) {
-          throw new NamespaceError('revision_conflict', 'Handoff revision has a different slug')
-        }
-      } else {
-        const migrated = await applyNextRevision(
-          client,
-          repo,
-          namespace,
-          pages,
-          tenantId,
-          slug,
-          slugRevision,
-        )
-        namespace = migrated.namespace
-        currentRevision = revisionOf(namespace)
-        if (migrated.code === 'applied') {
-          pages = pages.map((page) => ({
-            ...page,
-            slug: page.page_type === 'main' ? slug : `${slug}/${releaseTail(page.slug)}`,
-          }))
-          main = pages.find((page) => page.page_type === 'main') || null
-        }
-      }
-
-      if (!main) {
-        const page = await repo.insertTenantMainPage(client, namespace.main_slug, tenantId)
-        if (!page) throw new NamespaceError('slug_conflict', 'Main page path is already in use')
-        main = page
-      } else if (main.slug !== namespace.main_slug) {
-        throw new NamespaceError('invalid_namespace', 'Main page and namespace do not match')
-      }
-
-      return {
-        page: main,
-        mainSlug: namespace.main_slug,
-        slugRevision: currentRevision,
-      }
-    })
+    return await transaction(
+      pool,
+      (client) => ensureTenantMainPageTransaction(client, repo, handoff),
+    )
   } catch (error) {
     throw mapUniqueViolation(error)
   }
