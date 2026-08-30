@@ -15,7 +15,7 @@ export default function ItemOrderActions({
   onDelete,
   canMoveUp = index > 0,
   canMoveDown = index < count - 1,
-}: {
+}: Readonly<{
   index: number
   count: number
   itemLabel: string
@@ -23,7 +23,7 @@ export default function ItemOrderActions({
   onDelete: () => void
   canMoveUp?: boolean
   canMoveDown?: boolean
-}) {
+}>) {
   return (
     <>
       <IconButton size="small" onClick={() => onMove(-1)} disabled={!canMoveUp} aria-label={`Move ${itemLabel} up`}><KeyboardArrowUpIcon fontSize="small" /></IconButton>

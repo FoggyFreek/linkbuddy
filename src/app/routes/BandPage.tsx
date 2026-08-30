@@ -12,7 +12,7 @@ import ShareButton from '../../components/ShareButton.js'
 // A band's link page (/<slug>): one centered card running flush off the bottom
 // of the page. The card is the positioned ancestor its chrome pins to —
 // attribution top-left, share top-right — and it holds the footer too.
-export default function BandPage({ slug }: { slug: string }) {
+export default function BandPage({ slug }: Readonly<{ slug: string }>) {
   const { page, status, onLinkClick } = usePublicPage(slug)
   const band = page?.band
 

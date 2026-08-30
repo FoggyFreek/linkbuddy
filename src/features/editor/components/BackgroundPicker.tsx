@@ -15,7 +15,7 @@ type BackgroundOption = (typeof PAGE_BACKGROUND_OPTIONS)[number]
 // choice, and could disagree with the page it's previewing. `none` gets no
 // background image, so the scope's plain `surface.canvas` shows through — exactly
 // what an unset background looks like.
-function Swatch({ option, mode, selected, onSelect }: { option: BackgroundOption; mode: PageTheme; selected: boolean; onSelect: () => void }) {
+function Swatch({ option, mode, selected, onSelect }: Readonly<{ option: BackgroundOption; mode: PageTheme; selected: boolean; onSelect: () => void }>) {
   const backgroundSx = pageBackgroundSx(option.key)
   return (
     <Stack spacing={0.5}>
@@ -61,7 +61,7 @@ function Swatch({ option, mode, selected, onSelect }: { option: BackgroundOption
 // grid auto-fills and wraps, so any number of them lays out without touching
 // this component. The chosen key is stored on the layout, so it autosaves and
 // publishes with everything else.
-export default function BackgroundPicker({ value, mode, onChange }: { value: string; mode: PageTheme; onChange: (value: string) => void }) {
+export default function BackgroundPicker({ value, mode, onChange }: Readonly<{ value: string; mode: PageTheme; onChange: (value: string) => void }>) {
   return (
     <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: 'repeat(auto-fill, minmax(104px, 1fr))' }}>
       {PAGE_BACKGROUND_OPTIONS.map((option) => (

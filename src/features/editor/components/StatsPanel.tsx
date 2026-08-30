@@ -110,7 +110,7 @@ function formatTarget(key: string): string {
   }
 }
 
-function StatsBlock({ title, children }: { title: string; children: ReactNode }) {
+function StatsBlock({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
   return (
     <Card variant="panel">
       <Typography variant="h6" sx={{ mb: '10px' }}>{title}</Typography>
@@ -125,13 +125,13 @@ function rowCount(row: CountRow, valueKey: 'views' | 'clicks'): number {
   return valueKey === 'views' && 'views' in row ? row.views : valueKey === 'clicks' && 'clicks' in row ? row.clicks : 0
 }
 
-function BarList({ title, rows, total, valueKey = 'views', formatKey = (key) => key }: {
+function BarList({ title, rows, total, valueKey = 'views', formatKey = (key) => key }: Readonly<{
   title: string
   rows: CountRow[]
   total: number
   valueKey?: 'views' | 'clicks'
   formatKey?: (key: string) => string
-}) {
+}>) {
   return (
     <StatsBlock title={title}>
       {rows.length === 0 ? (
@@ -171,12 +171,12 @@ function foldTail(rows: StatsRow[], colorFor: (key: string, index: number) => st
 // Share of a dimension as a donut, with the exact counts kept in the table
 // underneath — that table doubles as the pie's legend (swatch + name) and as
 // the readable fallback for slices too thin to carry a label.
-function SharePie({ title, rows, formatKey, colorFor }: {
+function SharePie({ title, rows, formatKey, colorFor }: Readonly<{
   title: string
   rows: StatsRow[]
   formatKey: (key: string) => string
   colorFor: (key: string, index: number) => string
-}) {
+}>) {
   const slices = foldTail(rows, colorFor)
   const total = slices.reduce((sum, row) => sum + row.views, 0)
   const share = (value: number) => (total ? Math.round((value / total) * 1000) / 10 : 0)
@@ -251,7 +251,7 @@ function dailyDataset(byDay: DailyStatsRow[]): DailyChartRow[] {
 
 // Aggregate-only statistics: views + outbound clicks (conversion) by device
 // class, source, country, and click target (platform).
-export default function StatsPanel({ session, pageId }: { session: string | null; pageId: number }) {
+export default function StatsPanel({ session, pageId }: Readonly<{ session: string | null; pageId: number }>) {
   const [days, setDays] = useState<number>(30)
   const [stats, setStats] = useState<Stats | null>(null)
   const [error, setError] = useState<string | null>(null)

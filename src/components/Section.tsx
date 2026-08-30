@@ -3,7 +3,7 @@ import SectionTitle from './SectionTitle.js'
 import { WIDGETS } from './widgets/index.js'
 import type { LinkClickHandler, ResolvedSection } from '../types.js'
 
-export default function Section({ section, onLinkClick }: { section: ResolvedSection; onLinkClick: LinkClickHandler }) {
+export default function Section({ section, onLinkClick }: Readonly<{ section: ResolvedSection; onLinkClick: LinkClickHandler }>) {
   return (
     <Box component="section" sx={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {section.title && <SectionTitle>{section.title}</SectionTitle>}

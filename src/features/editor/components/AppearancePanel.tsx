@@ -15,7 +15,7 @@ import type { DraftTheme, PageTheme } from '../../../types.js'
 // panel card, heading and helper line, so adding the next one (colour scheme,
 // card style, fonts…) is a matter of dropping another <AppearanceSection> in
 // below rather than inventing new chrome.
-function AppearanceSection({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+function AppearanceSection({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
   return (
     <Card variant="panel">
       <Typography variant="h6" component="h2">{title}</Typography>
@@ -40,7 +40,7 @@ export default function AppearancePanel({
   onSetTheme,
   font,
   onSetFont,
-}: {
+}: Readonly<{
   background: string
   schemeMode: PageTheme
   onSetBackground: (value: string) => void
@@ -52,7 +52,7 @@ export default function AppearancePanel({
   onSetTheme: (value: DraftTheme) => void
   font: string
   onSetFont: (value: string) => void
-}) {
+}>) {
   return (
     <Stack spacing={2}>
       <AppearanceSection

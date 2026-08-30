@@ -20,7 +20,7 @@ export function hasBandLogo(band: Band | null | undefined) {
 // Giving a `width` scales it down instead — the height follows from the image's
 // own ratio, so the cap steps aside rather than clamping height against a now
 // definite width and squashing the artwork.
-export default function BandLogo({ band, width = 'auto', maxHeight = 83 }: { band: Band; width?: number | string; maxHeight?: number }) {
+export default function BandLogo({ band, width = 'auto', maxHeight = 83 }: Readonly<{ band: Band; width?: number | string; maxHeight?: number }>) {
   const onLight = band.logoUrl || band.logoDarkUrl
   const onDark = band.logoDarkUrl || band.logoUrl || ''
   if (!onLight) return null

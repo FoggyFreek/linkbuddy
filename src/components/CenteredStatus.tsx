@@ -14,13 +14,13 @@ export default function CenteredStatus({
   role,
   variant = 'body1',
   component = 'div',
-}: {
+}: Readonly<{
   children?: ReactNode
   busy?: boolean
   role?: string
   variant?: TypographyProps['variant'] | null
   component?: ElementType
-}) {
+}>) {
   return (
     <Box
       role={role}

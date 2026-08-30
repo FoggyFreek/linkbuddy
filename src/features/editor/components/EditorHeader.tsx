@@ -29,7 +29,7 @@ export default function EditorHeader({
   onRefresh,
   onDelete,
   onPublish,
-}: {
+}: Readonly<{
   page: EditorPage
   title: string
   saveLabel: string
@@ -37,7 +37,7 @@ export default function EditorHeader({
   onRefresh: () => void | Promise<void>
   onDelete: () => void | Promise<void>
   onPublish: () => void | Promise<void>
-}) {
+}>) {
   return (
     <Box component="header">
       <LinkBuddyLogo />

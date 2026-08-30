@@ -12,7 +12,7 @@ import type { ResolvedPage } from '../types.js'
 // scope element itself (what the visitor sees behind the content). The font is a
 // CSS variable the theme's typography reads, so it reaches every piece of text
 // inside the scope and nothing outside it.
-export default function PageScope({ page, sx, children }: { page: ResolvedPage; sx?: SxProps<Theme>; children: ReactNode }) {
+export default function PageScope({ page, sx, children }: Readonly<{ page: ResolvedPage; sx?: SxProps<Theme>; children: ReactNode }>) {
   const ownSx = Array.isArray(sx) ? sx : sx ? [sx] : []
   return (
     <ColorSchemeScope

@@ -6,7 +6,7 @@ import type { Band } from '../../../types.js'
 // The title slot: the band's logo when set, otherwise the name in type. The
 // scheme-aware swap lives in BandLogo, which resolves against the enclosing
 // ColorSchemeScope — this page's scheme, never the document's.
-export default function BandTitle({ band }: { band: Band }) {
+export default function BandTitle({ band }: Readonly<{ band: Band }>) {
   if (!hasBandLogo(band)) return <Typography variant="h1" sx={{ mt: '14px', mb: '6px' }}>{band.name}</Typography>
 
   return (

@@ -65,12 +65,12 @@ const CHANNELS: ShareChannel[] = [
 // card; `variant="inline"` renders a plain icon button (editor header).
 // `onShare(channel)` reports the chosen channel — the public page wires it to
 // the click beacon so shares show up in the statistics.
-export default function ShareButton({ url, title, onShare = () => {}, variant = 'floating' }: {
+export default function ShareButton({ url, title, onShare = () => {}, variant = 'floating' }: Readonly<{
   url: string
   title: string
   onShare?: (channel: string) => void
   variant?: 'floating' | 'corner' | 'inline'
-}) {
+}>) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const [copied, setCopied] = useState(false)
   // On the public page ShareButton sits inside a ColorSchemeScope; render the

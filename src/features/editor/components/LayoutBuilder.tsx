@@ -27,7 +27,7 @@ export default function LayoutBuilder({
   onAddWidget,
   onAddSection,
   onUnfurl,
-}: {
+}: Readonly<{
   sections: DraftSection[]
   content: ContentSnapshot
   openWidget: string | null
@@ -41,7 +41,7 @@ export default function LayoutBuilder({
   onAddWidget: (section: DraftSection, type: WidgetType) => void
   onAddSection: () => void
   onUnfurl: (url: string) => Promise<UnfurlResult>
-}) {
+}>) {
   const drag = useDragReorder(onMoveWidget)
 
   // Keyboard equivalent of a drag: arrow keys walk a widget through its section

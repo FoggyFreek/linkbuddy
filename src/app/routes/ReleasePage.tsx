@@ -12,7 +12,7 @@ import ShareButton from '../../components/ShareButton.js'
 // A release's smart link (/<mainSlug>/<tail>): artwork-led and full-bleed, so
 // its chrome floats over the viewport rather than sitting on a card. The
 // attribution has nothing to pin to and rides at the top of the footer instead.
-export default function ReleasePage({ slug }: { slug: string }) {
+export default function ReleasePage({ slug }: Readonly<{ slug: string }>) {
   const { page, status, onLinkClick } = usePublicPage(slug)
   const release = page?.release
 

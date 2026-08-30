@@ -13,7 +13,7 @@ import type { LinkClickHandler, ResolvedPage } from '../types.js'
 
 const noopClick = () => {}
 
-export default function PreviewContent({ page, onLinkClick = noopClick }: { page: ResolvedPage; onLinkClick?: LinkClickHandler }) {
+export default function PreviewContent({ page, onLinkClick = noopClick }: Readonly<{ page: ResolvedPage; onLinkClick?: LinkClickHandler }>) {
   if (page.release) {
     return <SmartLinkPage page={{ ...page, release: page.release }} onLinkClick={onLinkClick} />
   }
