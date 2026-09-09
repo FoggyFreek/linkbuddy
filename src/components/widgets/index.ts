@@ -1,3 +1,4 @@
+import AccoladesWidget from './AccoladesWidget.js'
 import SongWidget from './SongWidget.js'
 import PlatformsWidget from './PlatformsWidget.js'
 import EmbedWidget from './EmbedWidget.js'
@@ -12,6 +13,7 @@ export const WIDGETS = {
   platforms: PlatformsWidget,
   embed: EmbedWidget,
   gigs: GigsWidget,
+  accolades: AccoladesWidget,
   merch: MerchWidget,
   link: LinkWidget,
 }

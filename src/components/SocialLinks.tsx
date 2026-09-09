@@ -28,7 +28,7 @@ export default function SocialLinks({ band, onLinkClick, variant = 'plain' }: Re
   return (
     <Stack
       direction="row"
-      spacing={circle ? 2 : 2.75}
+      spacing={circle ? 2 : 1.375}
       sx={{ justifyContent: 'center', ...(circle ? { mt: '30px' } : {}) }}
     >
       {items.map((s) => {

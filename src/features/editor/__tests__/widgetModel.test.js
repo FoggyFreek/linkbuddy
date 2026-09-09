@@ -57,3 +57,9 @@ describe('widgetSummary', () => {
     expect(widgetSummary({ type: 'iframe' }, CONTENT)).toBe('iframe')
   })
 })
+
+it('creates and labels an accolades widget even before content is synced', () => {
+  const widget = makeWidget('accolades', {})
+  expect(widget).toMatchObject({ type: 'accolades', title: 'Accolades' })
+  expect(widgetSummary(widget, {})).toBe('Accolades · Accolades')
+})

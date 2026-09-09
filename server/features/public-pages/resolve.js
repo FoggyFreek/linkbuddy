@@ -37,6 +37,11 @@ function resolveWidget(widget, content) {
         }),
       }
     }
+    case 'accolades': {
+      const accolades = content.accolades || []
+      if (!accolades.length) return null
+      return { id: widget.id, type: 'accolades', title: widget.title || 'Accolades', accolades }
+    }
     case 'gigs': {
       const gigs = (content.gigs || []).slice(0, widget.limit || 10)
       return {

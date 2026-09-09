@@ -97,7 +97,7 @@ describe('SectionEditor (extracted editor component)', () => {
   it('offers every widget type in the add menu', async () => {
     const { screen } = await renderSection()
     await screen.getByRole('button', { name: 'Add' }).click()
-    for (const label of ['Song', 'Platform buttons', 'Gigs', 'Merch', 'Custom link', 'Embed']) {
+    for (const label of ['Song', 'Platform buttons', 'Gigs', 'Accolades', 'Merch', 'Custom link', 'Embed']) {
       await expect.element(screen.getByRole('menuitem', { name: label })).toBeInTheDocument()
     }
   })
@@ -122,4 +122,11 @@ describe('SectionEditor (extracted editor component)', () => {
     await userEvent.hover(screen.getByRole('button', { name: 'Add' }))
     await expect.element(screen.getByRole('tooltip')).toHaveTextContent('Add')
   })
+})
+
+it('adds an accolades carousel from the section menu', async () => {
+  const { screen, handlers } = await renderSection()
+  await screen.getByRole('button', { name: 'Add' }).click()
+  await screen.getByRole('menuitem', { name: 'Accolades', exact: true }).click()
+  expect(handlers.onAddWidget).toHaveBeenCalledWith('accolades')
 })

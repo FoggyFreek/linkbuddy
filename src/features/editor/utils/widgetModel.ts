@@ -17,6 +17,8 @@ export function makeWidget(type: WidgetType, content: ContentSnapshot): DraftWid
       return firstSong ? { id: newId(), type: 'song', songId: firstSong.id } : null
     case 'platforms':
       return firstSong ? { id: newId(), type: 'platforms', songId: firstSong.id, title: null } : null
+    case 'accolades':
+      return { id: newId(), type: 'accolades', title: 'Accolades' }
     case 'gigs':
       return { id: newId(), type: 'gigs', title: 'Upcoming Gigs', limit: 10 }
     case 'merch': {
@@ -43,6 +45,8 @@ export function widgetSummary(widget: DraftWidget, content: ContentSnapshot): st
       return `Song · ${songTitle(widget.songId)}`
     case 'platforms':
       return `Platform buttons · ${songTitle(widget.songId)}`
+    case 'accolades':
+      return `Accolades · ${widget.title || 'Accolades'}`
     case 'gigs':
       return `Gigs · ${widget.title || 'Upcoming Gigs'}`
     case 'merch':

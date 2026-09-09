@@ -1,7 +1,5 @@
-// The band's link page: one centered card holding the band header and the
-// sections of widget cards. Its `surface.s2` shell keeps the `background.paper`
-// widget cards inside it reading as a distinct surface in both schemes. Living
-// here rather than in the route means the editor preview shows the same card.
+// The band page's card: header plus widget sections on a `surface.s2` shell, so
+// the `background.paper` widgets read distinctly. Shared with the editor preview.
 import Stack from '@mui/material/Stack'
 import Card from '@mui/material/Card'
 import Section from '../../../components/Section.js'
@@ -11,9 +9,8 @@ import { CARD_PAD_TOP, CARD_PAD_X } from '../constants.js'
 import type { ReactNode } from 'react'
 import type { LinkClickHandler, ResolvedPage } from '../../../types.js'
 
-// `corner` is a node pinned to the card (the band page's attribution and share
-// buttons), which is its positioned ancestor. `flush` runs the card's bottom
-// edge off the page — the band page sets it, the framed editor preview doesn't.
+// `corner` pins to the card (its positioned ancestor); `flush` runs the bottom
+// edge off the page, and all four below `sm`. The preview sets neither.
 export default function LinksCard({ page, onLinkClick, footer = null, corner = null, flush = false }: Readonly<{
   page: ResolvedPage
   onLinkClick: LinkClickHandler
@@ -35,6 +32,7 @@ export default function LinksCard({ page, onLinkClick, footer = null, corner = n
         ...(flush && {
           flexGrow: 1,
           borderBottomLeftRadius: 0, borderBottomRightRadius: 0,
+          [theme.breakpoints.down('sm')]: { maxWidth: 'none', borderRadius: 0 },
         }),
       })}
     >

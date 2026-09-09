@@ -30,7 +30,7 @@ export default function BandHeader({ band, onLinkClick, bannerShown = false }: R
       )}
       <BandTitle band={band} />
       {band.bio && (
-        <Typography variant="subtitle2" component="p" sx={{ maxWidth: 440, mx: 'auto', mb: '18px' }}>{band.bio}</Typography>
+        <Typography variant="subtitle2" component="p" sx={{ maxWidth: 360, mx: 'auto', mb: '18px' }}>{band.bio}</Typography>
       )}
       <SocialLinks band={band} onLinkClick={onLinkClick} variant="plain" />
     </Box>

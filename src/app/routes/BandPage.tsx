@@ -9,9 +9,8 @@ import PrivacyNote from '../../components/PrivacyNote.js'
 import PoweredByGigBuddy from '../../components/PoweredByGigBuddy.js'
 import ShareButton from '../../components/ShareButton.js'
 
-// A band's link page (/<slug>): one centered card running flush off the bottom
-// of the page. The card is the positioned ancestor its chrome pins to —
-// attribution top-left, share top-right — and it holds the footer too.
+// A band's link page (/<slug>): one centered card, flush off the bottom, and the
+// positioned ancestor its chrome (attribution, share) and footer pin to.
 export default function BandPage({ slug }: Readonly<{ slug: string }>) {
   const { page, status, onLinkClick } = usePublicPage(slug)
   const band = page?.band
@@ -42,7 +41,8 @@ export default function BandPage({ slug }: Readonly<{ slug: string }>) {
   )
 
   return (
-    <PageScope page={page} sx={{ minHeight: '100dvh', px: 2, pt: 5, display: 'flex', flexDirection: 'column' }}>
+    // Below `sm` the card fills the viewport, so there are no gutters to pad.
+    <PageScope page={page} bleed sx={{ minHeight: '100dvh', px: { xs: 0, sm: 2 }, pt: { xs: 0, sm: 5 }, display: 'flex', flexDirection: 'column' }}>
       <LinksCard page={page} onLinkClick={onLinkClick} footer={footer} corner={corners} flush />
     </PageScope>
   )

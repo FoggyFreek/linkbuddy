@@ -1,6 +1,5 @@
-// A release's smart link: artwork one side, content the other. The container
-// query splits the panes only when the page itself is wide, so the narrow
-// editor preview and phones keep one stacked column.
+// A release's smart link: artwork beside content past the 840px container query,
+// one stacked column below it — full width under `sm` (viewport, not container).
 import Box from '@mui/material/Box'
 import Section from '../../../components/Section.js'
 import SocialLinks from '../../../components/SocialLinks.js'
@@ -15,10 +14,10 @@ export default function SmartLinkPage({ page, onLinkClick, footer = null }: Read
   footer?: ReactNode
 }>) {
   return (
-    <Box sx={{ containerType: 'inline-size', '--cover-w': 'min(320px, 78vw)' }}>
+    <Box sx={{ containerType: 'inline-size', '--cover-w': { xs: '100%', sm: 'min(320px, 78vw)' } }}>
       <Box sx={{ display: 'flex', flexDirection: 'column', '@container (min-width:840px)': { flexDirection: 'row', alignItems: 'stretch', minHeight: '100vh', m: '-40px -16px -24px' } }}>
         <ReleaseArt release={page.release} />
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: 'var(--cover-w)', mx: 'auto', '@container (min-width:840px)': { flex: '0 0 33%', maxWidth: 'none', mx: 0, p: '56px 44px', overflowY: 'auto' } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxWidth: 'var(--cover-w)', mx: 'auto', px: { xs: 2, sm: 0 }, pb: { xs: 3, sm: 0 }, '@container (min-width:840px)': { flex: '0 0 33%', maxWidth: 'none', mx: 0, p: '56px 44px', overflowY: 'auto' } }}>
           <ReleaseInfo release={page.release} />
           {page.sections.map((section) => <Section key={section.id} section={section} onLinkClick={onLinkClick} />)}
           {/* The band header normally hosts the socials; the release header

@@ -68,7 +68,25 @@ export interface Gig {
   soldOut?: boolean
 }
 
+export interface Accolade {
+  id: number
+  description: string
+  date: string
+  url: string | null
+  imageUrl: string | null
+}
+
+export interface AccoladesWidgetDraft extends WidgetBase {
+  type: 'accolades'
+  title: string | null
+}
+
+export interface ResolvedAccoladesWidget extends AccoladesWidgetDraft {
+  accolades: Accolade[]
+}
+
 export interface ContentSnapshot {
+  accolades?: Accolade[]
   band?: Band | null
   songs?: Song[]
   products?: Product[]
@@ -132,6 +150,7 @@ export type DraftWidget =
   | SongWidgetDraft
   | PlatformsWidgetDraft
   | GigsWidgetDraft
+  | AccoladesWidgetDraft
   | MerchWidgetDraft
   | EmbedWidgetDraft
   | LinkWidgetDraft
@@ -196,6 +215,7 @@ export type ResolvedWidget =
   | ResolvedSongWidget
   | ResolvedPlatformsWidget
   | ResolvedGigsWidget
+  | ResolvedAccoladesWidget
   | ResolvedMerchWidget
   | ResolvedEmbedWidget
   | ResolvedLinkWidget

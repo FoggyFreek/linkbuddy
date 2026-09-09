@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
+import { page as browser } from 'vitest/browser'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import Box from '@mui/material/Box'
@@ -51,6 +52,10 @@ async function renderPublicPage(background) {
 afterEach(cleanup)
 
 describe('page backgrounds on the public page', () => {
+  // The public routes drop the artwork below `sm` (app/__tests__/mobileBleed.test.jsx),
+  // so assert it at a width that shows it.
+  beforeAll(async () => { await browser.viewport(1000, 900) })
+
   it('paints the chosen background artwork behind the page', async () => {
     const scope = await renderPublicPage('blobs')
     const { backgroundImage, backgroundColor, backgroundSize } = getComputedStyle(scope)

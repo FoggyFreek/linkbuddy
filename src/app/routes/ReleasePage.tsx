@@ -9,9 +9,8 @@ import PrivacyNote from '../../components/PrivacyNote.js'
 import PoweredByGigBuddy from '../../components/PoweredByGigBuddy.js'
 import ShareButton from '../../components/ShareButton.js'
 
-// A release's smart link (/<mainSlug>/<tail>): artwork-led and full-bleed, so
-// its chrome floats over the viewport rather than sitting on a card. The
-// attribution has nothing to pin to and rides at the top of the footer instead.
+// A release's smart link (/<mainSlug>/<tail>): artwork-led and full-bleed, its
+// chrome floating over the viewport and its attribution riding in the footer.
 export default function ReleasePage({ slug }: Readonly<{ slug: string }>) {
   const { page, status, onLinkClick } = usePublicPage(slug)
   const release = page?.release
@@ -22,8 +21,7 @@ export default function ReleasePage({ slug }: Readonly<{ slug: string }>) {
   useFavicon(release?.coverUrl)
 
   if (status !== 'ready' || !page) return <PageStatus status={status} />
-  // The path says release but the payload has no release header: treat it as a
-  // page that isn't there rather than rendering a headless smart link.
+  // Release path without a release header: not-found beats a headless smart link.
   if (!release) return <PageStatus status="notfound" />
   const releasePage = { ...page, release }
 
@@ -43,10 +41,9 @@ export default function ReleasePage({ slug }: Readonly<{ slug: string }>) {
   )
 
   return (
-    // SmartLinkPage's `m: '-40px -16px -24px'` cancels this padding exactly once
-    // the panes split, so the artwork bleeds to the viewport edges — keep the two
-    // in step.
-    <PageScope page={releasePage} sx={{ minHeight: '100dvh', px: 2, pt: 5, pb: 3, display: 'flex', flexDirection: 'column' }}>
+    // SmartLinkPage's `m: '-40px -16px -24px'` cancels this padding once the panes
+    // split — keep the two in step. Phones drop it: the content is the page there.
+    <PageScope page={releasePage} bleed sx={{ minHeight: '100dvh', px: { xs: 0, sm: 2 }, pt: { xs: 0, sm: 5 }, pb: { xs: 0, sm: 3 }, display: 'flex', flexDirection: 'column' }}>
       <ShareButton
         url={`${window.location.origin}/${slug}`}
         title={shareTitle}

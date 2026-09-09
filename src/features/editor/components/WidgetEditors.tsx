@@ -310,6 +310,11 @@ export function WidgetEditor({ widget, content, onChange, onUnfurl }: Readonly<{
       return <SongWidgetEditor widget={widget} songs={content.songs || []} onChange={onChange} />
     case 'platforms':
       return <PlatformsWidgetEditor widget={widget} songs={content.songs || []} onChange={onChange} />
+    case 'accolades':
+      return <Stack spacing={1}>
+        <Typography variant="caption" color="text.secondary">Awards and quotes from GigBuddy appear in a swipeable carousel.</Typography>
+        <TextField size="small" fullWidth label="Accolades title" value={widget.title || ''} onChange={(e) => onChange({ ...widget, title: e.target.value })} />
+      </Stack>
     case 'gigs':
       return <GigsWidgetEditor widget={widget} onChange={onChange} />
     case 'merch':

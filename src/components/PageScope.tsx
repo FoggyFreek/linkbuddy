@@ -5,19 +5,18 @@ import type { ReactNode } from 'react'
 import type { SxProps, Theme } from '@mui/material/styles'
 import type { ResolvedPage } from '../types.js'
 
-// A resolved page payload turned into its colour scheme, background artwork and
-// typeface: the things every rendering of a page shares, whether it's a band
-// page, a release page or the editor's framed preview. `sx` is the caller's own
-// layout, applied before the background so the background always paints on the
-// scope element itself (what the visitor sees behind the content). The font is a
-// CSS variable the theme's typography reads, so it reaches every piece of text
-// inside the scope and nothing outside it.
-export default function PageScope({ page, sx, children }: Readonly<{ page: ResolvedPage; sx?: SxProps<Theme>; children: ReactNode }>) {
+// A resolved page turned into its colour scheme, background artwork and font
+// variable; `bleed` (public routes only) paints the artwork from `sm` up.
+export default function PageScope({ page, sx, bleed = false, children }: Readonly<{ page: ResolvedPage; sx?: SxProps<Theme>; bleed?: boolean; children: ReactNode }>) {
   const ownSx = Array.isArray(sx) ? sx : sx ? [sx] : []
+  const background = pageBackgroundSx(page.background)
+  const scopedBackground = background && bleed
+    ? (theme: Theme) => ({ [theme.breakpoints.up('sm')]: background(theme) })
+    : background
   return (
     <ColorSchemeScope
       mode={page.theme === 'dark' ? 'dark' : 'light'}
-      sx={[...ownSx, pageBackgroundSx(page.background), pageFontSx(page.font)]}
+      sx={[...ownSx, scopedBackground, pageFontSx(page.font)]}
     >
       {children}
     </ColorSchemeScope>
