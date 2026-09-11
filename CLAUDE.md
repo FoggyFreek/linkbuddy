@@ -89,7 +89,7 @@ either page kind. Alongside them: `SocialLinks`, `Thumb`, `CardLabel`,
 `icons.tsx`, `embeds.tsx`.
 
 **`shared/features/`** — cross-runtime contracts grouped by ownership:
-`appearance/` (backgrounds and fonts), `links/` (icons and platforms), and
+`appearance/` (backgrounds, fonts and theme palettes), `links/` (icons and platforms), and
 `branding/` (GigBuddy image assets). When you add a background, font, icon or
 platform, edit the shared feature first; both sides import it, so they can't drift. The
 artwork/asset maps live client-side (`components/icons.tsx`,
@@ -111,6 +111,14 @@ artwork/asset maps live client-side (`components/icons.tsx`,
 - **Resolution is forgiving.** Widgets pointing at vanished content (deleted
   song, archived product) are dropped silently — a public page must never break
   because GigBuddy content moved on.
+
+## Skills
+
+- **`page-backgrounds`** (`.claude/skills/page-backgrounds/`) — adding or
+  changing a page background: the palette-slot contract in
+  `src/lib/pageBackgrounds.ts`, importing a designed `.svg`, deriving and
+  *looking at* the dark colourway, and offering colourways as dots on a scene's
+  swatch. Follow it whenever a background, scene or colourway is touched.
 
 ## General notes
 
@@ -155,8 +163,11 @@ There is **no CSS file** — do not add one.
   inline anti-flash script in `index.html` in sync with the theme's keys), and
   the *page* scheme (an Appearance-tab light/dark toggle stored on the layout,
   `layout.theme`; `null`/"auto" falls back to dark for release pages, light for
-  the main page — see `normalizeTheme` in `server/features/public-pages/resolve.js`) inside
-  `ColorSchemeScope.tsx`, which the public page and the editor preview both
+  the main page — see `normalizeTheme` in `server/features/public-pages/resolve.js`). Within that
+  scheme a page picks one of three palettes (`layout.themeVariant`,
+  `src/lib/pageThemes.ts`), applied as palette-variable overrides on the scope
+  element — one stored key for both schemes, re-checked against the resolved
+  scheme by `pageThemeForScheme`. The page scheme lives in `ColorSchemeScope.tsx`, which the public page and the editor preview both
   wrap their content in. Changing one never affects the other.
 - **Portals must opt in:** Menu/Popover/Select/Tooltip/Dialog inside a scope
   escape it unless you spread `useScopedPortalProps()` (see `ShareButton`).

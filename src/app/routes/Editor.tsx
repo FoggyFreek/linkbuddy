@@ -150,6 +150,15 @@ export default function Editor() {
     applyLayout({ ...layout, theme })
   }
 
+  // The page's palette within that scheme, one of the three variants in
+  // src/lib/pageThemes.ts. A single key covers both schemes: it only paints while
+  // it belongs to the scheme the page renders in (pageThemeForScheme), so
+  // flipping light/dark falls back to that scheme's default and flipping back
+  // restores this choice.
+  const setThemeVariant = (themeVariant: string) => {
+    applyLayout({ ...layout, themeVariant })
+  }
+
   // The page's typeface, one of the self-hosted faces in src/lib/pageFonts.ts. On
   // the layout like the background and theme, so it takes the same
   // save/publish/preview path — and each page can set its own.
@@ -276,6 +285,8 @@ export default function Editor() {
           theme={layout.theme ?? null}
           autoTheme={page.pageType === 'release' ? 'dark' : 'light'}
           onSetTheme={setTheme}
+          themeVariant={layout.themeVariant ?? null}
+          onSetThemeVariant={setThemeVariant}
           font={layout.font || DEFAULT_PAGE_FONT}
           onSetFont={setFont}
         />

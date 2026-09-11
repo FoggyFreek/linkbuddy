@@ -9,6 +9,7 @@ import crypto from 'node:crypto'
 import { LINK_ICON_KEYS } from '../../../shared/features/links/linkIcons.js'
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
 import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
+import { PAGE_THEME_KEYS } from '../../../shared/features/appearance/pageThemes.js'
 
 const MAX_SECTIONS = 20
 const MAX_WIDGETS_PER_SECTION = 30
@@ -20,6 +21,7 @@ const MAX_URL = 2000
 export const LINK_ICONS = new Set(LINK_ICON_KEYS)
 export const PAGE_BACKGROUNDS = new Set(PAGE_BACKGROUND_KEYS)
 export const PAGE_FONTS = new Set(PAGE_FONT_KEYS)
+export const PAGE_THEMES = new Set(PAGE_THEME_KEYS)
 
 function fail(message) {
   return { error: message }
@@ -191,6 +193,7 @@ export function validateLayout(raw) {
       font: parseFont(raw.font),
       showBanner: raw.showBanner === true,
       theme: parseTheme(raw.theme),
+      themeVariant: parseThemeVariant(raw.themeVariant),
       sections,
     },
   }
@@ -218,4 +221,12 @@ function parseFont(raw) {
 // failing the save.
 function parseTheme(raw) {
   return raw === 'light' || raw === 'dark' ? raw : null
+}
+
+// The page's palette within that scheme (see src/lib/pageThemes.js): a closed key
+// set like the backgrounds and fonts. `null` means "the scheme's own default";
+// resolve.js also re-checks the key against the scheme the page ends up in, so a
+// key kept from the other scheme never paints.
+function parseThemeVariant(raw) {
+  return PAGE_THEMES.has(raw) ? raw : null
 }

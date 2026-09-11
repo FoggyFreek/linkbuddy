@@ -22,12 +22,17 @@
 // `surface.canvas` backdrop instead of blending with it.
 // The last three are different in kind: seamless tiles rather than one big
 // scene. They declare a `tile` size and repeat across the page instead of being
-// scaled to `cover`, and they stay deliberately low-contrast — quiet texture on
-// a canvas near the theme's own, not artwork.
+// scaled to `cover`, and they stay deliberately low-contrast — quiet texture,
+// not artwork. They also carry no colours of their own: they repeat over the
+// theme's own canvas, in the ink of the page's theme variant (src/lib/pageThemes.ts),
+// so they follow whichever palette the page is on.
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../shared/features/appearance/pageBackgrounds.js'
 import { SQUARES_TILE, HEXAGONS_TILE, TOPOGRAPHY_TILE } from './patternTiles.js'
 import { FLUID_SHAPES } from './fluidShapes.js'
+import { SAND_LAYERS, SAND_W, SAND_H, SAND_STRETCH } from './sandLayers.js'
+import { themeVariantInk } from './pageThemes.js'
 import type { Theme } from '@mui/material/styles'
+import type { PageTheme } from '../types.js'
 import type { SystemStyleObject } from '@mui/system'
 
 type ArtPalette = Record<string, string | number>
@@ -117,23 +122,20 @@ function gradientLinesArt(p: ArtPalette): string {
   )
 }
 
-// Layered, free-flowing dune shapes. Each broad band uses a gentle directional
-// gradient, so the result has the depth of raked sand while remaining clearly
-// flat, abstract vector artwork.
+// Layered dune ridges, each one a flat colour step of an ochre ramp with a soft
+// drop shadow where it overlaps the ridge behind it. The shapes live on their
+// own taller canvas (see sandLayers.ts) rather than the shared 900x1400 scene.
 function sandArt(p: ArtPalette & { layers: string[] }): string {
-  const boundaries = [
-    'M120 -70 C65 115 205 275 130 455 C55 640 220 775 145 970 C85 1125 205 1285 160 1470',
-    'M285 -70 C235 145 390 260 305 465 C240 625 405 755 330 930 C265 1080 415 1260 350 1470',
-    'M455 -70 C520 110 375 290 470 460 C555 615 420 760 500 925 C575 1080 455 1260 520 1470',
-    'M620 -70 C550 135 700 275 625 470 C560 640 720 750 660 930 C610 1090 755 1245 700 1470',
-    'M770 -70 C850 125 705 295 805 455 C890 590 750 790 830 950 C905 1090 805 1270 865 1470',
-    'M900 -70 C855 155 965 300 910 510 C870 670 970 825 925 1010 C890 1165 960 1325 945 1470',
-  ]
-  return scene(
-    `<rect width="${W}" height="${H}" fill="${p.layers[0]}"/>`
-    + boundaries.map((d, i) =>
-      `<path d="${d} L980 1470 L980 -70 Z" fill="${p.layers[i + 1]}"/>`).join(''),
-  )
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${SAND_W}" height="${SAND_H}" viewBox="0 0 ${SAND_W} ${SAND_H}" preserveAspectRatio="xMidYMid slice">`
+    + '<defs>'
+    + '<filter id="sandShadow" x="-30%" y="-30%" width="170%" height="170%" color-interpolation-filters="sRGB">'
+    + `<feDropShadow dx="8" dy="10" stdDeviation="12" flood-color="${p.shadow}" flood-opacity="${p.shadowOpacity}"/>`
+    + '</filter>'
+    + '</defs>'
+    + `<rect width="${SAND_W}" height="${SAND_H}" fill="${p.canvas}"/>`
+    + `<g transform="scale(1 ${SAND_STRETCH})">`
+    + SAND_LAYERS.map((d, i) => `<path filter="url(#sandShadow)" d="${d}" fill="${p.layers[i]}"/>`).join('')
+    + '</g></svg>'
 }
 
 // Parallel bezier ribbons sweep diagonally behind the content. A pair of thin
@@ -199,6 +201,28 @@ function mosaicArt(p: ArtPalette): string {
   )
 }
 
+// A radiating sun: sixty thin rays fanning out of one point, each pair drawn as
+// one continuous star, over a soft radial wash. Both the wash and the rays fade
+// from a white core into the palette's edge colour, so the burst reads as light
+// rather than as stripes. The star is authored around (400 400) on its own
+// 800-unit canvas, so the group recentres and scales it to reach this canvas's
+// far corner.
+const SUNBURST_RAYS = 'M998.7 439.2c1.7-26.5 1.7-52.7 0.1-78.5L401 399.9c0 0 0-0.1 0-0.1l587.6-116.9c-5.1-25.9-11.9-51.2-20.3-75.8L400.9 399.7c0 0 0-0.1 0-0.1l537.3-265c-11.6-23.5-24.8-46.2-39.3-67.9L400.8 399.5c0 0 0-0.1-0.1-0.1l450.4-395c-17.3-19.7-35.8-38.2-55.5-55.5l-395 450.4c0 0-0.1 0-0.1-0.1L733.4-99c-21.7-14.5-44.4-27.6-68-39.3l-265 537.4c0 0-0.1 0-0.1 0l192.6-567.4c-24.6-8.3-49.9-15.1-75.8-20.2L400.2 399c0 0-0.1 0-0.1 0l39.2-597.7c-26.5-1.7-52.7-1.7-78.5-0.1L399.9 399c0 0-0.1 0-0.1 0L282.9-188.6c-25.9 5.1-51.2 11.9-75.8 20.3l192.6 567.4c0 0-0.1 0-0.1 0l-265-537.3c-23.5 11.6-46.2 24.8-67.9 39.3l332.8 498.1c0 0-0.1 0-0.1 0.1L4.4-51.1C-15.3-33.9-33.8-15.3-51.1 4.4l450.4 395c0 0 0 0.1-0.1 0.1L-99 66.6c-14.5 21.7-27.6 44.4-39.3 68l537.4 265c0 0 0 0.1 0 0.1l-567.4-192.6c-8.3 24.6-15.1 49.9-20.2 75.8L399 399.8c0 0 0 0.1 0 0.1l-597.7-39.2c-1.7 26.5-1.7 52.7-0.1 78.5L399 400.1c0 0 0 0.1 0 0.1l-587.6 116.9c5.1 25.9 11.9 51.2 20.3 75.8l567.4-192.6c0 0 0 0.1 0 0.1l-537.3 265c11.6 23.5 24.8 46.2 39.3 67.9l498.1-332.8c0 0 0 0.1 0.1 0.1l-450.4 395c17.3 19.7 35.8 38.2 55.5 55.5l395-450.4c0 0 0.1 0 0.1 0.1L66.6 899c21.7 14.5 44.4 27.6 68 39.3l265-537.4c0 0 0.1 0 0.1 0L207.1 968.3c24.6 8.3 49.9 15.1 75.8 20.2L399.8 401c0 0 0.1 0 0.1 0l-39.2 597.7c26.5 1.7 52.7 1.7 78.5 0.1L400.1 401c0 0 0.1 0 0.1 0l116.9 587.6c25.9-5.1 51.2-11.9 75.8-20.3L400.3 400.9c0 0 0.1 0 0.1 0l265 537.3c23.5-11.6 46.2-24.8 67.9-39.3L400.5 400.8c0 0 0.1 0 0.1-0.1l395 450.4c19.7-17.3 38.2-35.8 55.5-55.5l-450.4-395c0 0 0-0.1 0.1-0.1L899 733.4c14.5-21.7 27.6-44.4 39.3-68l-537.4-265c0 0 0-0.1 0-0.1l567.4 192.6c8.3-24.6 15.1-49.9 20.2-75.8L401 400.2c0 0 0-0.1 0-0.1L998.7 439.2z'
+
+function sunburstArt(p: ArtPalette): string {
+  const [cx, cy] = [450, 470]
+  return scene(
+    '<defs>'
+    + `<radialGradient id="sunWash" cx="${cx}" cy="${cy}" r="${p.washRadius}" gradientUnits="userSpaceOnUse"><stop stop-color="${p.core}"/><stop offset="1" stop-color="${p.washEdge}"/></radialGradient>`
+    + `<radialGradient id="sunRays" cx="${cx}" cy="${cy}" r="${p.rayRadius}" gradientUnits="userSpaceOnUse"><stop stop-color="${p.core}"/><stop offset="1" stop-color="${p.rayEdge}"/></radialGradient>`
+    + '</defs>'
+    + `<rect width="${W}" height="${H}" fill="url(#sunWash)"/>`
+    + `<g transform="translate(${cx} ${cy}) scale(${p.rayScale}) translate(-400 -400)" fill-opacity="${p.rayOpacity}">`
+    + `<path fill="url(#sunRays)" d="${SUNBURST_RAYS}"/>`
+    + '</g>',
+  )
+}
+
 // A single abstract bloom, cropped hard by the canvas. The translucent petals
 // overlap like screen-printed ink while the loose contour lends the more
 // artistic end of the collection a tactile finish.
@@ -221,6 +245,19 @@ function bloomArt(p: ArtPalette): string {
     + `<circle cx="445" cy="565" r="216" fill="none" stroke="${p.ink}" stroke-width="8" stroke-dasharray="18 25" opacity=".7"/>`
     + `<path d="M80 1230 C 240 1080, 570 1110, 855 930" fill="none" stroke="${p.ink}" stroke-width="7" stroke-linecap="round"/>`
     + `<path d="M145 1320 C 365 1190, 620 1240, 920 1085" fill="none" stroke="${p.ink}" stroke-width="3" stroke-linecap="round" opacity=".7"/>`,
+  )
+}
+
+// Concentric rings sweeping out of the top-left corner, stepping through a
+// long warm-to-cool ramp so the page reads as one slow vortex rather than a set
+// of bands. Painted widest first, each ring drawn over the one behind it, with a
+// wide translucent stroke that softens every boundary into a gradient.
+function rainbowArt(p: ArtPalette & { rings: string[] }): string {
+  return scene(
+    `<rect width="${W}" height="${H}" fill="${p.rings[0]}"/>`
+    + `<g stroke="${p.seam}" stroke-width="64" stroke-opacity="${p.seamOpacity}">`
+    + p.rings.map((fill, i) => `<circle fill="${fill}" cx="0" cy="0" r="${(p.rings.length - i) * 100}"/>`).join('')
+    + '</g>',
   )
 }
 
@@ -369,6 +406,7 @@ const BACKGROUNDS = {
     label: 'Glow',
     description: 'A soft, minimal gradient with overlapping pools of colour.',
     art: glowArt,
+    colourway: 'Blossom',
     light: {
       canvas: '#f4efff', from: '#f8f3ff', to: '#dff4ff',
       a: '#ff9ccf', aOpacity: 0.68, b: '#7d8cff', bOpacity: 0.54,
@@ -378,6 +416,40 @@ const BACKGROUNDS = {
       canvas: '#111027', from: '#15122f', to: '#071f2b',
       a: '#d84f9d', aOpacity: 0.58, b: '#536dff', bOpacity: 0.64,
       c: '#1ab795', cOpacity: 0.46,
+    },
+  },
+  'glow-citrus': {
+    label: 'Glow',
+    description: 'Glow pools in warm amber, coral and gold.',
+    art: glowArt,
+    base: 'glow',
+    colourway: 'Citrus',
+    light: {
+      canvas: '#fff8ec', from: '#fffaf0', to: '#ffeccd',
+      a: '#ffb23f', aOpacity: 0.6, b: '#ff6f6f', bOpacity: 0.5,
+      c: '#ffd84d', cOpacity: 0.5,
+    },
+    dark: {
+      canvas: '#1c1408', from: '#221806', to: '#2a1204',
+      a: '#c9742a', aOpacity: 0.55, b: '#b3413f', bOpacity: 0.6,
+      c: '#c9a336', cOpacity: 0.45,
+    },
+  },
+  'glow-mist': {
+    label: 'Glow',
+    description: 'Glow pools in quiet sea blues and slate.',
+    art: glowArt,
+    base: 'glow',
+    colourway: 'Mist',
+    light: {
+      canvas: '#eef3f8', from: '#f4f8fc', to: '#dde9f4',
+      a: '#8fb8e0', aOpacity: 0.6, b: '#6f8aa8', bOpacity: 0.5,
+      c: '#bcd6e8', cOpacity: 0.55,
+    },
+    dark: {
+      canvas: '#0c141c', from: '#101a24', to: '#08121a',
+      a: '#2f5f8c', aOpacity: 0.6, b: '#3d5a75', bOpacity: 0.6,
+      c: '#1f4560', cOpacity: 0.5,
     },
   },
   'gradient-lines': {
@@ -395,15 +467,46 @@ const BACKGROUNDS = {
   },
   sand: {
     label: 'Sand',
-    description: 'Flat vertical sand layers stepping from pale ivory to deep ochre.',
+    description: 'Layered dune ridges stepping from pale ivory into deep ochre.',
     art: sandArt,
+    colourway: 'Dune',
     light: {
-      canvas: '#fffaf0',
-      layers: ['#fffaf0', '#fff2d6', '#f6e4c1', '#e8cf9f', '#d4b47e', '#b98e59', '#967043'],
+      canvas: '#faf4e3', shadow: '#4b3826', shadowOpacity: 0.24,
+      layers: ['#f6ebcf', '#eeddb7', '#e3c99b', '#d3b681', '#bd9c69', '#a48255', '#896a45', '#705236'],
     },
     dark: {
-      canvas: '#d8c39e',
-      layers: ['#d8c39e', '#c6ad84', '#ad9067', '#8d6d48', '#6c4e32', '#563923', '#3d2719'],
+      canvas: '#1d1610', shadow: '#000000', shadowOpacity: 0.45,
+      layers: ['#2a2118', '#352a1e', '#413324', '#4e3e2b', '#5d4a33', '#6d583c', '#7e6746', '#907752'],
+    },
+  },
+  'sand-slate': {
+    label: 'Sand',
+    description: 'Dune ridges in cool grey-blue stone.',
+    art: sandArt,
+    base: 'sand',
+    colourway: 'Slate',
+    light: {
+      canvas: '#f4f7fa', shadow: '#243040', shadowOpacity: 0.22,
+      layers: ['#eef2f6', '#d5dae0', '#bbc2c9', '#a2aab3', '#89929d', '#707a87', '#566270', '#3d4a5a'],
+    },
+    dark: {
+      canvas: '#10141a', shadow: '#000000', shadowOpacity: 0.45,
+      layers: ['#1a1f26', '#232a33', '#2d353f', '#36404c', '#3f4a58', '#485565', '#526071', '#5b6b7e'],
+    },
+  },
+  'sand-rose': {
+    label: 'Sand',
+    description: 'Dune ridges in blush pink deepening to mauve.',
+    art: sandArt,
+    base: 'sand',
+    colourway: 'Rose',
+    light: {
+      canvas: '#fff6f4', shadow: '#4b2630', shadowOpacity: 0.22,
+      layers: ['#fdf0ef', '#e8d6d7', '#d4bbbf', '#bfa1a7', '#ab868e', '#966c76', '#82515e', '#6d3746'],
+    },
+    dark: {
+      canvas: '#170e12', shadow: '#000000', shadowOpacity: 0.45,
+      layers: ['#221419', '#2f1c22', '#3b242b', '#482c34', '#54353e', '#613d47', '#6d4550', '#7a4d59'],
     },
   },
   ribbons: {
@@ -445,6 +548,50 @@ const BACKGROUNDS = {
       d: '#2ac29a', ink: '#e5edf7',
     },
   },
+  sunburst: {
+    label: 'Sunburst',
+    description: 'Fine rays fanning out of a bright core into an icy edge.',
+    art: sunburstArt,
+    colourway: 'Ice',
+    light: {
+      core: '#ffffff', washEdge: '#00eeff', rayEdge: '#00ffff',
+      canvas: '#ffffff', washRadius: 700, rayRadius: 1000, rayScale: 1.8, rayOpacity: 0.8,
+    },
+    dark: {
+      core: '#68b3d0', washEdge: '#05121a', rayEdge: '#0d3a4a',
+      canvas: '#68b3d0', washRadius: 700, rayRadius: 1000, rayScale: 1.8, rayOpacity: 0.62,
+    },
+  },
+  'sunburst-ember': {
+    label: 'Sunburst',
+    description: 'Sunburst rays in ember yellow over deep red.',
+    art: sunburstArt,
+    base: 'sunburst',
+    colourway: 'Ember',
+    light: {
+      core: '#fff6d8', washEdge: '#e03616', rayEdge: '#ffc21a',
+      canvas: '#fff6d8', washRadius: 700, rayRadius: 1000, rayScale: 1.8, rayOpacity: 0.8,
+    },
+    dark: {
+      core: '#ffbe55', washEdge: '#1b0603', rayEdge: '#9c2408',
+      canvas: '#ffbe55', washRadius: 700, rayRadius: 1000, rayScale: 1.8, rayOpacity: 0.62,
+    },
+  },
+  'sunburst-lagoon': {
+    label: 'Sunburst',
+    description: 'Sunburst rays in sea green over deep blue.',
+    art: sunburstArt,
+    base: 'sunburst',
+    colourway: 'Lagoon',
+    light: {
+      core: '#f0fff8', washEdge: '#0a6ed6', rayEdge: '#24e0a4',
+      canvas: '#f0fff8', washRadius: 700, rayRadius: 1000, rayScale: 1.8, rayOpacity: 0.8,
+    },
+    dark: {
+      core: '#67e0b4', washEdge: '#04141a', rayEdge: '#0c4a44',
+      canvas: '#67e0b4', washRadius: 700, rayRadius: 1000, rayScale: 1.8, rayOpacity: 0.62,
+    },
+  },
   bloom: {
     label: 'Bloom',
     description: 'An expressive oversized bloom in translucent printed inks.',
@@ -456,6 +603,50 @@ const BACKGROUNDS = {
     dark: {
       canvas: '#211127', p1: '#ff5b8d', p2: '#ff9d42', p3: '#8a72ff',
       center: '#ffe052', ink: '#e6b9f1', opacity: 0.62,
+    },
+  },
+  rainbow: {
+    label: 'Rainbow',
+    description: 'A slow vortex of rings turning from amber through magenta into midnight.',
+    art: rainbowArt,
+    colourway: 'Sunset',
+    light: {
+      canvas: '#ff9d00', seam: '#000000', seamOpacity: 0.05,
+      rings: ['#ff9d00', '#fd8b1d', '#f77a2c', '#f06a37', '#e65c40', '#da4e48', '#cc434e', '#bc3952', '#ab3155', '#992c56', '#872856', '#732453', '#60214f', '#4e1e49', '#3c1b42', '#2b1739', '#1c122f', '#100924'],
+    },
+    dark: {
+      canvas: '#9e6100', seam: '#000000', seamOpacity: 0.08,
+      rings: ['#9e6100', '#9d5612', '#994c1b', '#954222', '#8f3928', '#87302d', '#7e2a30', '#752333', '#6a1e35', '#5f1b35', '#541935', '#471633', '#3c1431', '#30132d', '#251129', '#1b0e23', '#110b1d', '#0a0616'],
+    },
+  },
+  'rainbow-aurora': {
+    label: 'Rainbow',
+    description: 'A vortex turning from mint through teal into deep indigo.',
+    art: rainbowArt,
+    base: 'rainbow',
+    colourway: 'Aurora',
+    light: {
+      canvas: '#9df5c4', seam: '#000000', seamOpacity: 0.05,
+      rings: ['#9df5c4', '#85eabf', '#6ce0bb', '#54d5b6', '#3bcbb1', '#31bbb1', '#2caab3', '#2799b5', '#2288b7', '#2077b2', '#2167a6', '#22569b', '#23468f', '#233881', '#1d2e6d', '#172458', '#111a44', '#0b1030'],
+    },
+    dark: {
+      canvas: '#61987a', seam: '#000000', seamOpacity: 0.08,
+      rings: ['#61987a', '#529176', '#438b74', '#348471', '#257e6e', '#1e746e', '#1b696f', '#185f70', '#155471', '#144a6e', '#144067', '#153560', '#162b59', '#162350', '#121d44', '#0e1637', '#0b102a', '#070a1e'],
+    },
+  },
+  'rainbow-ash': {
+    label: 'Rainbow',
+    description: 'A quiet vortex of warm greys sinking into charcoal.',
+    art: rainbowArt,
+    base: 'rainbow',
+    colourway: 'Ash',
+    light: {
+      canvas: '#e8e2d6', seam: '#000000', seamOpacity: 0.05,
+      rings: ['#e8e2d6', '#dbd5ca', '#cec8be', '#c0bbb1', '#b3aea5', '#a5a09a', '#95928e', '#868483', '#777678', '#69696d', '#5d5d62', '#515158', '#45454e', '#3a3a44', '#30303b', '#272732', '#1d1d29', '#141420'],
+    },
+    dark: {
+      canvas: '#908c85', seam: '#000000', seamOpacity: 0.08,
+      rings: ['#908c85', '#88847d', '#807c76', '#77746e', '#6f6c66', '#66635f', '#5c5b58', '#535251', '#4a494a', '#414144', '#3a3a3d', '#323237', '#2b2b30', '#24242a', '#1e1e25', '#18181f', '#121219', '#0c0c14'],
     },
   },
   blobs: {
@@ -502,24 +693,24 @@ const BACKGROUNDS = {
     description: 'A fine woven grid of nested square outlines.',
     art: squaresArt,
     tile: '70px 70px',
-    light: { canvas: '#e9ebf0', ink: '#2c3647', opacity: 0.14 },
-    dark: { canvas: '#16273d', ink: '#a8c4e2', opacity: 0.12 },
+    light: { opacity: 0.13 },
+    dark: { opacity: 0.11 },
   },
   hexagons: {
     label: 'Hexagons',
     description: 'A quiet honeycomb lattice of thin hexagon outlines.',
     art: hexagonsArt,
     tile: '56px 98px',
-    light: { canvas: '#eceff3', ink: '#33414f', opacity: 0.16 },
-    dark: { canvas: '#152437', ink: '#9dc0d8', opacity: 0.14 },
+    light: { opacity: 0.15 },
+    dark: { opacity: 0.13 },
   },
   topography: {
     label: 'Topography',
     description: 'Wandering contour lines, like a weathered map.',
     art: topographyArt,
     tile: '440px 440px',
-    light: { canvas: '#eef0ec', ink: '#3c4a45', opacity: 0.24 },
-    dark: { canvas: '#141f2e', ink: '#8fb6c9', opacity: 0.22 },
+    light: { opacity: 0.22 },
+    dark: { opacity: 0.2 },
   },
 }
 
@@ -528,48 +719,143 @@ function dataUri(svg: string): string {
 }
 
 // Render each scene's two colourways once, at module load: the strings are then
-// constant and every consumer (page, preview, picker swatch) reuses them.
+// constant and every consumer (page, preview, picker swatch) reuses them. The
+// seamless tiles are left out — their ink comes from the page's theme variant,
+// so they are drawn per (tile, variant) on first use and cached below.
 const IMAGES = Object.fromEntries(
-  Object.entries(BACKGROUNDS).map(([key, bg]) => [
-    key,
-    {
-      light: dataUri((bg.art as (palette: object) => string)(bg.light)),
-      dark: dataUri((bg.art as (palette: object) => string)(bg.dark)),
-    },
-  ]),
+  Object.entries(BACKGROUNDS)
+    .filter(([, bg]) => !('tile' in bg))
+    .map(([key, bg]) => [
+      key,
+      {
+        light: dataUri((bg.art as (palette: object) => string)(bg.light)),
+        dark: dataUri((bg.art as (palette: object) => string)(bg.dark)),
+      },
+    ]),
 )
+
+type BackgroundKey = keyof typeof BACKGROUNDS
+
+const TILE_IMAGES = new Map<string, string>()
+
+// One tile pattern in one theme variant's ink, drawn on first use. There are
+// only a handful of (tile × variant) combinations and each string is reused by
+// the page, the preview and the picker swatch, so caching them keeps the data
+// URI work to once per combination.
+function tileImage(key: BackgroundKey, scheme: PageTheme, variant: string | null | undefined): string {
+  const ink = themeVariantInk(variant, scheme)
+  const cacheKey = `${key}:${scheme}:${ink}`
+  let image = TILE_IMAGES.get(cacheKey)
+  if (!image) {
+    const bg = BACKGROUNDS[key]
+    image = dataUri((bg.art as (palette: object) => string)({ ...bg[scheme], ink }))
+    TILE_IMAGES.set(cacheKey, image)
+  }
+  return image
+}
+
+// A scene's colourways: keys that draw the same art from a different palette.
+// `base` names the scene they belong to and keeps them out of the picker's grid
+// — the editor offers them as colour dots on that scene's own swatch. Only a
+// scene that declares a `colourway` has them; the seamless tiles never will,
+// since they take their two colours from the page's light/dark scheme.
+export interface BackgroundColourway {
+  key: string
+  label: string
+  colors: { light: string[]; dark: string[] }
+}
+
+const baseKeyOf = (key: string): string => {
+  const bg = BACKGROUNDS[key as BackgroundKey]
+  return bg && 'base' in bg ? bg.base : key
+}
+
+// The colours a dot shows: a scene's ramp if it has one — the ramp is what that
+// colourway *is* — otherwise its colour slots in declaration order. Opacities,
+// radii and widths aren't colours and are skipped, and a long ramp is sampled
+// evenly (ends kept) so the dot stays legible at 16px.
+const DOT_COLORS = 5
+
+function paletteColors(palette: object): string[] {
+  const values = Object.values(palette)
+  const ramps = values.filter(Array.isArray).flat()
+  const colors = [...new Set((ramps.length ? ramps : values)
+    .filter((value) => typeof value === 'string' && value.startsWith('#')))]
+  if (colors.length <= DOT_COLORS) return colors
+  return Array.from({ length: DOT_COLORS }, (_, i) =>
+    colors[Math.round((i * (colors.length - 1)) / (DOT_COLORS - 1))])
+}
+
+const COLOURWAYS: Record<string, BackgroundColourway[]> = {}
+for (const key of PAGE_BACKGROUND_KEYS) {
+  const bg = BACKGROUNDS[key as BackgroundKey]
+  if (!bg || !('colourway' in bg)) continue
+  ;(COLOURWAYS[baseKeyOf(key)] ??= []).push({
+    key,
+    label: bg.colourway,
+    colors: { light: paletteColors(bg.light), dark: paletteColors(bg.dark) },
+  })
+}
+
+// The key whose swatch represents `key` in the picker: a colourway is shown by
+// its scene, everything else by itself.
+export function backgroundBaseKey(key: string): string {
+  return baseKeyOf(key)
+}
 
 // The picker's options, in the order they're offered — `none` (the plain themed
 // canvas) first, then the scenes, ordered by PAGE_BACKGROUND_KEYS so the editor
-// can never offer a key the server would reject.
-type BackgroundKey = keyof typeof BACKGROUNDS
-
-export const PAGE_BACKGROUND_OPTIONS = PAGE_BACKGROUND_KEYS.map((key) =>
-  key === DEFAULT_PAGE_BACKGROUND
-    ? { key, label: 'None', description: "The theme's plain canvas." }
-    : { key, label: BACKGROUNDS[key as BackgroundKey].label, description: BACKGROUNDS[key as BackgroundKey].description },
-)
+// can never offer a key the server would reject. Colourways are not options of
+// their own; they hang off their scene's option.
+export const PAGE_BACKGROUND_OPTIONS = PAGE_BACKGROUND_KEYS
+  .filter((key) => baseKeyOf(key) === key)
+  .map((key) =>
+    key === DEFAULT_PAGE_BACKGROUND
+      ? { key, label: 'None', description: "The theme's plain canvas.", colourways: [] as BackgroundColourway[] }
+      : {
+        key,
+        label: BACKGROUNDS[key as BackgroundKey].label,
+        description: BACKGROUNDS[key as BackgroundKey].description,
+        colourways: COLOURWAYS[key] ?? [],
+      })
 
 // The `sx` that paints a background. Returns `null` for `none`/unknown keys, so
 // a caller can drop `pageBackgroundSx(key)` straight into an `sx` array and get
-// the theme's plain canvas when no background is set.
+// the theme's plain canvas when no background is set. `themeVariant` is the
+// page's palette key (src/lib/pageThemes.ts): the theme-coloured tile patterns
+// are drawn in its ink, the scenes have palettes of their own and ignore it.
 //
 // It's an `sx` *function* so the colourway comes from `theme.applyStyles`, which
 // every call site evaluates on a ColorSchemeScope's own element — and the scope
 // resolves `applyStyles` against its own mode (see ColorSchemeScope.tsx). A
 // selector written here couldn't do that: `[data-theme='dark'] &` matches on any
 // dark ancestor, so a light page inside a dark editor would paint the dark art.
-export function pageBackgroundSx(key: string): ((theme: Theme) => SystemStyleObject<Theme>) | null {
+export function pageBackgroundSx(key: string, themeVariant?: string | null): ((theme: Theme) => SystemStyleObject<Theme>) | null {
   const backgroundKey = key as BackgroundKey
-  const image = IMAGES[backgroundKey]
-  if (!image) return null
   const bg = BACKGROUNDS[backgroundKey]
+  if (!bg) return null
+  // A seamless tile has no canvas of its own: it repeats over the theme's, which
+  // the page's variant repaints (the same `--mui-palette-surface-canvas` the
+  // plain `none` background shows), and its ink follows that variant too.
+  if ('tile' in bg) {
+    return (theme: Theme) => ({
+      backgroundColor: 'var(--mui-palette-surface-canvas)',
+      backgroundImage: tileImage(backgroundKey, 'light', themeVariant),
+      backgroundSize: bg.tile,
+      backgroundPosition: 'center top',
+      backgroundRepeat: 'repeat',
+      ...theme.applyStyles('dark', {
+        backgroundImage: tileImage(backgroundKey, 'dark', themeVariant),
+      }),
+    })
+  }
+  const image = IMAGES[backgroundKey]
   return (theme: Theme) => ({
     backgroundColor: bg.light.canvas,
     backgroundImage: image.light,
-    backgroundSize: 'tile' in bg ? bg.tile : 'cover',
+    backgroundSize: 'cover',
     backgroundPosition: 'center top',
-    backgroundRepeat: 'tile' in bg ? 'repeat' : 'no-repeat',
+    backgroundRepeat: 'no-repeat',
     ...theme.applyStyles('dark', {
       backgroundColor: bg.dark.canvas,
       backgroundImage: image.dark,

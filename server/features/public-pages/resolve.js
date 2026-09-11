@@ -6,6 +6,7 @@ import { detectPlatform } from './platforms.js'
 import { detectEmbed } from './embeds.js'
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
 import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
+import { pageThemeForScheme } from '../../../shared/features/appearance/pageThemes.js'
 
 function resolveWidget(widget, content) {
   switch (widget.type) {
@@ -97,13 +98,15 @@ export function resolvePage(content, layout, release = null) {
       coverUrl: song?.coverUrl || null,
     }
   }
+  const theme = normalizeTheme(layout?.theme, release ? 'dark' : 'light')
   return {
     band: content.band || null,
     release: resolvedRelease,
     background: normalizeBackground(layout?.background),
     font: normalizeFont(layout?.font),
     showBanner: layout?.showBanner === true,
-    theme: normalizeTheme(layout?.theme, release ? 'dark' : 'light'),
+    theme,
+    themeVariant: pageThemeForScheme(layout?.themeVariant, theme),
     sections,
   }
 }

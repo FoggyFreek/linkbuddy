@@ -64,6 +64,44 @@ describe('page backgrounds on the public page', () => {
     expect(backgroundColor).toBe('rgb(31, 75, 216)') // #1f4bd8, the blobs canvas
   })
 
+  it('paints the sand dunes with a shadow under every layer, per colour scheme', async () => {
+    const scope = await renderPublicPage('sand')
+    const { backgroundImage, backgroundColor } = getComputedStyle(scope)
+    expect(backgroundColor).toBe('rgb(250, 244, 227)') // #faf4e3, the sand canvas
+    const svg = decodeURIComponent(backgroundImage)
+    const layers = svg.match(/<path filter="url\(#sandShadow\)"/g)
+    expect(layers).toHaveLength(8)
+    expect(svg).toContain('<feDropShadow')
+    // Each ridge is its own step of the ramp, palest at the back.
+    const fills = [...svg.matchAll(/fill="(#[0-9a-fA-F]{6})"/g)].map(([, fill]) => fill)
+    expect(new Set(fills).size).toBe(fills.length)
+  })
+
+  it('sweeps the rainbow vortex out of the top-left corner', async () => {
+    const scope = await renderPublicPage('rainbow')
+    const { backgroundImage, backgroundColor } = getComputedStyle(scope)
+    expect(backgroundColor).toBe('rgb(255, 157, 0)') // #ff9d00, the widest ring
+    const svg = decodeURIComponent(backgroundImage)
+    const rings = [...svg.matchAll(/<circle fill="(#[0-9a-fA-F]{6})" cx="0" cy="0" r="(\d+)"/g)]
+    expect(rings).toHaveLength(18)
+    // Painted widest first, so every ring stays visible inside the one behind it.
+    const radii = rings.map(([, , r]) => Number(r))
+    expect(radii).toEqual([...radii].sort((a, b) => b - a))
+    expect(new Set(rings.map(([, fill]) => fill)).size).toBe(18)
+  })
+
+  it('fans the sunburst rays out of one glowing centre', async () => {
+    const scope = await renderPublicPage('sunburst')
+    const { backgroundImage, backgroundColor } = getComputedStyle(scope)
+    expect(backgroundColor).toBe('rgb(255, 255, 255)') // #ffffff, the glow at the centre
+    const svg = decodeURIComponent(backgroundImage)
+    // A wash and the rays, each its own radial gradient around the same centre.
+    const centres = [...svg.matchAll(/<radialGradient [^>]*cx="(\d+)" cy="(\d+)"/g)]
+    expect(centres).toHaveLength(2)
+    expect(new Set(centres.map(([, cx, cy]) => `${cx},${cy}`)).size).toBe(1)
+    expect(svg).toContain('<path fill="url(#sunRays)"')
+  })
+
   it('leaves the theme canvas alone when no background is set', async () => {
     const scope = await renderPublicPage(DEFAULT_PAGE_BACKGROUND)
     expect(getComputedStyle(scope).backgroundImage).toBe('none')
@@ -102,6 +140,75 @@ describe('page backgrounds on the public page', () => {
 })
 
 describe('BackgroundPicker', () => {
+  it('offers the sunburst colourways on its own swatch, once it is chosen', async () => {
+    const onChange = vi.fn()
+    const screen = await renderApp(<Box><BackgroundPicker value="none" mode="light" onChange={onChange} /></Box>)
+    // Colourways are a property of the chosen scene, not extra swatches.
+    expect(PAGE_BACKGROUND_OPTIONS.map((option) => option.key)).not.toContain('sunburst-ember')
+    expect(document.querySelector('[aria-label="Colours: Ember"]')).toBeNull()
+
+    await screen.getByRole('button', { name: 'Background: Sunburst' }).click()
+    expect(onChange).toHaveBeenLastCalledWith('sunburst')
+
+    const screen2 = await renderApp(<Box><BackgroundPicker value="sunburst" mode="light" onChange={onChange} /></Box>)
+    for (const label of ['Ice', 'Ember', 'Lagoon']) {
+      await expect.element(screen2.getByRole('button', { name: `Colours: ${label}` })).toBeInTheDocument()
+    }
+    const ice = document.querySelector('[aria-label="Colours: Ice"]')
+    expect(ice.getAttribute('aria-pressed')).toBe('true')
+    // Each dot is the colourway's own palette, one colour per column.
+    expect([...ice.children].map((column) => getComputedStyle(column).backgroundColor))
+      .toEqual(['rgb(255, 255, 255)', 'rgb(0, 238, 255)', 'rgb(0, 255, 255)'])
+    // Only the scene that has colourways shows them.
+    expect(document.querySelectorAll('[aria-label^="Colours: "]')).toHaveLength(3)
+
+    await screen2.getByRole('button', { name: 'Colours: Ember' }).click()
+    expect(onChange).toHaveBeenLastCalledWith('sunburst-ember')
+  })
+
+  it.each([
+    ['Glow', ['Blossom', 'Citrus', 'Mist']],
+    ['Sand', ['Dune', 'Slate', 'Rose']],
+    ['Rainbow', ['Sunset', 'Aurora', 'Ash']],
+  ])('offers three colourways on the %s swatch', async (scene, labels) => {
+    const onChange = vi.fn()
+    const key = scene.toLowerCase()
+    const screen = await renderApp(<Box><BackgroundPicker value={key} mode="light" onChange={onChange} /></Box>)
+    for (const label of labels) {
+      await expect.element(screen.getByRole('button', { name: `Colours: ${label}` })).toBeInTheDocument()
+    }
+    expect(document.querySelectorAll('[aria-label^="Colours: "]')).toHaveLength(labels.length)
+    await screen.getByRole('button', { name: `Colours: ${labels[2]}` }).click()
+    expect(onChange).toHaveBeenLastCalledWith(`${key}-${labels[2].toLowerCase()}`)
+  })
+
+  it('samples a long ramp down to a legible dot, keeping both ends', async () => {
+    await renderApp(<Box><BackgroundPicker value="sand" mode="light" onChange={vi.fn()} /></Box>)
+    const columns = [...document.querySelector('[aria-label="Colours: Dune"]').children]
+      .map((column) => getComputedStyle(column).backgroundColor)
+    // Eight ridge colours, five columns: the ramp's own ends still bound it.
+    expect(columns).toHaveLength(5)
+    expect(columns[0]).toBe('rgb(246, 235, 207)') // #f6ebcf, the palest ridge
+    expect(columns[4]).toBe('rgb(112, 82, 54)') // #705236, the deepest
+  })
+
+  it('keeps the sunburst swatch chosen, and painted, while a colourway is picked', async () => {
+    const screen = await renderApp(
+      <Box>
+        <BackgroundPicker value="sunburst-ember" mode="light" onChange={vi.fn()} />
+        <ColorSchemeScope mode="light" data-testid="ember-art" sx={pageBackgroundSx('sunburst-ember')} />
+        <ColorSchemeScope mode="light" data-testid="ice-art" sx={pageBackgroundSx('sunburst')} />
+      </Box>,
+    )
+    const swatch = await screen.getByRole('button', { name: 'Background: Sunburst' }).element()
+    expect(swatch.getAttribute('aria-pressed')).toBe('true')
+    expect(document.querySelector('[aria-label="Colours: Ember"]').getAttribute('aria-pressed')).toBe('true')
+    // The swatch previews the picked colourway, not the scene's default one.
+    const painted = getComputedStyle(swatch.querySelector('[data-theme]')).backgroundImage
+    expect(painted).toBe(getComputedStyle(document.querySelector('[data-testid="ember-art"]')).backgroundImage)
+    expect(painted).not.toBe(getComputedStyle(document.querySelector('[data-testid="ice-art"]')).backgroundImage)
+  })
+
   it('offers every background and reports the picked key', async () => {
     const onChange = vi.fn()
     const screen = await renderApp(

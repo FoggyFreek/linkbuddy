@@ -8,6 +8,7 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import BackgroundPicker from './BackgroundPicker.js'
 import FontPicker from './FontPicker.js'
+import ThemeVariantPicker from './ThemeVariantPicker.js'
 import type { ReactNode } from 'react'
 import type { DraftTheme, PageTheme } from '../../../types.js'
 
@@ -38,6 +39,8 @@ export default function AppearancePanel({
   theme,
   autoTheme,
   onSetTheme,
+  themeVariant,
+  onSetThemeVariant,
   font,
   onSetFont,
 }: Readonly<{
@@ -50,6 +53,8 @@ export default function AppearancePanel({
   theme: DraftTheme
   autoTheme: PageTheme
   onSetTheme: (value: DraftTheme) => void
+  themeVariant: string | null
+  onSetThemeVariant: (value: string) => void
   font: string
   onSetFont: (value: string) => void
 }>) {
@@ -91,13 +96,17 @@ export default function AppearancePanel({
           <ToggleButton value="light">Light</ToggleButton>
           <ToggleButton value="dark">Dark</ToggleButton>
         </ToggleButtonGroup>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
+          Colours for the {schemeMode} theme.
+        </Typography>
+        <ThemeVariantPicker value={themeVariant} mode={schemeMode} onChange={onSetThemeVariant} />
       </AppearanceSection>
 
       <AppearanceSection
         title="Background"
         hint="Artwork behind your page. Your content card stays on top of it, so text stays readable."
       >
-        <BackgroundPicker value={background} mode={schemeMode} onChange={onSetBackground} />
+        <BackgroundPicker value={background} mode={schemeMode} themeVariant={themeVariant} onChange={onSetBackground} />
       </AppearanceSection>
 
       <AppearanceSection

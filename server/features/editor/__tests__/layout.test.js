@@ -140,6 +140,10 @@ describe('validateLayout', () => {
     expect(validateLayout({ background: 'orbit', sections: [] }).layout.background).toBe('orbit')
     expect(validateLayout({ background: 'mosaic', sections: [] }).layout.background).toBe('mosaic')
     expect(validateLayout({ background: 'bloom', sections: [] }).layout.background).toBe('bloom')
+    expect(validateLayout({ background: 'sunburst', sections: [] }).layout.background).toBe('sunburst')
+    expect(validateLayout({ background: 'sunburst-ember', sections: [] }).layout.background).toBe('sunburst-ember')
+    expect(validateLayout({ background: 'sand-slate', sections: [] }).layout.background).toBe('sand-slate')
+    expect(validateLayout({ background: 'rainbow', sections: [] }).layout.background).toBe('rainbow')
     expect(validateLayout({ background: 'blobs', sections: [] }).layout.background).toBe('blobs')
     expect(validateLayout({ background: 'confetti', sections: [] }).layout.background).toBe('confetti')
     expect(validateLayout({ background: 'url(evil.svg)', sections: [] }).layout.background).toBe('none')
@@ -158,6 +162,15 @@ describe('validateLayout', () => {
     expect(validateLayout({ theme: 'dark', sections: [] }).layout.theme).toBe('dark')
     expect(validateLayout({ theme: 'neon', sections: [] }).layout.theme).toBeNull()
     expect(validateLayout({ sections: [] }).layout.theme).toBeNull()
+  })
+
+  it('keeps a known page theme variant and defaults everything else to null', () => {
+    expect(validateLayout({ themeVariant: 'dark-forest', sections: [] }).layout.themeVariant).toBe('dark-forest')
+    expect(validateLayout({ themeVariant: 'light-sand', sections: [] }).layout.themeVariant).toBe('light-sand')
+    expect(validateLayout({ themeVariant: 'light', sections: [] }).layout.themeVariant).toBe('light')
+    expect(validateLayout({ themeVariant: 'neon', sections: [] }).layout.themeVariant).toBeNull()
+    expect(validateLayout({ themeVariant: { toString: () => 'dark' }, sections: [] }).layout.themeVariant).toBeNull()
+    expect(validateLayout({ sections: [] }).layout.themeVariant).toBeNull()
   })
 
   it('keeps a known page font and falls back to system otherwise', () => {

@@ -167,6 +167,7 @@ export interface Layout {
   font: string
   showBanner: boolean
   theme: DraftTheme
+  themeVariant: string | null
   sections: DraftSection[]
 }
 
@@ -239,6 +240,7 @@ export interface ResolvedPage {
   font: string
   showBanner: boolean
   theme: PageTheme
+  themeVariant: string
   sections: ResolvedSection[]
   gigbuddyUrl?: string
 }

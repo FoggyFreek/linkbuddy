@@ -152,6 +152,26 @@ describe('resolvePage', () => {
     expect(resolvePage({ band }, null).theme).toBe('light')
   })
 
+  it('resolves the theme variant against the scheme the page renders in', () => {
+    const band = { name: 'A' }
+    const release = { songId: 1, title: 'Single', artist: 'A' }
+    // A variant of the page's own scheme is kept...
+    expect(resolvePage({ band }, { theme: 'light', themeVariant: 'light-sand', sections: [] }).themeVariant).toBe('light-sand')
+    expect(resolvePage({ band }, { theme: 'dark', themeVariant: 'dark-forest', sections: [] }).themeVariant).toBe('dark-forest')
+    // ...one belonging to the other scheme falls back to the scheme's default,
+    // so the page is never painted in a palette built for the opposite scheme.
+    expect(resolvePage({ band }, { theme: 'light', themeVariant: 'dark-forest', sections: [] }).themeVariant).toBe('light')
+    expect(resolvePage({ band }, { theme: 'dark', themeVariant: 'light-sand', sections: [] }).themeVariant).toBe('dark')
+    // The same check runs against the auto fallback: light on the main page,
+    // dark on a release page.
+    expect(resolvePage({ band }, { themeVariant: 'light-sky', sections: [] }).themeVariant).toBe('light-sky')
+    expect(resolvePage({ band }, { themeVariant: 'light-sky', sections: [] }, release).themeVariant).toBe('dark')
+    // Missing or unknown resolves to the scheme's default on both page kinds.
+    expect(resolvePage({ band }, { sections: [] }).themeVariant).toBe('light')
+    expect(resolvePage({ band }, { themeVariant: 'neon', sections: [] }, release).themeVariant).toBe('dark')
+    expect(resolvePage({ band }, null).themeVariant).toBe('light')
+  })
+
   it('passes the layout font through, defaulting to system on both page kinds', () => {
     const band = { name: 'A' }
     const release = { songId: 1, title: 'Single', artist: 'A' }
