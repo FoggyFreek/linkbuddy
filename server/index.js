@@ -2,24 +2,16 @@
 // the gigbuddy deployment shape. Run `npm run migrate` before first start.
 import path from 'node:path'
 import url from 'node:url'
-import fs from 'node:fs'
-import express from 'express'
 import 'dotenv/config'
 import { createPool } from './db.js'
 import { createApp } from './app.js'
 import { purgeOldViews, normalizeRetentionDays } from './features/statistics/statsRepo.js'
 
 const pool = createPool()
-const app = createApp(pool)
-
+// createApp serves the bundle and the SPA fallback itself, so a public page's
+// HTML can carry its share-card meta tags (server/features/public-pages/metaTags.js).
 const distDir = path.join(path.dirname(url.fileURLToPath(import.meta.url)), '..', 'dist')
-if (fs.existsSync(distDir)) {
-  app.use(express.static(distDir))
-  // SPA fallback for /:slug, /edit and /privacy.
-  app.get('/*splat', (_req, res) => {
-    res.sendFile(path.join(distDir, 'index.html'))
-  })
-}
+const app = createApp(pool, { distDir })
 
 // Statistics retention (PRIVACY.md): a rolling window per page — the plan's
 // 30 or 90 days synced from GigBuddy, falling back to this default. Purged on

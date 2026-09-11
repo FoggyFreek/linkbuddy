@@ -31,7 +31,8 @@ page (`BandPage`), `/<mainSlug>/<tail>` a release smart link (`ReleasePage`).
 `features/`: `editor/` (layout validation, plan gating, sessions),
 `integrations/` (GigBuddy content export), `pages/` (repositories, namespace
 moves, slugs), `statistics/` (anonymous dimensions and aggregation),
-`public-pages/` (stored layout × content snapshot → public payload), and
+`public-pages/` (stored layout × content snapshot → public payload, plus the
+share-card meta tags injected into the served HTML), and
 `unfurl/` (SSRF-hardened link enrichment). Each feature owns its Node tests in
 `__tests__/`.
 

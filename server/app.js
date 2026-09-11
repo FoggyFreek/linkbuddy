@@ -4,6 +4,8 @@
 // binding a port.
 import express from 'express'
 import crypto from 'node:crypto'
+import fs from 'node:fs'
+import path from 'node:path'
 import { signPayload, verifyPayload } from './features/editor/tokens.js'
 import { fetchExport, gigbuddyWebOrigin } from './features/integrations/gigbuddy.js'
 import {
@@ -24,6 +26,7 @@ import { insertView, insertClick, aggregateStats, summaryStats } from './feature
 import { classifyDevice, classifySource, resolveCountry, visitorHash } from './features/statistics/classify.js'
 import { validateLayout } from './features/editor/layout.js'
 import { resolvePage } from './features/public-pages/resolve.js'
+import { pageMetaFor, injectMetaTags } from './features/public-pages/metaTags.js'
 import { sanitizeClickTarget } from './features/public-pages/platforms.js'
 import { pageEntitlements, DEFAULT_STATS_RETENTION_DAYS } from './features/editor/entitlements.js'
 import { fetchLinkMetadata } from './features/unfurl/unfurl.js'
@@ -685,6 +688,42 @@ export function createApp(pool, overrides = {}) {
       next(err)
     }
   })
+
+  // ---------- built client + share cards ----------
+  //
+  // Mounted last, so it can never shadow an API route. A public page's HTML
+  // gets its Open Graph tags injected here rather than client-side: WhatsApp,
+  // X, iMessage, Discord and Signal fetch the document and never run the
+  // bundle, so the card a shared link previews with can only come from the
+  // server.
+  if (overrides.distDir && fs.existsSync(path.join(overrides.distDir, 'index.html'))) {
+    const shellPath = path.join(overrides.distDir, 'index.html')
+    app.use(express.static(overrides.distDir))
+
+    async function shareCardMeta(pathname) {
+      const slug = slugFromSegments(pathname.split('/').filter(Boolean))
+      if (!slug) return null
+      const page = await getPageBySlug(pool, slug)
+      // Unpublished or plan-lapsed pages 404 on the API; their shell stays
+      // anonymous here for the same reason.
+      if (!page?.published_layout || !pageEntitlements(page.content).enabled) return null
+      const base = (process.env.LINKPAGE_PUBLIC_URL || '').replace(/\/$/, '')
+      const resolved = resolvePage(page.content, page.published_layout, page.release)
+      return pageMetaFor(resolved, { pageUrl: base ? `${base}/${slug}` : null })
+    }
+
+    // SPA fallback for /:slug, /edit and /privacy.
+    app.get('/*splat', async (req, res, next) => {
+      try {
+        const shell = await fs.promises.readFile(shellPath, 'utf8')
+        const meta = await shareCardMeta(req.path)
+        if (meta) res.set('Cache-Control', 'public, max-age=60')
+        res.type('html').send(meta ? injectMetaTags(shell, meta) : shell)
+      } catch (err) {
+        next(err)
+      }
+    })
+  }
 
   // eslint-disable-next-line no-unused-vars
   app.use((err, _req, res, _next) => {
