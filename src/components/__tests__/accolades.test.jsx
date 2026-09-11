@@ -19,6 +19,10 @@ it('renders accolade details and a horizontally scrollable, keyboard-accessible 
   expect(carousel.clientWidth).toBeLessThanOrEqual(320)
   expect(carousel.tabIndex).toBe(0)
   expect(getComputedStyle(carousel).scrollSnapType).toBe('x mandatory')
+  // Opens on the second card; the rest of this test runs from the first.
+  await vi.waitFor(() => expect(carousel.scrollLeft).toBeGreaterThan(0))
+  await screen.getByRole('button', { name: 'Go to accolade 1' }).click()
+  await vi.waitFor(() => expect(carousel.scrollLeft).toBe(0))
   const time = screen.container.querySelector('time')
   const timeColor = getComputedStyle(time).color
   expect(time.dateTime).toBe('2026-09-01')
@@ -27,9 +31,10 @@ it('renders accolade details and a horizontally scrollable, keyboard-accessible 
   expect(timeColor).toBe(getComputedStyle(description).getPropertyValue('--mui-palette-text-disabled'))
   expect(parseFloat(getComputedStyle(description).fontSize)).toBeLessThan(parseFloat(getComputedStyle(description.closest('article')).fontSize))
   const badge = screen.container.querySelector('img')
-  expect(badge.getBoundingClientRect().height).toBe(115)
+  // Layout box, unaffected by the scale transform a card animates through.
+  expect(badge.offsetHeight).toBe(115)
   expect(getComputedStyle(badge).marginTop).toBe('16px')
-  expect(badge.getBoundingClientRect().width).toBeLessThanOrEqual(badge.parentElement.getBoundingClientRect().width - 32)
+  expect(badge.offsetWidth).toBeLessThanOrEqual(badge.parentElement.offsetWidth - 32)
   expect(screen.container.querySelectorAll('img')).toHaveLength(1)
   await screen.getByRole('button', { name: 'Next accolade' }).click()
   await vi.waitFor(() => expect(carousel.scrollLeft).toBeGreaterThan(0))
@@ -122,4 +127,32 @@ it('stacks the selected card over its overlapping neighbours and keeps it centre
   const centre = carousel.getBoundingClientRect().left + carousel.clientWidth / 2
   const selected = cards[3].getBoundingClientRect()
   expect(Math.abs(selected.left + selected.width / 2 - centre)).toBeLessThan(2)
+})
+
+it('opens on the second accolade when there are three or more', async () => {
+  const accolades = Array.from({ length: 3 }, (_, id) => ({ id, description: `Award ${id}`, date: '2026-09-01', url: null, imageUrl: null }))
+  const screen = await render(<ThemeProvider theme={theme}><div style={{ width: 320 }}><AccoladesWidget widget={{ id: 'a', type: 'accolades', title: 'Awards', accolades }} onLinkClick={vi.fn()} /></div></ThemeProvider>)
+  const carousel = screen.container.querySelector('[aria-roledescription="carousel"]')
+  await vi.waitFor(() => {
+    expect(carousel.scrollLeft).toBeGreaterThan(0)
+    expect(screen.container.querySelectorAll('[data-carousel-dot]')[1].getAttribute('aria-current')).toBe('true')
+  })
+  const cards = [...screen.container.querySelectorAll('article')]
+  expect(new DOMMatrixReadOnly(getComputedStyle(cards[1]).transform).m11).toBe(1)
+  expect(new DOMMatrixReadOnly(getComputedStyle(cards[0]).transform).m11).toBeLessThan(1)
+  const centre = carousel.getBoundingClientRect().left + carousel.clientWidth / 2
+  const selected = cards[1].getBoundingClientRect()
+  expect(Math.abs(selected.left + selected.width / 2 - centre)).toBeLessThan(2)
+})
+
+it.each([
+  ['one', 1],
+  ['two', 2],
+])('opens on the first accolade when there are %s', async (_label, length) => {
+  const accolades = Array.from({ length }, (_, id) => ({ id, description: `Award ${id}`, date: '2026-09-01', url: null, imageUrl: null }))
+  const screen = await render(<ThemeProvider theme={theme}><div style={{ width: 320 }}><AccoladesWidget widget={{ id: 'a', type: 'accolades', title: 'Awards', accolades }} onLinkClick={vi.fn()} /></div></ThemeProvider>)
+  const carousel = screen.container.querySelector('[aria-roledescription="carousel"]')
+  await expect.element(screen.getByText('Award 0')).toBeVisible()
+  expect(carousel.scrollLeft).toBe(0)
+  expect(new DOMMatrixReadOnly(getComputedStyle(screen.container.querySelector('article')).transform).m11).toBe(1)
 })

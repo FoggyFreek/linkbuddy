@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardActionArea from '@mui/material/CardActionArea'
@@ -43,8 +43,10 @@ function AccoladeContent({ accolade }: Readonly<{ accolade: Accolade }>) {
 export default function AccoladesWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedAccoladesWidget; onLinkClick: LinkClickHandler }>) {
   const carouselId = useId()
   const carouselRef = useRef<HTMLDivElement>(null)
-  const [active, setActive] = useState(0)
   const count = widget.accolades.length
+  // From three cards up, open on the second
+  const initial = count > 2 ? 1 : 0
+  const [active, setActive] = useState(initial)
 
   // Cards are equal width, so the scroll offset that centres card i is i * step.
   const step = () => {
@@ -58,6 +60,8 @@ export default function AccoladesWidget({ widget, onLinkClick }: Readonly<{ widg
     carousel.scrollTo({ left: clamped * step(), behavior: 'instant' })
     setActive(clamped)
   }
+
+  useLayoutEffect(() => { goTo(initial) }, [])
 
   if (!count) return null
   const label = widget.title || 'Accolades'
