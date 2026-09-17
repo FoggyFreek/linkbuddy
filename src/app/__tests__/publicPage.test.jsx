@@ -8,11 +8,11 @@ import ColorSchemeScope from '../../components/ColorSchemeScope.jsx'
 
 // Mock the network layer so the real data-loading path runs against fixed mock
 // data instead of a live API. Each test sets the resolved page.
-const state = { page: null }
+const state = { page: null, clicks: [] }
 vi.mock('../../lib/api.js', () => ({
   getPublicPage: () => Promise.resolve(state.page),
   sendView: () => {},
-  sendClick: () => {},
+  sendClick: (_slug, target) => state.clicks.push(target),
 }))
 
 // Imported after the mock is registered. The two public page kinds are separate
@@ -77,6 +77,24 @@ afterEach(() => {
 })
 
 describe('public page rendering (real components, mocked API)', () => {
+  it('offers a band that published booking details a way to book it', async () => {
+    state.page = mockPage({ band: { booking: { email: 'book@testers.example', phone: null, feeLowCents: 50000, feeHighCents: null, currency: 'EUR', repertoire: 'covers' } } })
+    state.clicks = []
+    const screen = await renderPage()
+
+    await screen.getByRole('button', { name: 'Book now' }).click()
+    await expect.element(screen.getByRole('dialog')).toBeInTheDocument()
+    await expect.element(screen.getByText('Book The Testers')).toBeInTheDocument()
+    // The page's own beacon carries the booking targets.
+    expect(state.clicks).toContain('book:open')
+  })
+
+  it('shows no booking button when the band did not opt in', async () => {
+    state.page = mockPage()
+    const screen = await renderPage()
+    expect(screen.getByRole('button', { name: 'Book now' }).elements()).toHaveLength(0)
+  })
+
   it('renders the band name as an MUI Typography h1', async () => {
     state.page = mockPage()
     const screen = await renderPage()

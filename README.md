@@ -187,6 +187,17 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
   or unrecognized the fallback depends on the page — release pages render dark
   (their artwork-led layout is dark-first), main pages light.
 - The export includes `accolades: [{ id, description, date, url, imageUrl }]`, newest first (up to 50). Dates use `YYYY-MM-DD`; `url` and `imageUrl` are nullable. Older snapshots without accolades are supported. Add an Accolades widget in the editor, refresh content, then publish; empty carousels are hidden.
+- The `band` object carries `booking: { feeLowCents, feeHighCents, currency, repertoire, contactEnabled, email, phone }` from GigBuddy's profile.
+  `contactEnabled` is the band's opt-in: when it is false GigBuddy already
+  nulls the contacts, and this app publishes no booking block at all — the fee
+  indication included. An opted-in band with a usable email and/or phone gets a
+  "Book now" button on its main page; the dialog shows the fee range (or
+  "Contact for more information"), the repertoire, and the contacts to act on.
+  Clicks report as `book:open` / `book:email` / `book:phone` in the statistics;
+  `book:open` is engagement, so it is excluded from the click-through rate the
+  way shares and embed plays are. Contacts, fees and the currency are validated
+  whole — an over-long or malformed value is dropped, never truncated into a
+  usable-looking wrong one. Older snapshots without `booking` are supported.
 - `GET /api/public/linkpage/image?t=<token>` — streams band logo / song cover;
   the token is HMAC-signed by GigBuddy with the same secret and embedded in
   the export payload's image URLs.

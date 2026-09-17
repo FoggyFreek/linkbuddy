@@ -38,6 +38,8 @@ const SHARE_NAMES: Record<string, string> = {
   email: 'Email',
 }
 
+const BOOK_NAMES: Record<string, string> = { open: 'Opened', email: 'Email', phone: 'Phone' }
+
 // The theme's validated categorical slots. Colours are assigned by *identity*
 // (a category always keeps its slot) rather than by rank, so a range change
 // can't repaint the survivors of a chart.
@@ -56,7 +58,8 @@ const CLICK_KINDS = [
   { kind: 'share', label: 'Shares', color: SLOT(5) },
   { kind: 'social', label: 'Socials', color: SLOT(6) },
   { kind: 'shop', label: 'Merch shop', color: SLOT(7) },
-  { kind: 'other', label: 'Other', color: SLOT(8) },
+  { kind: 'book', label: 'Booking', color: SLOT(8) },
+  { kind: 'other', label: 'Other', color: NEUTRAL },
 ]
 const KNOWN_KINDS = new Set(CLICK_KINDS.map((k) => k.kind))
 
@@ -105,6 +108,8 @@ function formatTarget(key: string): string {
       return `Preview · ${PLATFORM_NAMES[value] || value}`
     case 'shop':
       return 'Merch shop'
+    case 'book':
+      return `Booking · ${BOOK_NAMES[value] || value}`
     default:
       return key
   }

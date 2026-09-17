@@ -3,6 +3,7 @@ import Box from '@mui/material/Box'
 import usePublicPage from './usePublicPage.js'
 import useFavicon from './useFavicon.js'
 import LinksCard from '../../features/public-links-card/components/LinksCard.js'
+import BookNowFab from '../../features/public-links-card/components/BookNowFab.js'
 import PageScope from '../../components/PageScope.js'
 import PageStatus from '../../components/PageStatus.js'
 import PrivacyNote from '../../components/PrivacyNote.js'
@@ -44,6 +45,7 @@ export default function BandPage({ slug }: Readonly<{ slug: string }>) {
     // Below `sm` the card fills the viewport, so there are no gutters to pad.
     <PageScope page={page} bleed sx={{ minHeight: '100dvh', px: { xs: 0, sm: 2 }, pt: { xs: 0, sm: 5 }, display: 'flex', flexDirection: 'column' }}>
       <LinksCard page={page} onLinkClick={onLinkClick} footer={footer} corner={corners} flush />
+      <BookNowFab booking={band?.booking} bandName={band?.name} onLinkClick={onLinkClick} />
     </PageScope>
   )
 }

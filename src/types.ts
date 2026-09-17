@@ -29,6 +29,19 @@ export interface EmbedDescriptor {
   height?: number
 }
 
+export type BookingRepertoire = 'covers' | 'tribute' | 'original'
+
+// The public half of a band's GigBuddy booking profile. Present only when the
+// band opted in there and left a reachable contact (see resolve.js).
+export interface Booking {
+  email: string | null
+  phone: string | null
+  feeLowCents: number | null
+  feeHighCents: number | null
+  currency: string
+  repertoire: BookingRepertoire | null
+}
+
 export interface Band {
   name: string
   slug?: string
@@ -38,6 +51,7 @@ export interface Band {
   logoUrl?: string | null
   logoDarkUrl?: string | null
   socials?: Record<string, string | null | undefined>
+  booking?: Booking | null
 }
 
 export interface Song {

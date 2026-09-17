@@ -78,9 +78,61 @@ function resolveWidget(widget, content) {
   }
 }
 
+// A band may publish its booking details from GigBuddy's profile. The block a
+// visitor sees is rebuilt here rather than passed through: `contactEnabled` is
+// the band's explicit opt-in, and without it nothing booking-related — the fee
+// indication included — leaves this server. The same holds when the opt-in is
+// on but no contact survives normalization: there would be no way to act on it.
+const BOOKING_REPERTOIRES = ['covers', 'tribute', 'original']
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_PATTERN = /^[\d+][\d\s()./-]*$/
+
+// Over-length is rejected, not trimmed: a truncated contact still parses as one
+// and would reach nobody.
+function bookingText(value, max) {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  return trimmed && trimmed.length <= max ? trimmed : null
+}
+
+function bookingMatch(value, max, pattern) {
+  const text = bookingText(value, max)
+  return text && pattern.test(text) ? text : null
+}
+
+function feeCents(value) {
+  return Number.isSafeInteger(value) && value >= 0 ? value : null
+}
+
+function resolveBooking(booking) {
+  if (!booking || booking.contactEnabled !== true) return null
+  const email = bookingMatch(booking.email, 254, EMAIL_PATTERN)
+  const phone = bookingMatch(booking.phone, 40, PHONE_PATTERN)
+  if (!email && !phone) return null
+  const currency = bookingMatch(booking.currency, 3, /^[a-z]{3}$/i)
+  // A range filled in backwards is still one span of money.
+  const fees = [feeCents(booking.feeLowCents), feeCents(booking.feeHighCents)]
+  const [feeLowCents, feeHighCents] = fees.every((f) => f !== null) ? [...fees].sort((a, b) => a - b) : fees
+  return {
+    email,
+    phone,
+    feeLowCents,
+    feeHighCents,
+    currency: currency ? currency.toUpperCase() : 'EUR',
+    repertoire: BOOKING_REPERTOIRES.includes(booking.repertoire) ? booking.repertoire : null,
+  }
+}
+
+function resolveBand(band) {
+  return band ? { ...band, booking: resolveBooking(band.booking) } : null
+}
+
 // `release` is the page's stored release snapshot ({songId, title, artist})
 // for release landing pages; null for the main page. The cover comes from the
 // live content snapshot when the song still exists (fresh signed image URL).
+// A release page shows the art full-bleed, so it takes gigbuddy's
+// high-resolution cover; song widgets elsewhere stay on the thumbnail-sized
+// one. Songs exported without a high-resolution cover fall back to it.
 export function resolvePage(content, layout, release = null) {
   const sections = (layout?.sections || [])
     .map((section) => ({
@@ -95,12 +147,12 @@ export function resolvePage(content, layout, release = null) {
     resolvedRelease = {
       title: release.title,
       artist: release.artist || content.band?.name || null,
-      coverUrl: song?.coverUrl || null,
+      coverUrl: song?.coverHighResolutionUrl || song?.coverUrl || null,
     }
   }
   const theme = normalizeTheme(layout?.theme, release ? 'dark' : 'light')
   return {
-    band: content.band || null,
+    band: resolveBand(content.band),
     release: resolvedRelease,
     background: normalizeBackground(layout?.background),
     font: normalizeFont(layout?.font),

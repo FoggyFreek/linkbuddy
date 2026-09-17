@@ -159,6 +159,19 @@ describe('StatsPanel device / country pies', () => {
     expect(screen.container.textContent).not.toContain(region.of('IT'))
   })
 
+  it('names each booking target the visitor reached', async () => {
+    const screen = await renderPanel(mockStats({
+      byTarget: [
+        { key: 'book:open', views: 12 },
+        { key: 'book:email', views: 5 },
+        { key: 'book:phone', views: 2 },
+      ],
+    }))
+    await expect.element(screen.getByText('Booking · Opened')).toBeVisible()
+    await expect.element(screen.getByText('Booking · Email')).toBeVisible()
+    await expect.element(screen.getByText('Booking · Phone')).toBeVisible()
+  })
+
   it('says so when a dimension has no data', async () => {
     const screen = await renderPanel(mockStats({ byDevice: [] }))
     await expect.element(screen.getByText('Devices')).toBeVisible()

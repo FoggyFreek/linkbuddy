@@ -2,6 +2,21 @@
 // UI shows counts per dimension, never individual view rows.
 import { DEFAULT_STATS_RETENTION_DAYS, MAX_STATS_RETENTION_DAYS } from '../editor/entitlements.js'
 
+// Amplification ('share:…'), embed plays ('embed:…') and opening the booking
+// dialog stay visible in byTarget but never count as outbound conversion.
+const NON_CONVERSION_PREFIXES = ['share:', 'embed:']
+const NON_CONVERSION_TARGETS = ['book:open']
+
+export const OUTBOUND_CLICK_SQL = [
+  ...NON_CONVERSION_PREFIXES.map((prefix) => `target NOT LIKE '${prefix}%'`),
+  ...NON_CONVERSION_TARGETS.map((target) => `target <> '${target}'`),
+].join(' AND ')
+
+export function isOutboundClick(target) {
+  return !NON_CONVERSION_PREFIXES.some((prefix) => target.startsWith(prefix))
+    && !NON_CONVERSION_TARGETS.includes(target)
+}
+
 export async function insertView(executor, pageId, { device, source, country, visitorHash }) {
   await executor.query(
     `INSERT INTO page_views (page_id, device, source, country, visitor_hash)
@@ -64,15 +79,12 @@ export async function summaryStats(executor, pageId, since) {
         WHERE page_id = $1 AND occurred_at >= $2`,
       [pageId, since],
     ),
-    // Share events ('share:…') are page amplification and embed plays
-    // ('embed:…') are on-page engagement — neither is outbound conversion, so
-    // both stay visible in byTarget but are excluded from the click totals
-    // that feed the click-through rate.
+    // The click total behind the click-through rate: conversions only.
     executor.query(
       `SELECT COUNT(*)::int AS clicks
          FROM page_clicks
         WHERE page_id = $1 AND occurred_at >= $2
-          AND target NOT LIKE 'share:%' AND target NOT LIKE 'embed:%'`,
+          AND ${OUTBOUND_CLICK_SQL}`,
       [pageId, since],
     ),
     executor.query(
@@ -123,7 +135,7 @@ export async function aggregateStats(executor, pageId, since) {
       `SELECT source AS key, COUNT(*)::int AS views
          FROM page_clicks
         WHERE page_id = $1 AND occurred_at >= $2
-          AND target NOT LIKE 'share:%' AND target NOT LIKE 'embed:%'
+          AND ${OUTBOUND_CLICK_SQL}
         GROUP BY source
         ORDER BY views DESC, key
         LIMIT 12`,

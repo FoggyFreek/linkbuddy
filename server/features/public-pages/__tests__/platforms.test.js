@@ -29,6 +29,12 @@ describe('sanitizeClickTarget', () => {
     expect(sanitizeClickTarget('social:instagram')).toBe('social:instagram')
   })
 
+  it('accepts the booking targets the Book now button reports', () => {
+    for (const target of ['book:open', 'book:email', 'book:phone']) {
+      expect(sanitizeClickTarget(target)).toBe(target)
+    }
+  })
+
   it('rejects garbage and free-text abuse', () => {
     expect(sanitizeClickTarget('')).toBeNull()
     expect(sanitizeClickTarget(null)).toBeNull()
