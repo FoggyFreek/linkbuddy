@@ -47,6 +47,7 @@ it('renders accolade details and a horizontally scrollable, keyboard-accessible 
   await vi.waitFor(() => expect(carousel.scrollLeft).toBe(0))
   const card = screen.container.querySelector('article')
   const cardStyle = getComputedStyle(card)
+  expect(cardStyle.borderRadius).toBe('18px')
   expect(cardStyle.backgroundColor).toBe('rgb(255, 255, 255)')
   expect(cardStyle.boxShadow).not.toBe('none')
   const containerStyle = getComputedStyle(card.closest('.MuiPaper-root:not(article)'))

@@ -99,8 +99,27 @@ export interface ResolvedAccoladesWidget extends AccoladesWidgetDraft {
   accolades: Accolade[]
 }
 
+export interface Album {
+  id: number
+  title: string
+  artist: string | null
+  releaseDate: string | null
+  coverUrl: string | null
+  coverHighResolutionUrl?: string | null
+}
+
+export interface DiscographyWidgetDraft extends WidgetBase {
+  type: 'discography'
+  title: string | null
+}
+
+export interface ResolvedDiscographyWidget extends DiscographyWidgetDraft {
+  discography: Album[]
+}
+
 export interface ContentSnapshot {
   accolades?: Accolade[]
+  discography?: Album[]
   band?: Band | null
   songs?: Song[]
   products?: Product[]
@@ -165,6 +184,7 @@ export type DraftWidget =
   | PlatformsWidgetDraft
   | GigsWidgetDraft
   | AccoladesWidgetDraft
+  | DiscographyWidgetDraft
   | MerchWidgetDraft
   | EmbedWidgetDraft
   | LinkWidgetDraft
@@ -231,6 +251,7 @@ export type ResolvedWidget =
   | ResolvedPlatformsWidget
   | ResolvedGigsWidget
   | ResolvedAccoladesWidget
+  | ResolvedDiscographyWidget
   | ResolvedMerchWidget
   | ResolvedEmbedWidget
   | ResolvedLinkWidget

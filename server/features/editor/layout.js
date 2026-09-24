@@ -155,6 +155,7 @@ const WIDGET_PARSERS = {
   platforms: parsePlatforms,
   gigs: parseGigs,
   accolades: (raw, id) => ({ widget: { id, type: 'accolades', title: cleanString(raw.title, MAX_TITLE) } }),
+  discography: (raw, id) => ({ widget: { id, type: 'discography', title: cleanString(raw.title, MAX_TITLE) } }),
   merch: parseMerch,
   embed: parseEmbed,
   link: parseLink,

@@ -74,6 +74,7 @@ into its own repository — nothing else needs to change.
 | `embed` | any pasted URL | metadata (title/artwork/description) pulled via oEmbed (Spotify, YouTube, SoundCloud, Vimeo, TikTok) or Open Graph tags; renders as a click-to-play card that opens the player in a closable modal overlay — an audio player (Spotify/SoundCloud) or a 16:9 video lightbox (YouTube, privacy-enhanced `youtube-nocookie.com`) — or as a rich link card |
 | `gigs` | announced upcoming gigs | expandable card; only gigs with status `announced` are ever exported |
 | `accolades` | awards and quotes from GigBuddy | touch-friendly horizontal carousel with description, date, optional link and signed image |
+| `discography` | albums marked as discography in GigBuddy | photo carousel with title and release year over the album art |
 | `merch` | selected products | horizontal card carousel; optional per-item image URL + badge, optional shop URL (e.g. your Shopify store) the cards link to |
 | `link` | free-form link | label, optional sublabel/thumbnail, icon |
 
@@ -187,6 +188,7 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
   or unrecognized the fallback depends on the page — release pages render dark
   (their artwork-led layout is dark-first), main pages light.
 - The export includes `accolades: [{ id, description, date, url, imageUrl }]`, newest first (up to 50). Dates use `YYYY-MM-DD`; `url` and `imageUrl` are nullable. Older snapshots without accolades are supported. Add an Accolades widget in the editor, refresh content, then publish; empty carousels are hidden.
+- The export includes `discography: [{ id, title, artist, releaseDate, releaseYear, coverUrl, coverHighResolutionUrl }]` for albums marked as discography, newest first. `releaseDate` uses `YYYY-MM-DD`; dates and art can be null. Add a Discography widget in the editor, refresh content, then publish; empty carousels are hidden.
 - The `band` object carries `booking: { feeLowCents, feeHighCents, currency, repertoire, contactEnabled, email, phone }` from GigBuddy's profile.
   `contactEnabled` is the band's opt-in: when it is false GigBuddy already
   nulls the contacts, and this app publishes no booking block at all — the fee

@@ -63,3 +63,9 @@ it('creates and labels an accolades widget even before content is synced', () =>
   expect(widget).toMatchObject({ type: 'accolades', title: 'Accolades' })
   expect(widgetSummary(widget, {})).toBe('Accolades · Accolades')
 })
+
+it('creates and labels a discography widget even before content is synced', () => {
+  const widget = makeWidget('discography', {})
+  expect(widget).toMatchObject({ type: 'discography', title: 'Discography' })
+  expect(widgetSummary(widget, {})).toBe('Discography · Discography')
+})

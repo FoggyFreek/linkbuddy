@@ -23,6 +23,7 @@ const ADD_TYPES: AddType[] = [
   { type: 'platforms', label: 'Platform buttons', needs: 'songs', releaseOnly: true },
   { type: 'gigs', label: 'Gigs' },
   { type: 'accolades', label: 'Accolades' },
+  { type: 'discography', label: 'Discography' },
   { type: 'merch', label: 'Merch', needs: 'products' },
   { type: 'link', label: 'Custom link' },
   { type: 'embed', label: 'Embed' },

@@ -43,6 +43,11 @@ function resolveWidget(widget, content) {
       if (!accolades.length) return null
       return { id: widget.id, type: 'accolades', title: widget.title || 'Accolades', accolades }
     }
+    case 'discography': {
+      const discography = content.discography || []
+      if (!discography.length) return null
+      return { id: widget.id, type: 'discography', title: widget.title || 'Discography', discography }
+    }
     case 'gigs': {
       const gigs = (content.gigs || []).slice(0, widget.limit || 10)
       return {

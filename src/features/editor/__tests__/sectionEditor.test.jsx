@@ -130,3 +130,10 @@ it('adds an accolades carousel from the section menu', async () => {
   await screen.getByRole('menuitem', { name: 'Accolades', exact: true }).click()
   expect(handlers.onAddWidget).toHaveBeenCalledWith('accolades')
 })
+
+it('adds a discography carousel from the section menu', async () => {
+  const { screen, handlers } = await renderSection()
+  await screen.getByRole('button', { name: 'Add' }).click()
+  await screen.getByRole('menuitem', { name: 'Discography' }).click()
+  expect(handlers.onAddWidget).toHaveBeenCalledWith('discography')
+})
