@@ -1,5 +1,6 @@
 // Small pure helpers shared across the editor UI. No React, no I/O.
 import { trim } from '../../../utils/trimChars.js'
+import type { DropTarget } from './dropTarget.js'
 import type { ApiError, ContentSnapshot, DragLocation, DraftSection, EditorPage, Layout, PageListEntry, PageTheme, SaveState } from '../../../types.js'
 
 // Immutably move list[index] by `delta` positions; returns the list unchanged
@@ -32,6 +33,36 @@ export function moveWidget(sections: DraftSection[], from: DragLocation, to: Dra
       const at = Math.max(0, Math.min(to.index, widgets.length))
       widgets = [...widgets.slice(0, at), widget, ...widgets.slice(at)]
     }
+    return { ...section, widgets }
+  })
+}
+
+// Apply a drag drop to a flat list. An insert `index` counts gaps in the list as
+// it was before the item was lifted out.
+export function dropItem<T>(list: T[], from: number, target: Pick<DropTarget, 'mode' | 'index'>): T[] {
+  if (target.mode === 'swap') {
+    if (target.index === from || !(target.index in list)) return list
+    const next = [...list]
+    next[from] = list[target.index]
+    next[target.index] = list[from]
+    return next
+  }
+  const to = target.index > from ? target.index - 1 : target.index
+  return to === from ? list : moveItem(list, from, to - from)
+}
+
+// Apply a drag drop to a widget, within or across sections.
+export function dropWidget(sections: DraftSection[], from: DragLocation, target: DropTarget): DraftSection[] {
+  if (target.mode === 'insert') {
+    const index = target.list === from.sectionId && target.index > from.index ? target.index - 1 : target.index
+    return moveWidget(sections, from, { sectionId: target.list, index })
+  }
+  const a = sections.find((s) => s.id === from.sectionId)?.widgets[from.index]
+  const b = sections.find((s) => s.id === target.list)?.widgets[target.index]
+  if (!a || !b || a === b) return sections
+  return sections.map((section) => {
+    if (section.id !== from.sectionId && section.id !== target.list) return section
+    const widgets = section.widgets.map((w) => (w === a ? b : w === b ? a : w))
     return { ...section, widgets }
   })
 }

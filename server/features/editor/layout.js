@@ -14,6 +14,7 @@ import { PAGE_THEME_KEYS } from '../../../shared/features/appearance/pageThemes.
 const MAX_SECTIONS = 20
 const MAX_WIDGETS_PER_SECTION = 30
 const MAX_MERCH_ITEMS = 50
+const MAX_HIDDEN_LINKS = 50
 const MAX_TITLE = 120
 const MAX_LABEL = 160
 const MAX_URL = 2000
@@ -58,10 +59,17 @@ function optionalUrl(value) {
   return value ? sanitizeUrl(value) : null
 }
 
+// Hidden links are match keys against the song's synced link URLs, never rendered.
+function parseHiddenLinks(value) {
+  if (!Array.isArray(value)) return []
+  const urls = value.map((url) => cleanString(url, MAX_URL)).filter(Boolean)
+  return [...new Set(urls)].slice(0, MAX_HIDDEN_LINKS)
+}
+
 function parseSong(raw, id) {
   const songId = positiveId(raw.songId)
   if (!songId) return fail('Song widget needs a songId')
-  return { widget: { id, type: 'song', songId } }
+  return { widget: { id, type: 'song', songId, hiddenLinks: parseHiddenLinks(raw.hiddenLinks) } }
 }
 
 // One button per streaming platform for a song's links — the core widget of a

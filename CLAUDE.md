@@ -74,9 +74,10 @@ may not import another feature. Don't copy that pattern elsewhere.
 **`features/editor/`** — `components/` (tabs: build, appearance, preview, stats,
 plus the widget forms `WidgetEditors` and the `NewReleaseForm` dialog), `hooks/`
 (`useEditorSession` = handoff/session/page list, `useLayoutEditor` = draft
-layout + debounced autosave, `useDragReorder` = widget drag/keyboard reordering,
-owned by `LayoutBuilder` because a widget can be dragged between sections),
-`utils/` (`editorUtils.ts`, and `widgetModel.ts`
+layout + debounced autosave, `useDragReorder` = pointer/keyboard reordering of
+widgets and sections, owned by `LayoutBuilder` because a widget can be dragged
+between sections and a section drag collapses every card),
+`utils/` (`editorUtils.ts`, `dropTarget.ts` = swap/insert hit-testing, and `widgetModel.ts`
 = the pure vocabulary for creating/labelling widgets). Its root is the
 `app/routes/Editor.tsx` route, which owns the session and composes the tabs.
 

@@ -135,6 +135,7 @@ interface WidgetBase {
 export interface SongWidgetDraft extends WidgetBase {
   type: 'song'
   songId: number
+  hiddenLinks?: string[]
 }
 
 export interface PlatformsWidgetDraft extends WidgetBase {

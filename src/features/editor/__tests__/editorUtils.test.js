@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   moveItem,
   moveWidget,
+  dropItem,
+  dropWidget,
   slugify,
   saveErrorState,
   pageLabel,
@@ -65,6 +67,69 @@ describe('moveWidget', () => {
     const before = sections()
     expect(moveWidget(before, { sectionId: 's1', index: 0 }, { sectionId: 'nope', index: 0 })).toBe(before)
     expect(ids(before, 's1')).toEqual(['w1', 'w2', 'w3'])
+  })
+})
+
+describe('dropItem', () => {
+  const list = ['a', 'b', 'c', 'd']
+
+  it('inserts into the gap, counting gaps in the list as it was before the drag', () => {
+    expect(dropItem(list, 0, { mode: 'insert', index: 3 })).toEqual(['b', 'c', 'a', 'd'])
+    expect(dropItem(list, 3, { mode: 'insert', index: 1 })).toEqual(['a', 'd', 'b', 'c'])
+    expect(dropItem(list, 1, { mode: 'insert', index: 4 })).toEqual(['a', 'c', 'd', 'b'])
+  })
+
+  it('swaps two items in place', () => {
+    expect(dropItem(list, 0, { mode: 'swap', index: 2 })).toEqual(['c', 'b', 'a', 'd'])
+    expect(list).toEqual(['a', 'b', 'c', 'd'])
+  })
+
+  it('returns the list unchanged for a drop onto its own spot', () => {
+    expect(dropItem(list, 1, { mode: 'swap', index: 1 })).toBe(list)
+    expect(dropItem(list, 1, { mode: 'insert', index: 2 })).toBe(list)
+  })
+})
+
+describe('dropWidget', () => {
+  const sections = () => [
+    { id: 's1', title: 'A', widgets: [{ id: 'w1' }, { id: 'w2' }, { id: 'w3' }] },
+    { id: 's2', title: 'B', widgets: [{ id: 'w4' }] },
+    { id: 's3', title: 'C', widgets: [] },
+  ]
+  const ids = (result, sectionId) => result.find((s) => s.id === sectionId).widgets.map((w) => w.id)
+
+  it('inserts between rows of the same section', () => {
+    const after = dropWidget(sections(), { sectionId: 's1', index: 0 }, { mode: 'insert', list: 's1', index: 2 })
+    expect(ids(after, 's1')).toEqual(['w2', 'w1', 'w3'])
+  })
+
+  it('inserts into another section, including an empty one', () => {
+    const after = dropWidget(sections(), { sectionId: 's1', index: 2 }, { mode: 'insert', list: 's2', index: 0 })
+    expect(ids(after, 's1')).toEqual(['w1', 'w2'])
+    expect(ids(after, 's2')).toEqual(['w3', 'w4'])
+    const empty = dropWidget(sections(), { sectionId: 's2', index: 0 }, { mode: 'insert', list: 's3', index: 0 })
+    expect(ids(empty, 's3')).toEqual(['w4'])
+  })
+
+  it('swaps two widgets within a section', () => {
+    const after = dropWidget(sections(), { sectionId: 's1', index: 0 }, { mode: 'swap', list: 's1', index: 2 })
+    expect(ids(after, 's1')).toEqual(['w3', 'w2', 'w1'])
+  })
+
+  it('swaps two widgets across sections and leaves the others untouched', () => {
+    const before = sections()
+    const after = dropWidget(before, { sectionId: 's1', index: 1 }, { mode: 'swap', list: 's2', index: 0 })
+    expect(ids(after, 's1')).toEqual(['w1', 'w4', 'w3'])
+    expect(ids(after, 's2')).toEqual(['w2'])
+    expect(after[2]).toBe(before[2])
+    expect(ids(before, 's1')).toEqual(['w1', 'w2', 'w3'])
+  })
+
+  it('no-ops on an unknown source or target', () => {
+    const before = sections()
+    expect(dropWidget(before, { sectionId: 'nope', index: 0 }, { mode: 'swap', list: 's1', index: 0 })).toBe(before)
+    expect(dropWidget(before, { sectionId: 's1', index: 0 }, { mode: 'swap', list: 's3', index: 0 })).toBe(before)
+    expect(dropWidget(before, { sectionId: 's1', index: 0 }, { mode: 'insert', list: 'nope', index: 0 })).toBe(before)
   })
 })
 

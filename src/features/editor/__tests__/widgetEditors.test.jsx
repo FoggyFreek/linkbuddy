@@ -7,7 +7,15 @@ import { WidgetEditor } from '../components/WidgetEditors.jsx'
 
 const content = {
   songs: [
-    { id: 1, title: 'First Song', artist: 'The Testers' },
+    {
+      id: 1,
+      title: 'First Song',
+      artist: 'The Testers',
+      links: [
+        { label: 'Spotify', url: 'https://open.spotify.com/track/1' },
+        { label: '', url: 'https://music.apple.com/album/1' },
+      ],
+    },
     { id: 2, title: 'Second Song', artist: null },
   ],
   products: [
@@ -37,6 +45,30 @@ describe('WidgetEditor', () => {
   it('renders the song editor', async () => {
     const { screen } = await renderEditor({ id: 'song', type: 'song', songId: 1 })
     await expect.element(screen.getByText(/Fetches the album art/)).toBeInTheDocument()
+  })
+
+  it("lists the song's links and hides the ones unticked", async () => {
+    const widget = { id: 'song', type: 'song', songId: 1, hiddenLinks: [] }
+    const { screen, handlers } = await renderEditor(widget)
+    await expect.element(screen.getByRole('checkbox', { name: 'Spotify' })).toBeChecked()
+    await screen.getByRole('checkbox', { name: 'music.apple.com' }).click()
+    expect(handlers.onChange).toHaveBeenLastCalledWith({ ...widget, hiddenLinks: ['https://music.apple.com/album/1'] })
+  })
+
+  it('shows a hidden song link again when ticked', async () => {
+    const widget = { id: 'song', type: 'song', songId: 1, hiddenLinks: ['https://open.spotify.com/track/1'] }
+    const { screen, handlers } = await renderEditor(widget)
+    await expect.element(screen.getByRole('checkbox', { name: 'Spotify' })).not.toBeChecked()
+    await screen.getByRole('checkbox', { name: 'Spotify' }).click()
+    expect(handlers.onChange).toHaveBeenLastCalledWith({ ...widget, hiddenLinks: [] })
+  })
+
+  it('resets hidden links when another song is picked', async () => {
+    const widget = { id: 'song', type: 'song', songId: 1, hiddenLinks: ['https://open.spotify.com/track/1'] }
+    const { screen, handlers } = await renderEditor(widget)
+    await screen.getByLabelText('Song').click()
+    await screen.getByRole('option', { name: 'Second Song' }).click()
+    expect(handlers.onChange).toHaveBeenLastCalledWith({ ...widget, songId: 2, hiddenLinks: [] })
   })
 
   it('edits platform widget fields', async () => {

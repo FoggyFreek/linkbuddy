@@ -15,7 +15,7 @@ import Typography from '@mui/material/Typography'
 import { LINK_ICON_KEYS } from '../../../../shared/features/links/linkIcons.js'
 import { LINK_ICON_COMPONENTS } from '../../../components/icons.js'
 import type {
-  ContentSnapshot, DraftWidget, EmbedWidgetDraft, GigsWidgetDraft, LinkWidgetDraft,
+  ContentSnapshot, DraftWidget, EmbedWidgetDraft, GigsWidgetDraft, Link, LinkWidgetDraft,
   MerchItemDraft, MerchWidgetDraft, PlatformsWidgetDraft, Product, Song,
   SongWidgetDraft, UnfurlResult,
 } from '../../../types.js'
@@ -56,13 +56,45 @@ export function SongSelect({ value, songs, onChange, label = 'Song' }: Readonly<
   )
 }
 
+function linkName(link: Link) {
+  if (link.label) return link.label
+  try {
+    return new URL(link.url).hostname.replace(/^www\./, '')
+  } catch {
+    return link.url
+  }
+}
+
 function SongWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: SongWidgetDraft; songs: Song[]; onChange: (widget: SongWidgetDraft) => void }>) {
+  const links = songs.find((song) => song.id === widget.songId)?.links || []
+  const hidden = widget.hiddenLinks || []
+  const toggle = (url: string) => {
+    const hiddenLinks = hidden.includes(url) ? hidden.filter((hiddenUrl) => hiddenUrl !== url) : [...hidden, url]
+    onChange({ ...widget, hiddenLinks })
+  }
   return (
   <Stack spacing={1}>
   <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
         Fetches the album art and any streaming links for the selected song from gigBuddy and displays them in a row with platform icons. 
   </Typography>
-  <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId })} />
+  <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId, hiddenLinks: [] })} />
+  {links.length > 0 ? (
+    <Stack component="ul" spacing={0} sx={{ listStyle: 'none', m: 0, p: 0, pl: 3, pt: 1 }}>
+      {links.map((link) => (
+        <Box component="li" key={link.url}>
+          <FormControlLabel
+            control={<Checkbox size="small" checked={!hidden.includes(link.url)} onChange={() => toggle(link.url)} />}
+            label={linkName(link)}
+          />
+        </Box>
+      ))}
+    </Stack>
+  ) : (
+    <Box sx={{ pl: 3 }}><Hint>This song has no streaming links in GigBuddy yet.</Hint></Box>
+  )}
+  {links.length > 0 && links.every((link) => hidden.includes(link.url)) && (
+    <Box sx={{ pl: 3 }}><Hint>With every link unticked, this song is hidden on the public page.</Hint></Box>
+  )}
   </Stack>
   )
 }

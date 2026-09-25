@@ -14,7 +14,7 @@ export function makeWidget(type: WidgetType, content: ContentSnapshot): DraftWid
   const firstSong = (content.songs || [])[0]
   switch (type) {
     case 'song':
-      return firstSong ? { id: newId(), type: 'song', songId: firstSong.id } : null
+      return firstSong ? { id: newId(), type: 'song', songId: firstSong.id, hiddenLinks: [] } : null
     case 'platforms':
       return firstSong ? { id: newId(), type: 'platforms', songId: firstSong.id, title: null } : null
     case 'accolades':

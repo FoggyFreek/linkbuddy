@@ -25,11 +25,11 @@ import { useEditorSession } from '../../features/editor/hooks/useEditorSession.j
 import { useLayoutEditor } from '../../features/editor/hooks/useLayoutEditor.js'
 import NewReleaseForm from '../../features/editor/components/NewReleaseForm.js'
 import { makeWidget } from '../../features/editor/utils/widgetModel.js'
-import { moveItem, moveWidget, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
+import { pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
 import { DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
 import { DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
 import type {
-  ContentSnapshot, DragLocation, DraftSection, DraftTheme, EditorPage, EditorTab,
+  ContentSnapshot, DraftSection, DraftTheme, EditorPage, EditorTab,
   Layout, PageListEntry, ResolvedPage, WidgetType,
 } from '../../types.js'
 import { errorMessage } from '../../types.js'
@@ -166,14 +166,9 @@ export default function Editor() {
     applyLayout({ ...layout, font })
   }
 
-  const moveSection = (index: number, delta: number) => {
-    applyLayout({ ...layout, sections: moveItem(layout.sections, index, delta) })
-  }
-
-  // A widget dragged (or arrow-keyed) to a new slot, possibly in another
-  // section; `from`/`to` are { sectionId, index }.
-  const relocateWidget = (from: DragLocation, to: DragLocation) => {
-    applyLayout({ ...layout, sections: moveWidget(layout.sections, from, to) })
+  // A drag or arrow-key reorder of sections and/or widgets, as the whole new list.
+  const reorderSections = (sections: DraftSection[]) => {
+    applyLayout({ ...layout, sections })
   }
 
   const addWidget = (section: DraftSection, type: WidgetType) => {
@@ -265,8 +260,7 @@ export default function Editor() {
           canAdd={canAdd}
           pageType={page.pageType}
           onUpdateSection={updateSection}
-          onMoveSection={moveSection}
-          onMoveWidget={relocateWidget}
+          onReorder={reorderSections}
           onRemoveSection={removeSection}
           onAddWidget={addWidget}
           onAddSection={addSection}

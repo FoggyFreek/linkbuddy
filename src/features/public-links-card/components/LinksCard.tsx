@@ -40,7 +40,11 @@ export default function LinksCard({ page, onLinkClick, footer = null, corner = n
       {bannerShown && page.band?.bannerUrl && <BandBanner src={page.band.bannerUrl} />}
       <Stack spacing={1.75} sx={{ maxWidth: 600, mx: 'auto' }}>
         <BandHeader band={page.band} onLinkClick={onLinkClick} bannerShown={bannerShown} />
-        {page.sections.map((section) => <Section key={section.id} section={section} onLinkClick={onLinkClick} />)}
+        {page.sections.length > 0 && (
+          <Stack spacing={3.5}>
+            {page.sections.map((section) => <Section key={section.id} section={section} onLinkClick={onLinkClick} />)}
+          </Stack>
+        )}
       </Stack>
       {footer}
     </Card>

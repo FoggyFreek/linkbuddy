@@ -27,18 +27,19 @@ const canAdd = (needs) => !needs || (content[needs]?.length ?? 0) > 0
 // Widget reordering is owned by LayoutBuilder (a widget can be dragged into
 // another section), so here it's a stub; widgetReorder.test.jsx covers the real
 // thing through LayoutBuilder.
-const drag = {
-  isDragging: () => false,
-  isOver: () => false,
+const idle = { active: false, dragging: false, swap: false, before: false, after: false }
+const widgetDrag = {
+  active: false,
+  itemState: () => idle,
+  insertAt: () => false,
   handleProps: () => ({}),
-  rowProps: () => ({}),
   listProps: () => ({}),
+  itemProps: {},
 }
 
 async function renderSection(props = {}) {
   const handlers = {
     onUpdate: vi.fn(),
-    onMove: vi.fn(),
     onMoveWidgetByKey: vi.fn(),
     onRemove: vi.fn(),
     onAddWidget: vi.fn(),
@@ -52,11 +53,12 @@ async function renderSection(props = {}) {
       <SectionEditor
         section={section}
         content={content}
-        index={0}
-        count={2}
         openWidget={null}
         canAdd={canAdd}
-        drag={drag}
+        drop={idle}
+        handleProps={{}}
+        itemProps={{}}
+        widgetDrag={widgetDrag}
         {...handlers}
       />
     </ThemeProvider>,

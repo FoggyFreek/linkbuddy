@@ -12,7 +12,9 @@ function resolveWidget(widget, content) {
   switch (widget.type) {
     case 'song': {
       const song = (content.songs || []).find((s) => s.id === widget.songId)
-      if (!song?.links?.length) return null
+      const hidden = new Set(widget.hiddenLinks || [])
+      const links = (song?.links || []).filter((link) => !hidden.has(link.url.trim()))
+      if (!links.length) return null
       return {
         id: widget.id,
         type: 'song',
@@ -22,7 +24,7 @@ function resolveWidget(widget, content) {
         // Tag each link with its detected platform so the stack can render a
         // recognized platform's icon in place of a text pill (id 'other' when
         // the host matches no known platform).
-        links: song.links.map((link) => ({ ...link, platform: detectPlatform(link.url, link.label) })),
+        links: links.map((link) => ({ ...link, platform: detectPlatform(link.url, link.label) })),
       }
     }
     case 'platforms': {

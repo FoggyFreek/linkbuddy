@@ -75,6 +75,21 @@ describe('resolvePage', () => {
     expect(page.sections).toHaveLength(0)
   })
 
+  it('leaves the song links the editor hid off the public page', () => {
+    const layout = {
+      sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'song', songId: 1, hiddenLinks: ['https://music.apple.com/album/x'] }] }],
+    }
+    const widget = resolvePage(content, layout).sections[0].widgets[0]
+    expect(widget.links.map((link) => link.url)).toEqual(['https://open.spotify.com/track/x'])
+  })
+
+  it('drops a song widget whose every link is hidden', () => {
+    const layout = {
+      sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'song', songId: 3, hiddenLinks: ['https://open.spotify.com/track/y'] }] }],
+    }
+    expect(resolvePage(content, layout).sections).toHaveLength(0)
+  })
+
   it('resolves platforms widgets with detected platforms and embed descriptors', () => {
     const layout = {
       sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'platforms', songId: 1, title: null }] }],

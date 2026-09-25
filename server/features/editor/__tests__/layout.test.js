@@ -44,6 +44,20 @@ describe('validateLayout', () => {
     for (const widget of section.widgets) expect(widget.id).toBeTruthy()
   })
 
+  it("keeps a song widget's hidden links as capped, de-duplicated strings", () => {
+    const hiddenLinks = ['https://music.apple.com/x', ' https://music.apple.com/x ', 42, '', ...Array.from({ length: 60 }, (_, i) => `https://l.example/${i}`)]
+    const result = validateLayout({ sections: [{ widgets: [{ ...song(3), hiddenLinks }] }] })
+    const [widget] = result.layout.sections[0].widgets
+    expect(widget.hiddenLinks[0]).toBe('https://music.apple.com/x')
+    expect(widget.hiddenLinks).toHaveLength(50)
+    expect(new Set(widget.hiddenLinks).size).toBe(50)
+  })
+
+  it('defaults a song widget without hidden links to showing every link', () => {
+    const result = validateLayout({ sections: [{ widgets: [{ ...song(3), hiddenLinks: 'nope' }] }] })
+    expect(result.layout.sections[0].widgets[0].hiddenLinks).toEqual([])
+  })
+
   it('accepts platforms widgets and requires their songId', () => {
     const ok = validateLayout({ sections: [{ widgets: [{ type: 'platforms', songId: 4, title: 'Listen' }] }] })
     expect(ok.layout.sections[0].widgets[0]).toMatchObject({ type: 'platforms', songId: 4, title: 'Listen' })
