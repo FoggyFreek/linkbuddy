@@ -31,8 +31,8 @@ function renderAt(path) {
   )
 }
 
-beforeEach(() => {
-  cleanup()
+beforeEach(async () => {
+  await cleanup()
   state.page = null
 })
 afterEach(() => window.history.pushState({}, '', original))

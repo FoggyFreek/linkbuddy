@@ -69,8 +69,8 @@ function shownLogo() {
   })
 }
 
-afterEach(() => {
-  cleanup()
+afterEach(async () => {
+  await cleanup()
   delete document.documentElement.dataset.theme
 })
 
@@ -109,7 +109,7 @@ describe('band logo follows the page scheme, not the document scheme', () => {
     const screen = await renderPreview({ theme: 'light', sections: [], band: { name: 'The Testers', logoDarkUrl: LOGO_DARK } }, 'dark')
     await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
     expect(await shownLogo()).toBe(LOGO_DARK)
-    cleanup()
+    await cleanup()
 
     const screen2 = await renderPreview({ theme: 'dark', sections: [], band: { name: 'The Testers', logoUrl: LOGO } }, 'light')
     await expect.element(screen2.getByRole('heading', { level: 1 })).toBeInTheDocument()

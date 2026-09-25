@@ -42,8 +42,8 @@ beforeEach(() => {
   document.querySelectorAll('link[rel="icon"]').forEach((link) => link.remove())
 })
 
-afterEach(() => {
-  cleanup()
+afterEach(async () => {
+  await cleanup()
   document.querySelectorAll('link[rel="icon"]').forEach((link) => link.remove())
 })
 

@@ -69,10 +69,10 @@ beforeEach(() => {
   delete document.documentElement.dataset.theme
 })
 
-afterEach(() => {
+afterEach(async () => {
   // Unmount between tests — otherwise a previous render's DOM stays in the body
   // and can satisfy a `document.querySelector` meant for the current one.
-  cleanup()
+  await cleanup()
   delete document.documentElement.dataset.theme
 })
 

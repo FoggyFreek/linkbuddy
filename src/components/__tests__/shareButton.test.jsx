@@ -9,8 +9,8 @@ import PoweredByGigBuddy from '../PoweredByGigBuddy.jsx'
 const originalShare = Object.getOwnPropertyDescriptor(navigator, 'share')
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
 
-afterEach(() => {
-  cleanup()
+afterEach(async () => {
+  await cleanup()
   vi.restoreAllMocks()
   if (originalShare) Object.defineProperty(navigator, 'share', originalShare)
   else delete navigator.share

@@ -26,8 +26,8 @@ function renderHeader(overrides = {}, mode = 'light') {
   )
 }
 
-afterEach(() => {
-  cleanup()
+afterEach(async () => {
+  await cleanup()
   delete document.documentElement.dataset.theme
 })
 

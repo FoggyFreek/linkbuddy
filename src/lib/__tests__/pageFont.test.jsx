@@ -58,8 +58,8 @@ beforeEach(() => {
   delete document.documentElement.dataset.theme
 })
 
-afterEach(() => {
-  cleanup()
+afterEach(async () => {
+  await cleanup()
   state.page = null
 })
 
