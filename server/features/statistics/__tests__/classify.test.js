@@ -55,15 +55,21 @@ describe('classifySource', () => {
 })
 
 describe('resolveCountry', () => {
-  it('reads CDN geo headers case-insensitively and uppercases', () => {
+  it('reads the one configured geo header and uppercases it', () => {
     const headers = { 'cf-ipcountry': 'nl' }
-    expect(resolveCountry((name) => headers[name])).toBe('NL')
+    expect(resolveCountry((name) => headers[name], 'cf-ipcountry')).toBe('NL')
   })
 
-  it('falls back to unknown without trusted headers', () => {
-    expect(resolveCountry(() => undefined)).toBe('unknown')
-    expect(resolveCountry(() => 'XX')).toBe('unknown')
-    expect(resolveCountry(() => 'Netherlands')).toBe('unknown')
+  it('ignores geo headers nobody configured, since visitors can send them', () => {
+    const headers = { 'cf-ipcountry': 'nl', 'x-country-code': 'de' }
+    expect(resolveCountry((name) => headers[name], undefined)).toBe('unknown')
+    expect(resolveCountry((name) => headers[name], 'x-vercel-ip-country')).toBe('unknown')
+  })
+
+  it('falls back to unknown on unusable values', () => {
+    expect(resolveCountry(() => undefined, 'cf-ipcountry')).toBe('unknown')
+    expect(resolveCountry(() => 'XX', 'cf-ipcountry')).toBe('unknown')
+    expect(resolveCountry(() => 'Netherlands', 'cf-ipcountry')).toBe('unknown')
   })
 })
 

@@ -144,6 +144,17 @@ describe('injectMetaTags', () => {
     expect(html.indexOf('og:title')).toBeLessThan(html.indexOf('</head>'))
   })
 
+  it('inserts band text literally, never as a replacement pattern', () => {
+    for (const name of ["Evil$'Band", 'Evil$&Band', 'Evil$`Band', 'Evil$$Band', 'Evil$<Band>']) {
+      const html = injectMetaTags(TEMPLATE, pageMetaFor(bandPage({ band: { ...BAND, name } }), URL_OPTS))
+      const escaped = name.replaceAll('&', '&amp;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+      expect(html.match(/<\/head>/g), name).toHaveLength(1)
+      expect(html.match(/<head>/g), name).toHaveLength(1)
+      expect(html.match(/<body>/g), name).toHaveLength(1)
+      expect(html, name).toContain(`<meta property="og:title" content="${escaped}" />`)
+    }
+  })
+
   it('returns the document unchanged when it has no head to inject into', () => {
     expect(injectMetaTags('<p>no head</p>', pageMetaFor(bandPage(), URL_OPTS))).toBe('<p>no head</p>')
   })

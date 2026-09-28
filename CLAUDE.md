@@ -9,7 +9,7 @@ that before changing one.
 
 A standalone GigBuddy "link page" app: React 19 + Vite SPA (`src/`) over an
 Express 5 + Postgres API (`server/`). No accounts and no router: GigBuddy is the
-identity provider (HMAC handoff token → editor session), and routing is
+identity provider (Ed25519-signed, single-use handoff token → editor session), and routing is
 path-based — `/edit` (editor), `/privacy`, `/` (server root), everything else is
 a page slug, where the segment count picks the kind: `/<slug>` is a band's link
 page (`BandPage`), `/<mainSlug>/<tail>` a release smart link (`ReleasePage`).

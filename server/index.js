@@ -3,9 +3,17 @@
 import path from 'node:path'
 import url from 'node:url'
 import 'dotenv/config'
+import { configProblems } from './config.js'
 import { createPool } from './db.js'
 import { createApp } from './app.js'
 import { purgeOldViews, normalizeRetentionDays } from './features/statistics/statsRepo.js'
+import { purgeConsumedHandoffs } from './features/editor/handoffsRepo.js'
+
+const problems = configProblems(process.env)
+if (problems.length) {
+  for (const problem of problems) console.error(`config: ${problem}`)
+  process.exit(1)
+}
 
 const pool = createPool()
 // createApp serves the bundle and the SPA fallback itself, so a public page's
@@ -23,6 +31,11 @@ async function purge() {
     if (deleted > 0) console.log(`purged ${deleted} view events older than ${retentionDays} days`)
   } catch (err) {
     console.error('stats purge failed:', err.message)
+  }
+  try {
+    await purgeConsumedHandoffs(pool)
+  } catch (err) {
+    console.error('handoff purge failed:', err.message)
   }
 }
 setInterval(purge, 24 * 60 * 60 * 1000).unref()

@@ -1,3 +1,4 @@
+import { StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, cleanup } from 'vitest-browser-react'
 import { ThemeProvider } from '@mui/material/styles'
@@ -80,16 +81,31 @@ afterEach(async () => {
   vi.restoreAllMocks()
 })
 
-async function renderEditor() {
-  return render(
+async function renderEditor({ strict = false } = {}) {
+  const editor = (
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
       <Editor />
-    </ThemeProvider>,
+    </ThemeProvider>
   )
+  return render(strict ? <StrictMode>{editor}</StrictMode> : editor)
 }
 
 describe('Editor workflow', () => {
+  it('exchanges a single-use handoff exactly once and clears it from the address bar', async () => {
+    window.history.replaceState(null, '', '/edit#gbtoken=handoff-token')
+    api.getStoredSession.mockReturnValue(null)
+    api.exchangeHandoff.mockResolvedValue({ session: 'fresh-session', pages: pageEntries, page: mainPage })
+
+    const screen = await renderEditor({ strict: true })
+
+    await expect.element(screen.getByRole('heading', { level: 1, name: 'The Testers' })).toBeInTheDocument()
+    expect(api.exchangeHandoff).toHaveBeenCalledTimes(1)
+    expect(api.exchangeHandoff).toHaveBeenCalledWith('handoff-token')
+    expect(api.storeSession).toHaveBeenCalledWith('fresh-session')
+    expect(window.location.hash).toBe('')
+  })
+
   it('loads the main page, publishes it, refreshes content, and adds a section', async () => {
     const screen = await renderEditor()
     await expect.element(screen.getByRole('heading', { level: 1, name: 'The Testers' })).toBeInTheDocument()

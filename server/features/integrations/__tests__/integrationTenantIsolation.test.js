@@ -29,11 +29,11 @@ const VIEWS = { 8: 11, 9: 22, 80: 3333, 81: 4444 }
 const CLICKS = { 8: 1, 9: 2, 80: 333, 81: 444 }
 
 beforeAll(() => {
-  process.env.GIGBUDDY_SYNC_SECRET = SECRET
+  process.env.GIGBUDDY_INTEGRATION_TOKEN = SECRET
 })
 
 afterAll(() => {
-  delete process.env.GIGBUDDY_SYNC_SECRET
+  delete process.env.GIGBUDDY_INTEGRATION_TOKEN
   vi.restoreAllMocks()
 })
 

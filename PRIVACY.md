@@ -28,9 +28,9 @@ below.
    `mobile | tablet | desktop | unknown` (bot traffic is dropped entirely).
 4. **No referrer paths or query strings** — only the referrer *hostname* (or a
    sanitized `utm_source`), because URLs can carry personal data.
-5. **Country only from trusted edge headers** (`cf-ipcountry` and friends).
-   The app performs no IP geolocation of its own; without a CDN header the
-   country is `unknown`.
+5. **Country only from the configured edge header** (`STATS_COUNTRY_HEADER`,
+   e.g. `cf-ipcountry`). The app performs no IP geolocation of its own; without
+   that header the country is `unknown`.
 6. **Unique-visitor estimation without identifiers**: a keyed hash of
    (day, IP, user agent), truncated to 16 chars, rotating every 24 h. It
    cannot be linked across days and cannot be reversed; it exists only to

@@ -6,8 +6,9 @@ import express from 'express'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { signPayload, verifyPayload } from './features/editor/tokens.js'
-import { fetchExport, gigbuddyWebOrigin } from './features/integrations/gigbuddy.js'
+import { linkbuddyKey, signSession, verifyHandoff, verifySession } from './features/editor/tokens.js'
+import { consumeHandoffNonce } from './features/editor/handoffsRepo.js'
+import { fetchEditorAccess, fetchExport, gigbuddyWebOrigin } from './features/integrations/gigbuddy.js'
 import {
   getPageBySlug,
   getPageForTenant,
@@ -31,6 +32,8 @@ import { sanitizeClickTarget } from './features/public-pages/platforms.js'
 import { pageEntitlements, DEFAULT_STATS_RETENTION_DAYS } from './features/editor/entitlements.js'
 import { fetchLinkMetadata } from './features/unfurl/unfurl.js'
 import { createConcurrencyGate } from './features/unfurl/concurrencyGate.js'
+import { createRateLimiter } from './rateLimiter.js'
+import { securityHeaders } from './securityHeaders.js'
 
 // Bound concurrent editor unfurls: at most a few in flight globally and a
 // couple per tenant, so the endpoint's remote fetches can't fan out into
@@ -38,7 +41,11 @@ import { createConcurrencyGate } from './features/unfurl/concurrencyGate.js'
 const UNFURL_MAX_GLOBAL = 6
 const UNFURL_MAX_PER_TENANT = 2
 
+const REFRESH_RETRY_MS = 60 * 1000
 const SESSION_TTL_SECONDS = 12 * 60 * 60
+// How long GigBuddy's answer on a member's editor access is trusted.
+const ACCESS_RECHECK_MS = 5 * 60 * 1000
+const HANDOFF_NONCE_RE = /^[\w-]{16,64}$/
 // Every GigBuddy call arrives from one host, so these budgets are shared by all
 // of its tenants. The read routes get their own, far larger bucket: a dashboard
 // view costs two reads, and a busy hour of those must never exhaust the budget
@@ -46,6 +53,10 @@ const SESSION_TTL_SECONDS = 12 * 60 * 60
 const INTEGRATION_RATE_LIMIT = 120
 const INTEGRATION_READ_RATE_LIMIT = 1200
 const INTEGRATION_RATE_WINDOW_MS = 60 * 1000
+// Per visitor address: generous for real page views and clicks, tight enough
+// that one client cannot inflate statistics or grow the event tables at will.
+const BEACON_RATE_LIMIT = 60
+const BEACON_RATE_WINDOW_MS = 60 * 1000
 
 // URL/namespace design: a band's main page lives at /<mainSlug> (the band's
 // GigBuddy slug); each release page lives one segment deeper at
@@ -76,8 +87,8 @@ function beaconDimensions(req) {
       typeof req.body?.utmSource === 'string' ? req.body.utmSource : null,
       req.hostname || null,
     ),
-    country: resolveCountry((name) => req.get(name)),
-    visitorHash: visitorHash(req.ip, ua, process.env.GIGBUDDY_SYNC_SECRET),
+    country: resolveCountry((name) => req.get(name), process.env.STATS_COUNTRY_HEADER),
+    visitorHash: visitorHash(req.ip, ua, linkbuddyKey('visitor-hash').toString('base64')),
   }
 }
 
@@ -113,30 +124,25 @@ function pageListPayload(pages) {
 function validIntegrationBearer(header) {
   const prefix = 'Bearer '
   const supplied = typeof header === 'string' && header.startsWith(prefix) ? header.slice(prefix.length) : ''
-  const expected = process.env.GIGBUDDY_SYNC_SECRET || ''
+  const expected = process.env.GIGBUDDY_INTEGRATION_TOKEN || ''
   const suppliedHash = crypto.createHash('sha256').update(supplied).digest()
   const expectedHash = crypto.createHash('sha256').update(expected).digest()
   return Boolean(expected) && crypto.timingSafeEqual(suppliedHash, expectedHash)
 }
 
 function createIntegrationRateLimiter(limit = INTEGRATION_RATE_LIMIT) {
-  const clients = new Map()
-  return (req, res, next) => {
-    const now = Date.now()
-    const key = req.ip || 'unknown'
-    let entry = clients.get(key)
-    if (!entry || now - entry.startedAt >= INTEGRATION_RATE_WINDOW_MS) {
-      entry = { startedAt: now, count: 0 }
-      clients.set(key, entry)
-    }
-    entry.count += 1
-    if (entry.count > limit) {
-      const retrySeconds = Math.max(1, Math.ceil((entry.startedAt + INTEGRATION_RATE_WINDOW_MS - now) / 1000))
-      res.set('Retry-After', String(retrySeconds))
-      return res.status(429).json({ code: 'rate_limited', error: 'Too many synchronization requests' })
-    }
-    next()
-  }
+  return createRateLimiter({
+    limit,
+    windowMs: INTEGRATION_RATE_WINDOW_MS,
+    body: { code: 'rate_limited', error: 'Too many synchronization requests' },
+  })
+}
+
+// Proxy hops in front of this app (nginx by default). Express then takes the
+// visitor address from the entry that proxy appended, never a client-sent one.
+function trustedProxyHops() {
+  const hops = Number(process.env.TRUST_PROXY_HOPS)
+  return Number.isSafeInteger(hops) && hops >= 0 ? hops : 1
 }
 
 // Tenant and page ids arrive as text on the GigBuddy integration routes; only
@@ -166,7 +172,10 @@ export function createApp(pool, overrides = {}) {
   const migrateNamespace = overrides.migrateTenantNamespace || migrateTenantNamespace
   const ensureMainPage = overrides.ensureTenantMainPage || ensureTenantMainPage
   const app = express()
-  app.set('trust proxy', true)
+  const shellPath = overrides.distDir ? path.join(overrides.distDir, 'index.html') : null
+  const hasShell = Boolean(shellPath && fs.existsSync(shellPath))
+  app.set('trust proxy', trustedProxyHops())
+  app.use(securityHeaders({ shellHtml: hasShell ? fs.readFileSync(shellPath, 'utf8') : '' }))
   app.use(express.json({ limit: '256kb' }))
 
   // Liveness probe for the container/reverse proxy. Deliberately trivial (no
@@ -175,25 +184,41 @@ export function createApp(pool, overrides = {}) {
 
   // Content exports are fetched per band (by the band's main slug) and stored
   // per page, so release pages resolve against the same fresh snapshot.
-  async function syncContent(page, mainSlug, slugRevision) {
-    const result = await fetchExport(mainSlug)
-    if (result.notFound) return page
-    return saveContentForNamespace(
-      pool,
-      page.id,
-      page.gigbuddy_tenant_id,
-      mainSlug,
-      slugRevision,
-      result.content,
-    )
+  // Concurrent syncs of one page share a single export pull.
+  const syncsInFlight = new Map()
+  function syncContent(page, mainSlug, slugRevision) {
+    const key = `${page.id}:${mainSlug}:${slugRevision ?? ''}`
+    if (syncsInFlight.has(key)) return syncsInFlight.get(key)
+    const sync = (async () => {
+      const result = await fetchExport(mainSlug)
+      if (result.notFound) return page
+      return saveContentForNamespace(
+        pool,
+        page.id,
+        page.gigbuddy_tenant_id,
+        mainSlug,
+        slugRevision,
+        result.content,
+      )
+    })().finally(() => syncsInFlight.delete(key))
+    syncsInFlight.set(key, sync)
+    return sync
   }
 
+  // Public views only ever trigger one attempt per page per retry window, so
+  // a failing or rate-limited GigBuddy is not hammered by visitor traffic.
+  const refreshAttempts = new Map()
   function maybeRefreshContent(page) {
+    const now = Date.now()
     const syncedAt = page.content_synced_at ? new Date(page.content_synced_at).getTime() : 0
-    if (Date.now() - syncedAt < contentTtlMs()) return
-    syncContent(page, mainSlugOf(page)).catch((err) => {
-      console.error(`content refresh failed for ${page.slug}:`, err.message)
-    })
+    if (now - syncedAt < contentTtlMs()) return
+    if (now - (refreshAttempts.get(page.id) ?? 0) < REFRESH_RETRY_MS) return
+    refreshAttempts.set(page.id, now)
+    syncContent(page, mainSlugOf(page))
+      .then(() => refreshAttempts.delete(page.id))
+      .catch((err) => {
+        console.error(`content refresh failed for ${page.slug}:`, err.message)
+      })
   }
 
   const integrationRateLimit = createIntegrationRateLimiter()
@@ -208,8 +233,8 @@ export function createApp(pool, overrides = {}) {
 
   app.put(
     '/api/integrations/gigbuddy/tenants/:tenantId/slug',
-    requireIntegrationSecret,
     integrationRateLimit,
+    requireIntegrationSecret,
     async (req, res, next) => {
       const startedAt = Date.now()
       const tenantId = parseId(req.params.tenantId)
@@ -264,8 +289,8 @@ export function createApp(pool, overrides = {}) {
   // snapshot; those stay behind the editor session.
   app.get(
     '/api/integrations/gigbuddy/tenants/:tenantId/pages',
-    requireIntegrationSecret,
     integrationReadRateLimit,
+    requireIntegrationSecret,
     async (req, res, next) => {
       const tenantId = parseId(req.params.tenantId)
       if (!Number.isSafeInteger(tenantId)) {
@@ -286,8 +311,8 @@ export function createApp(pool, overrides = {}) {
   // leaves this app.
   app.get(
     '/api/integrations/gigbuddy/tenants/:tenantId/stats',
-    requireIntegrationSecret,
     integrationReadRateLimit,
+    requireIntegrationSecret,
     async (req, res, next) => {
       const tenantId = parseId(req.params.tenantId)
       const requestedPage = req.query.pageId === undefined ? null : parseId(String(req.query.pageId))
@@ -376,8 +401,9 @@ export function createApp(pool, overrides = {}) {
       next(err)
     }
   }
-  app.post('/api/pages/:s1/view', handleView)
-  app.post('/api/pages/:s1/:s2/view', handleView)
+  const beaconRateLimit = createRateLimiter({ limit: BEACON_RATE_LIMIT, windowMs: BEACON_RATE_WINDOW_MS })
+  app.post('/api/pages/:s1/view', beaconRateLimit, handleView)
+  app.post('/api/pages/:s1/:s2/view', beaconRateLimit, handleView)
 
   // Outbound click beacon (conversion statistics): which platform button or
   // widget was clicked, in the same anonymous dimensions as views.
@@ -394,26 +420,57 @@ export function createApp(pool, overrides = {}) {
       next(err)
     }
   }
-  app.post('/api/pages/:s1/click', handleClick)
-  app.post('/api/pages/:s1/:s2/click', handleClick)
+  app.post('/api/pages/:s1/click', beaconRateLimit, handleClick)
+  app.post('/api/pages/:s1/:s2/click', beaconRateLimit, handleClick)
 
   // ---------- editor ----------
+
+  // GigBuddy stays the authority on who may edit: a member's access is
+  // re-confirmed at most every ACCESS_RECHECK_MS, so revoking it there ends the
+  // session here. A failed check is forgotten, so the next request asks again.
+  const accessChecks = new Map()
+  function forgetExpiredAccess(now) {
+    for (const [key, entry] of accessChecks) {
+      if (now - entry.checkedAt >= ACCESS_RECHECK_MS) accessChecks.delete(key)
+    }
+  }
+  function confirmEditorAccess(tenantId, userId) {
+    const now = Date.now()
+    const key = `${tenantId}:${userId}`
+    const cached = accessChecks.get(key)
+    if (cached && now - cached.checkedAt < ACCESS_RECHECK_MS) return cached.allowed
+    if (accessChecks.size > 1000) forgetExpiredAccess(now)
+    const allowed = fetchEditorAccess(tenantId, userId)
+    accessChecks.set(key, { allowed, checkedAt: now })
+    allowed.catch(() => accessChecks.delete(key))
+    return allowed
+  }
+  function rememberEditorAccess(tenantId, userId) {
+    accessChecks.set(`${tenantId}:${userId}`, { allowed: Promise.resolve(true), checkedAt: Date.now() })
+  }
 
   // Exchange a gigbuddy handoff token for an editor session bound to the
   // band (tenant), covering the main page and all its release pages.
   app.post('/api/editor/session', async (req, res, next) => {
     try {
-      const handoff = verifyPayload(req.body?.token)
+      const handoff = verifyHandoff(req.body?.token)
       if (
         handoff?.t !== 'handoff' ||
+        typeof handoff.n !== 'string' ||
+        !HANDOFF_NONCE_RE.test(handoff.n) ||
         typeof handoff.slug !== 'string' ||
         !MAIN_SLUG_RE.test(handoff.slug) ||
         !Number.isSafeInteger(handoff.tenantId) ||
         handoff.tenantId <= 0 ||
+        !Number.isSafeInteger(handoff.userId) ||
+        handoff.userId <= 0 ||
         (handoff.slugRevision !== undefined &&
           (!Number.isSafeInteger(handoff.slugRevision) || handoff.slugRevision < 0))
       ) {
         return res.status(401).json({ error: 'Invalid or expired editor link — reopen it from GigBuddy' })
+      }
+      if (!(await consumeHandoffNonce(pool, handoff.n, handoff.exp))) {
+        return res.status(401).json({ error: 'This editor link was already used — reopen it from GigBuddy' })
       }
       let reconciled
       try {
@@ -449,17 +506,19 @@ export function createApp(pool, overrides = {}) {
         }
       } catch (err) {
         console.error(`content sync failed for ${page.slug}:`, err.message)
-        return res.status(502).json({ error: 'Could not load content from GigBuddy — try again' })
+        return res.status(502).json({ error: 'Could not load content from GigBuddy — reopen the editor from GigBuddy' })
       }
       const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS
-      const session = signPayload({
+      const session = signSession({
         t: 'session',
         tenantId: handoff.tenantId,
+        userId: handoff.userId,
         mainSlug: reconciled.mainSlug,
         slugRevision: reconciled.slugRevision,
         exp,
         n: crypto.randomUUID(),
       })
+      rememberEditorAccess(handoff.tenantId, handoff.userId)
       const pages = await listPagesForTenant(pool, handoff.tenantId)
       res.json({ session, pages: pageListPayload(pages), page: editorPagePayload(page) })
     } catch (err) {
@@ -470,8 +529,13 @@ export function createApp(pool, overrides = {}) {
   const requireSession = (req, res, next) => {
     const header = req.get('authorization') || ''
     const token = header.startsWith('Bearer ') ? header.slice(7) : null
-    const session = verifyPayload(token)
-    if (session?.t !== 'session' || !Number.isInteger(session.tenantId)) {
+    const session = verifySession(token)
+    if (
+      session?.t !== 'session' ||
+      !Number.isSafeInteger(session.tenantId) ||
+      !Number.isSafeInteger(session.userId) ||
+      session.userId <= 0
+    ) {
       return res.status(401).json({ error: 'Session expired — reopen the editor from GigBuddy' })
     }
     req.editorSession = session
@@ -493,6 +557,25 @@ export function createApp(pool, overrides = {}) {
     }
   }
 
+  const requireEditorAccess = async (req, res, next) => {
+    const { tenantId, userId } = req.editorSession
+    let allowed
+    try {
+      allowed = await confirmEditorAccess(tenantId, userId)
+    } catch (error) {
+      console.error(`editor access check failed for tenant ${tenantId}:`, error.message)
+      return res.status(503).json({ error: 'Could not confirm your access with GigBuddy — try again' })
+    }
+    if (!allowed) {
+      return res.status(401).json({ error: 'Your access to this link page has ended — reopen the editor from GigBuddy' })
+    }
+    next()
+  }
+
+  // Every editor route: a valid session, a member GigBuddy still confirms, and
+  // the tenant's current namespace.
+  const requireEditor = [requireSession, requireEditorAccess, requireCurrentNamespace]
+
   // Loads req.page for :pageId, scoped to the session's tenant: a foreign
   // page id 404s, existence must not leak.
   const loadPage = async (req, res, next) => {
@@ -512,7 +595,7 @@ export function createApp(pool, overrides = {}) {
   // artwork, description) plus the embed descriptor for a pasted URL. Rate-
   // limited by in-flight concurrency (global + per tenant) → 429 when saturated.
   const unfurlGate = createConcurrencyGate({ max: UNFURL_MAX_GLOBAL, maxPerKey: UNFURL_MAX_PER_TENANT })
-  app.post('/api/editor/unfurl', requireSession, async (req, res) => {
+  app.post('/api/editor/unfurl', requireEditor, async (req, res) => {
     const key = req.editorSession.tenantId
     if (!unfurlGate.tryAcquire(key)) {
       return res.status(429).json({ error: 'Too many link lookups at once — try again in a moment' })
@@ -527,7 +610,7 @@ export function createApp(pool, overrides = {}) {
     }
   })
 
-  app.get('/api/editor/pages', requireSession, async (req, res, next) => {
+  app.get('/api/editor/pages', requireEditor, async (req, res, next) => {
     try {
       const pages = await listPagesForTenant(pool, req.editorSession.tenantId)
       res.json({ pages: pageListPayload(pages) })
@@ -540,7 +623,7 @@ export function createApp(pool, overrides = {}) {
   // namespaced under the band's main slug (so it can never collide with any
   // band's main page), the layout starts with a platforms widget, and the
   // content snapshot is inherited so the page previews instantly.
-  app.post('/api/editor/pages', requireSession, requireCurrentNamespace, async (req, res, next) => {
+  app.post('/api/editor/pages', requireEditor, async (req, res, next) => {
     try {
       const { tenantId, mainSlug } = req.editorSession
       const main = await getPageBySlug(pool, mainSlug)
@@ -615,11 +698,11 @@ export function createApp(pool, overrides = {}) {
     }
   })
 
-  app.get('/api/editor/pages/:pageId', requireSession, loadPage, (req, res) => {
+  app.get('/api/editor/pages/:pageId', requireEditor, loadPage, (req, res) => {
     res.json(editorPagePayload(req.page))
   })
 
-  app.delete('/api/editor/pages/:pageId', requireSession, loadPage, async (req, res, next) => {
+  app.delete('/api/editor/pages/:pageId', requireEditor, loadPage, async (req, res, next) => {
     try {
       const deleted = await deleteReleasePage(pool, req.page.id, req.editorSession.tenantId)
       if (!deleted) return res.status(400).json({ error: 'The main page cannot be deleted' })
@@ -629,7 +712,7 @@ export function createApp(pool, overrides = {}) {
     }
   })
 
-  app.put('/api/editor/pages/:pageId/draft', requireSession, loadPage, async (req, res, next) => {
+  app.put('/api/editor/pages/:pageId/draft', requireEditor, loadPage, async (req, res, next) => {
     try {
       const result = validateLayout(req.body?.layout)
       if (result.error) return res.status(400).json({ error: result.error })
@@ -642,11 +725,11 @@ export function createApp(pool, overrides = {}) {
 
   // Preview-as-visitor: the draft resolved exactly like the public endpoint
   // resolves the published layout.
-  app.get('/api/editor/pages/:pageId/preview', requireSession, loadPage, (req, res) => {
+  app.get('/api/editor/pages/:pageId/preview', requireEditor, loadPage, (req, res) => {
     res.json(resolvePage(req.page.content, req.page.draft_layout, req.page.release))
   })
 
-  app.post('/api/editor/pages/:pageId/publish', requireSession, loadPage, async (req, res, next) => {
+  app.post('/api/editor/pages/:pageId/publish', requireEditor, loadPage, async (req, res, next) => {
     try {
       const page = await publishDraft(pool, req.page.id)
       res.json({ publishedAt: page.published_at })
@@ -657,8 +740,7 @@ export function createApp(pool, overrides = {}) {
 
   app.post(
     '/api/editor/pages/:pageId/refresh-content',
-    requireSession,
-    requireCurrentNamespace,
+    requireEditor,
     loadPage,
     async (req, res, next) => {
       try {
@@ -677,7 +759,7 @@ export function createApp(pool, overrides = {}) {
     },
   )
 
-  app.get('/api/editor/pages/:pageId/stats', requireSession, loadPage, async (req, res, next) => {
+  app.get('/api/editor/pages/:pageId/stats', requireEditor, loadPage, async (req, res, next) => {
     try {
       // The plan's rolling window (30 or 90 days) caps how far back stats go.
       const retentionDays = pageEntitlements(req.page.content).statsRetentionDays
@@ -696,8 +778,7 @@ export function createApp(pool, overrides = {}) {
   // X, iMessage, Discord and Signal fetch the document and never run the
   // bundle, so the card a shared link previews with can only come from the
   // server.
-  if (overrides.distDir && fs.existsSync(path.join(overrides.distDir, 'index.html'))) {
-    const shellPath = path.join(overrides.distDir, 'index.html')
+  if (hasShell) {
     app.use(express.static(overrides.distDir))
 
     async function shareCardMeta(pathname) {

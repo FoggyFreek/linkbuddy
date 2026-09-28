@@ -3,14 +3,14 @@
 # only over HTTPS (GIGBUDDY_URL) — nothing here connects to GigBuddy's database.
 #
 #   cp .env.example .env   # fill GIGBUDDY_URL, GIGBUDDY_WEB_URL,
-#                          #   GIGBUDDY_SYNC_SECRET, LINKPAGE_PUBLIC_URL,
+#                          #   the integration credentials, LINKPAGE_PUBLIC_URL,
 #                          #   POSTGRES_PASSWORD, ...
 #   docker compose up -d --build
 #
 # The app listens on 127.0.0.1:3010 — put a TLS-terminating reverse proxy
-# (Caddy / nginx / Traefik) in front for link.<your-domain>, and make sure it
-# forwards a country header (cf-ipcountry / x-vercel-ip-country / …) if you want
-# the country dimension in statistics.
+# (Caddy / nginx / Traefik) in front for link.<your-domain> that appends the
+# visitor address to X-Forwarded-For, and set STATS_COUNTRY_HEADER to the geo
+# header it sets if you want the country dimension in statistics.
 
 services:
   db:

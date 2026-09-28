@@ -1,5 +1,6 @@
-// The only integration point with GigBuddy: pulling a band's content export
-// over HTTP with the shared-secret bearer. See README.md for the contract.
+// The outbound integration with GigBuddy: pulling a band's content export and
+// confirming an editor's access, over HTTP with the export bearer. See
+// README.md for the contract.
 
 const origin = (value) => (value || '').replace(/\/$/, '')
 
@@ -10,15 +11,31 @@ export function gigbuddyWebOrigin() {
   return origin(process.env.GIGBUDDY_WEB_URL)
 }
 
-export async function fetchExport(slug) {
+const EXPORT_TIMEOUT_MS = 8000
+const ACCESS_TIMEOUT_MS = 5000
+
+function gigbuddyGet(path, timeoutMs) {
   const base = origin(process.env.GIGBUDDY_URL)
-  if (!base || !process.env.GIGBUDDY_SYNC_SECRET) {
-    throw new Error('GIGBUDDY_URL / GIGBUDDY_SYNC_SECRET are not configured')
+  if (!base || !process.env.GIGBUDDY_EXPORT_TOKEN) {
+    throw new Error('GIGBUDDY_URL / GIGBUDDY_EXPORT_TOKEN are not configured')
   }
-  const res = await fetch(`${base}/api/public/linkpage/export/${encodeURIComponent(slug)}`, {
-    headers: { authorization: `Bearer ${process.env.GIGBUDDY_SYNC_SECRET}` },
+  return fetch(`${base}/api/public/linkpage${path}`, {
+    headers: { authorization: `Bearer ${process.env.GIGBUDDY_EXPORT_TOKEN}` },
+    signal: AbortSignal.timeout(timeoutMs),
   })
+}
+
+export async function fetchExport(slug, { timeoutMs = EXPORT_TIMEOUT_MS } = {}) {
+  const res = await gigbuddyGet(`/export/${encodeURIComponent(slug)}`, timeoutMs)
   if (res.status === 404) return { notFound: true }
   if (!res.ok) throw new Error(`GigBuddy export failed with status ${res.status}`)
   return { content: await res.json() }
+}
+
+// Whether GigBuddy still lets this member edit the tenant's link page.
+export async function fetchEditorAccess(tenantId, userId, { timeoutMs = ACCESS_TIMEOUT_MS } = {}) {
+  const res = await gigbuddyGet(`/access/${tenantId}/${userId}`, timeoutMs)
+  if (!res.ok) throw new Error(`GigBuddy access check failed with status ${res.status}`)
+  const body = await res.json()
+  return body?.allowed === true
 }

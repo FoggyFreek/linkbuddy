@@ -1,16 +1,24 @@
 import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest'
 import request from 'supertest'
+import crypto from 'node:crypto'
 import { createApp } from '../../../app.js'
-import { signPayload, verifyPayload } from '../../editor/tokens.js'
+import { verifySession } from '../../editor/tokens.js'
+import { configureCredentials, signHandoff } from '../../../__tests__/credentials.js'
 import { NamespaceError } from '../namespaceService.js'
 
 // A small in-memory pages model for the editor-session route. Namespace
 // reconciliation itself has dedicated transaction tests.
 function makeFakePool(pages) {
   let nextId = Math.max(0, ...pages.map((p) => p.id)) + 1
+  const consumedHandoffs = new Set()
   return {
     rows: pages,
     query: async (sql, params = []) => {
+      if (sql.includes('INSERT INTO consumed_handoffs')) {
+        if (consumedHandoffs.has(params[0])) return { rows: [], rowCount: 0 }
+        consumedHandoffs.add(params[0])
+        return { rows: [], rowCount: 1 }
+      }
       if (sql.includes('INSERT INTO pages') && sql.includes("VALUES ($1, $2, 'main')")) {
         const [slug, tenantId] = params
         const existing = pages.find((p) => p.slug === slug)
@@ -88,11 +96,10 @@ function makeApp(pool) {
   return createApp(pool, { ensureTenantMainPage: ensureMainPage })
 }
 
-const SECRET = 'ownership-test-secret'
 const exp = () => Math.floor(Date.now() / 1000) + 600
 
 beforeAll(() => {
-  process.env.GIGBUDDY_SYNC_SECRET = SECRET
+  configureCredentials()
   process.env.GIGBUDDY_URL = 'http://stub'
   globalThis.fetch = async () => ({
     ok: true,
@@ -102,7 +109,7 @@ beforeAll(() => {
 })
 
 afterAll(() => {
-  delete process.env.GIGBUDDY_SYNC_SECRET
+  delete process.env.LINKBUDDY_SECRET
 })
 
 let pages
@@ -110,11 +117,46 @@ beforeEach(() => {
   pages = []
 })
 
-function openSession(app, slug, tenantId, slugRevision) {
-  return request(app)
-    .post('/api/editor/session')
-    .send({ token: signPayload({ t: 'handoff', slug, tenantId, slugRevision, exp: exp() }) })
+function handoff(slug, tenantId, slugRevision, extra = {}) {
+  return signHandoff({ t: 'handoff', slug, tenantId, userId: 5, slugRevision, exp: exp(), n: crypto.randomUUID(), ...extra })
 }
+
+function openSession(app, slug, tenantId, slugRevision) {
+  return request(app).post('/api/editor/session').send({ token: handoff(slug, tenantId, slugRevision) })
+}
+
+describe('handoff tokens', () => {
+  it('open exactly one editor session each', async () => {
+    const app = makeApp(makeFakePool(pages))
+    const token = handoff('replayed', 5)
+
+    const first = await request(app).post('/api/editor/session').send({ token })
+    const replay = await request(app).post('/api/editor/session').send({ token })
+
+    expect(first.status).toBe(200)
+    expect(replay.status).toBe(401)
+    expect(replay.body.session).toBeUndefined()
+  })
+
+  it('are refused unless they name the member who opened the editor', async () => {
+    const app = makeApp(makeFakePool(pages))
+    for (const userId of [undefined, 0, '5', 1.5]) {
+      const res = await request(app).post('/api/editor/session').send({ token: handoff('memberless', 5, undefined, { userId }) })
+      expect(res.status).toBe(401)
+    }
+    expect(pages).toHaveLength(0)
+  })
+
+  it('are refused without a nonce to consume', async () => {
+    const app = makeApp(makeFakePool(pages))
+    const token = handoff('no-nonce', 5, undefined, { n: undefined })
+
+    const res = await request(app).post('/api/editor/session').send({ token })
+
+    expect(res.status).toBe(401)
+    expect(pages).toHaveLength(0)
+  })
+})
 
 describe('tenant-keyed main-page ownership', () => {
   it('creates the main page on first open and reuses it on re-open (same tenant)', async () => {
@@ -175,9 +217,10 @@ describe('tenant-keyed main-page ownership', () => {
     const pool = makeFakePool(pages)
     const res = await openSession(makeApp(pool), 'versioned', 2, 4)
     expect(res.status).toBe(200)
-    expect(verifyPayload(res.body.session)).toMatchObject({
+    expect(verifySession(res.body.session)).toMatchObject({
       t: 'session',
       tenantId: 2,
+      userId: 5,
       mainSlug: 'versioned',
       slugRevision: 4,
     })

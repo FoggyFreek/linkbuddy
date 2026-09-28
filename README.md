@@ -28,7 +28,7 @@ into its own repository — nothing else needs to change.
 │              │                                   │               │
 │  /api/public/linkpage/export/:slug  ◄─────────── │  content sync │
 │  /api/public/linkpage/image?t=…     ◄─────────── │  <img> tags   │
-└──────────────┘   shared-secret bearer / HMAC     └───────────────┘
+└──────────────┘   per-purpose bearers / signatures └───────────────┘
 ```
 
 - **Content** (band profile, socials, profile links, songs + streaming links,
@@ -40,8 +40,9 @@ into its own repository — nothing else needs to change.
 - **Layout** (sections and widgets, their order and settings) is owned by this
   app: a draft the editor works on, and a published copy visitors see.
 - **Editing**: in GigBuddy, a **tenant admin** clicks "Edit link page"
-  (Profile page). GigBuddy mints a 10-minute HMAC handoff token and opens
-  `/edit#gbtoken=…` here; the app exchanges it for a 12-hour editor session.
+  (Profile page). GigBuddy mints a 10-minute, single-use, Ed25519-signed
+  handoff token and opens `/edit#gbtoken=…` here; the app exchanges it for a
+  12-hour editor session.
   There are no accounts in this app — GigBuddy is the identity provider and
   gates the handoff on role (tenant admin) and plan.
 - **Plan gating** (GigBuddy tiers are the source of truth; each export ships
@@ -83,7 +84,7 @@ into its own repository — nothing else needs to change.
 ```
 cd linkpage
 npm install
-cp .env.example .env       # fill in GIGBUDDY_SYNC_SECRET (same value as gigbuddy's LINKPAGE_SECRET)
+cp .env.example .env       # fill in the credentials from `npm run credentials:generate`
 createdb gigbuddy_linkpage # its own database — never gigbuddy's
 npm run migrate
 npm run dev                # API on :3010 + Vite on :5175
@@ -92,8 +93,8 @@ npm run dev                # API on :3010 + Vite on :5175
 On the GigBuddy side set in its environment:
 
 ```
-LINKPAGE_SECRET=<same shared secret>
 LINKPAGE_URL=http://localhost:5175
+# ...plus the GigBuddy half printed by `npm run credentials:generate`
 ```
 
 Then open GigBuddy → Profile → "Edit link page".
@@ -102,10 +103,13 @@ Then open GigBuddy → Profile → "Edit link page".
 
 `npm run build` produces `dist/`; `npm run server` serves API + SPA on one
 port (`LINKPAGE_PORT`). Host it on its own subdomain (e.g. `link.example.com`)
-behind a CDN/proxy that sets a country header (`cf-ipcountry`,
-`x-vercel-ip-country`, `fastly-country-code` or `x-country-code`) — without
-one, the country dimension records `unknown` (no IP geolocation is done here,
-by design).
+behind a reverse proxy that appends the visitor address to
+`X-Forwarded-For` (`TRUST_PROXY_HOPS` counts the proxies in front, default 1).
+For the country dimension, name the one geo header your edge sets and
+overwrites in `STATS_COUNTRY_HEADER` (e.g. `cf-ipcountry`); any other geo header
+could come from the visitor and is ignored. Unset, the country is `unknown`
+(no IP geolocation is done here, by design). Beacons are limited per visitor
+address.
 
 Run `npm run migrate` on deploy. Statistics retention is enforced daily
 in-process; deployments that prefer an external scheduler can run
@@ -119,15 +123,16 @@ server, its **own** Postgres, and a one-shot migration step:
 
 ```
 cp .env.example .env      # set POSTGRES_PASSWORD, GIGBUDDY_URL,
-                          #   GIGBUDDY_WEB_URL, GIGBUDDY_SYNC_SECRET,
-                          #   LINKPAGE_PUBLIC_URL
+                          #   GIGBUDDY_WEB_URL, LINKPAGE_PUBLIC_URL and
+                          #   the integration credentials
 docker compose up -d --build
 ```
 
 `migrate` runs `server/migrate.js` and exits; `app` starts only after it
 succeeds, and exposes `127.0.0.1:3010` with a `/api/health` liveness probe.
 Front it with a TLS-terminating reverse proxy (Caddy/nginx/Traefik) for your
-`link.<domain>` and forward a country header if you want the country stat.
+`link.<domain>`, and set `STATS_COUNTRY_HEADER` to the geo header it sets if you
+want the country stat.
 
 For a three-subdomain setup — GigBuddy at `app.<domain>`, this app at
 `link.<domain>`, a marketing site at `www.<domain>` — set:
@@ -136,11 +141,21 @@ For a three-subdomain setup — GigBuddy at `app.<domain>`, this app at
 |---|---|---|
 | this app (`link`) | `GIGBUDDY_URL` | `https://app.<domain>` (server-to-server export pull) |
 | this app (`link`) | `GIGBUDDY_WEB_URL` | `https://www.<domain>` (browser-facing: the attribution badge's href) |
-| this app (`link`) | `GIGBUDDY_SYNC_SECRET` | shared secret |
 | this app (`link`) | `LINKPAGE_PUBLIC_URL` | `https://link.<domain>` |
-| GigBuddy (`app`) | `LINKPAGE_SECRET` | **same** shared secret |
 | GigBuddy (`app`) | `LINKPAGE_URL` | `https://link.<domain>` |
 | GigBuddy (`app`) | `APP_URL` | `https://app.<domain>` (the image-proxy URLs in exports are built from this) |
+
+Integration credentials — generate a matching set with
+`npm run credentials:generate`. Each one has a single purpose, and only the two
+bearers exist on both sides:
+
+| This app (`link`) | GigBuddy (`app`) | Purpose |
+|---|---|---|
+| `LINKBUDDY_SECRET` | — | signs editor sessions, keys the visitor hash |
+| `GIGBUDDY_HANDOFF_PUBLIC_KEY` | `LINKPAGE_HANDOFF_PRIVATE_KEY` | Ed25519 pair: GigBuddy signs handoffs, this app only verifies |
+| — | `LINKPAGE_IMAGE_SECRET` | signs the public image tokens |
+| `GIGBUDDY_EXPORT_TOKEN` | `LINKPAGE_EXPORT_TOKEN` | bearer this app presents on the export |
+| `GIGBUDDY_INTEGRATION_TOKEN` | `LINKPAGE_INTEGRATION_TOKEN` | bearer GigBuddy presents on the integration routes |
 
 **Cross-origin image note:** public pages on `link.<domain>` embed band
 artwork served by GigBuddy at `app.<domain>/api/public/linkpage/image`. GigBuddy's
@@ -181,7 +196,7 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
 ## Integration contract (GigBuddy side)
 
 - `GET /api/public/linkpage/export/:slug` — full content snapshot;
-  `Authorization: Bearer <shared secret>`; 404 for unknown slugs. The `band`
+  `Authorization: Bearer <export token>`; 404 for unknown slugs; budgeted per band. The `band`
   object may carry an optional `theme: 'light' | 'dark'` (band-selectable in
   GigBuddy) that skins every one of the band's public pages, including the
   smart-link release pages. Either explicit value is honoured; when it's absent
@@ -190,9 +205,9 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
 - The export includes `accolades: [{ id, description, date, url, imageUrl }]`, newest first (up to 50). Dates use `YYYY-MM-DD`; `url` and `imageUrl` are nullable. Older snapshots without accolades are supported. Add an Accolades widget in the editor, refresh content, then publish; empty carousels are hidden.
 - The export includes `discography: [{ id, title, artist, releaseDate, releaseYear, coverUrl, coverHighResolutionUrl }]` for albums marked as discography, newest first. `releaseDate` uses `YYYY-MM-DD`; dates and art can be null. Add a Discography widget in the editor, refresh content, then publish; empty carousels are hidden.
 - The `band` object carries `booking: { feeLowCents, feeHighCents, currency, repertoire, contactEnabled, email, phone }` from GigBuddy's profile.
-  `contactEnabled` is the band's opt-in: when it is false GigBuddy already
-  nulls the contacts, and this app publishes no booking block at all — the fee
-  indication included. An opted-in band with a usable email and/or phone gets a
+  `contactEnabled` is the band's opt-in: when it is false GigBuddy nulls every
+  booking value (fees, currency, repertoire, contacts), and this app publishes no
+  booking block at all. An opted-in band with a usable email and/or phone gets a
   "Book now" button on its main page; the dialog shows the fee range (or
   "Contact for more information"), the repertoire, and the contacts to act on.
   Clicks report as `book:open` / `book:email` / `book:phone` in the statistics;
@@ -201,21 +216,21 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
   whole — an over-long or malformed value is dropped, never truncated into a
   usable-looking wrong one. Older snapshots without `booking` are supported.
 - `GET /api/public/linkpage/image?t=<token>` — streams band logo / song cover;
-  the token is HMAC-signed by GigBuddy with the same secret and embedded in
-  the export payload's image URLs.
+  the token is HMAC-signed by GigBuddy with a key only GigBuddy holds, embedded
+  in the export payload's image URLs, and only ever resolves to an image folder.
 - Handoff token (GigBuddy → here, in the `/edit` URL fragment): payload
-  `{ t: 'handoff', slug, slugRevision, tenantId, exp }`, HMAC-SHA256, 10 min
-  TTL. Legacy tokens without `slugRevision` remain valid only while their slug
+  `{ t: 'handoff', iss: 'gigbuddy', aud: 'linkbuddy', slug, slugRevision, tenantId, n, exp }`,
+  Ed25519-signed, 10 min TTL, single-use (the nonce `n` is consumed on exchange). Legacy tokens without `slugRevision` remain valid only while their slug
   matches LinkBuddy's recorded tenant namespace; they can never rename it.
 - `PUT /api/integrations/gigbuddy/tenants/:tenantId/slug` atomically moves the
   tenant's main page and every `/<main>/<release>` path without replacing page
-  rows. Send `{ oldSlug, newSlug, revision }` with the shared-secret bearer.
+  rows. Send `{ oldSlug, newSlug, revision }` with the integration bearer.
   Stable success codes are `applied`, `already_applied`, `no_pages`, and
   `stale_ignored`; conflicts use `slug_conflict` or `revision_gap`. Tenant ID
   and revision are authoritative; `oldSlug` is diagnostic only.
 
-Tokens are compact `base64url(json) + '.' + base64url(hmac)` — see
-`server/features/editor/tokens.js` (mirrored in gigbuddy's `server/security/linkpageTokens.js`).
+Tokens are compact `base64url(json) + '.' + base64url(signature)` — see
+`server/features/editor/tokens.js` and gigbuddy's `server/promotion/linkpage/linkpageTokens.js`.
 
 ## Tests
 

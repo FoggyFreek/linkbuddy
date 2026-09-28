@@ -303,6 +303,51 @@ describe('resolvePage', () => {
     expect(resolvePage({ band }, null).font).toBe('system')
   })
 
+  it('only ever publishes http(s) URLs from the synced snapshot', () => {
+    const bad = 'javascript:alert(1)'
+    const good = 'https://gb.example/ok'
+    const hostile = {
+      band: {
+        slug: 'woods', name: 'The Woods', socials: {},
+        logoUrl: bad, logoDarkUrl: 'data:text/html,x', avatarUrl: good, bannerUrl: ' JAVASCRIPT:alert(1)',
+      },
+      songs: [{
+        id: 1, title: 'Song', artist: null, coverUrl: bad, coverHighResolutionUrl: bad,
+        links: [{ label: 'Evil', url: bad }, { label: 'Spotify', url: 'https://open.spotify.com/track/x' }],
+      }],
+      accolades: [{ id: 1, description: 'Prize', date: null, url: bad, imageUrl: good }],
+      discography: [{ id: 1, title: 'LP', artist: 'The Woods', coverUrl: bad, coverHighResolutionUrl: good }],
+      gigs: [{ id: 1, date: '2026-08-01', title: 'Show', venue: null, city: null, eventUrl: bad }],
+    }
+    const layout = {
+      sections: [{
+        id: 's',
+        title: null,
+        widgets: [
+          { id: 'song', type: 'song', songId: 1, hiddenLinks: [] },
+          { id: 'platforms', type: 'platforms', songId: 1, title: null },
+          { id: 'accolades', type: 'accolades', title: null },
+          { id: 'discography', type: 'discography', title: null },
+          { id: 'gigs', type: 'gigs', title: null, limit: 10 },
+        ],
+      }],
+    }
+
+    const page = resolvePage(hostile, layout, { songId: 1, title: 'Song', artist: null })
+    const json = JSON.stringify(page)
+
+    expect(json).not.toMatch(/javascript:|data:/i)
+    expect(page.band).toMatchObject({ logoUrl: null, logoDarkUrl: null, avatarUrl: good, bannerUrl: null })
+    expect(page.release.coverUrl).toBeNull()
+    const [song, platforms, accolades, discography, gigs] = page.sections[0].widgets
+    expect(song.links.map((link) => link.url)).toEqual(['https://open.spotify.com/track/x'])
+    expect(song.coverUrl).toBeNull()
+    expect(platforms.platforms.map((platform) => platform.url)).toEqual(['https://open.spotify.com/track/x'])
+    expect(accolades.accolades[0]).toMatchObject({ url: null, imageUrl: good })
+    expect(discography.discography[0]).toMatchObject({ coverUrl: null, coverHighResolutionUrl: good })
+    expect(gigs.gigs[0].eventUrl).toBeNull()
+  })
+
   it('survives an empty snapshot', () => {
     const page = resolvePage({}, { sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'gigs', limit: 5 }] }] })
     expect(page.sections[0].widgets[0].gigs).toEqual([])

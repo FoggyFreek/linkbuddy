@@ -102,5 +102,6 @@ export function injectMetaTags(html, meta) {
   return html
     .replace(PLACEHOLDER_TITLE, '')
     .replace(PLACEHOLDER_DESCRIPTION, '')
-    .replace('</head>', `${renderMetaTags(meta)}\n  </head>`)
+    // A replacer function, so `$` sequences in band text stay literal.
+    .replace('</head>', () => `${renderMetaTags(meta)}\n  </head>`)
 }

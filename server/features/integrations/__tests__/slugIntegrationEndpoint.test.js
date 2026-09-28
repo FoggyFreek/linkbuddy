@@ -8,12 +8,14 @@ const route = '/api/integrations/gigbuddy/tenants/42/slug'
 const validBody = { oldSlug: 'old-band', newSlug: 'new-band', revision: 1 }
 
 beforeAll(() => {
-  process.env.GIGBUDDY_SYNC_SECRET = SECRET
+  process.env.GIGBUDDY_INTEGRATION_TOKEN = SECRET
+  process.env.GIGBUDDY_EXPORT_TOKEN = 'integration-export-token'
   process.env.GIGBUDDY_URL = 'https://gigbuddy.test'
 })
 
 afterAll(() => {
-  delete process.env.GIGBUDDY_SYNC_SECRET
+  delete process.env.GIGBUDDY_INTEGRATION_TOKEN
+  delete process.env.GIGBUDDY_EXPORT_TOKEN
   delete process.env.GIGBUDDY_URL
   vi.restoreAllMocks()
 })
@@ -39,6 +41,17 @@ describe('GigBuddy slug integration endpoint', () => {
     expect(missing.status).toBe(401)
     expect(wrong.status).toBe(401)
     expect(missing.body.code).toBe('unauthorized')
+    expect(migrate).not.toHaveBeenCalled()
+  })
+
+  it('rate-limits a caller guessing bearers before authenticating it', async () => {
+    const migrate = vi.fn()
+    const app = appWith(migrate)
+    const statuses = []
+    for (let i = 0; i < 121; i++) statuses.push((await put(app, validBody, `Bearer guess-${i}`)).status)
+
+    expect(statuses.slice(0, 120).every((status) => status === 401)).toBe(true)
+    expect(statuses[120]).toBe(429)
     expect(migrate).not.toHaveBeenCalled()
   })
 

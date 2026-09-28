@@ -15,6 +15,13 @@ import {
   getEditorPage,
 } from '../../../lib/api.js'
 
+// Handoff tokens are single-use, so a double mount must share one exchange.
+let pendingExchange: { token: string; result: ReturnType<typeof exchangeHandoff> } | null = null
+function exchangeOnce(token: string) {
+  if (pendingExchange?.token !== token) pendingExchange = { token, result: exchangeHandoff(token) }
+  return pendingExchange.result
+}
+
 export function useEditorSession(
   sessionRef: MutableRefObject<string | null>,
   adoptPage: (page: EditorPage) => void,
@@ -35,7 +42,7 @@ export function useEditorSession(
     const boot = async () => {
       try {
         if (gbtoken) {
-          const { session: token, pages: loadedPages, page: loaded } = await exchangeHandoff(gbtoken)
+          const { session: token, pages: loadedPages, page: loaded } = await exchangeOnce(gbtoken)
           window.history.replaceState(null, '', window.location.pathname)
           storeSession(token)
           sessionRef.current = token

@@ -1,6 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest'
 import request from 'supertest'
 import { createApp } from '../../../app.js'
+import { configureCredentials } from '../../../__tests__/credentials.js'
+
+beforeAll(configureCredentials)
 
 const PAGE = {
   id: 1,
@@ -37,6 +40,54 @@ function makePool(pages = [PAGE]) {
 
 beforeEach(() => {
   inserts = []
+})
+
+afterEach(() => {
+  delete process.env.STATS_COUNTRY_HEADER
+  delete process.env.TRUST_PROXY_HOPS
+})
+
+const view = (app, headers = {}) => {
+  const req = request(app).post('/api/pages/thewoods/view').set('user-agent', CHROME_UA)
+  for (const [name, value] of Object.entries(headers)) req.set(name, value)
+  return req
+}
+
+describe('beacon trust boundaries', () => {
+  it('takes the visitor address from the proxy hop, not from spoofable forwarded entries', async () => {
+    const app = createApp(makePool())
+    await view(app, { 'x-forwarded-for': '198.51.100.1, 203.0.113.9' }).expect(204)
+    await view(app, { 'x-forwarded-for': '198.51.100.2, 203.0.113.9' }).expect(204)
+    await view(app, { 'x-forwarded-for': '198.51.100.1, 203.0.113.10' }).expect(204)
+
+    const hashes = inserts.map((insert) => insert.params[4])
+    expect(hashes[0]).toBe(hashes[1])
+    expect(hashes[2]).not.toBe(hashes[0])
+  })
+
+  it('reads the country only from the configured proxy header', async () => {
+    process.env.STATS_COUNTRY_HEADER = 'x-country-code'
+    const app = createApp(makePool())
+    await view(app, { 'cf-ipcountry': 'DE', 'x-country-code': 'nl' }).expect(204)
+    delete process.env.STATS_COUNTRY_HEADER
+    await view(app, { 'cf-ipcountry': 'DE', 'x-country-code': 'nl' }).expect(204)
+
+    expect(inserts.map((insert) => insert.params[3])).toEqual(['NL', 'unknown'])
+  })
+
+  it('throttles one visitor without affecting another', async () => {
+    const app = createApp(makePool())
+    const statuses = []
+    for (let i = 0; i < 61; i++) {
+      statuses.push((await view(app, { 'x-forwarded-for': `198.51.100.${i}, 203.0.113.9` })).status)
+    }
+
+    expect(statuses.slice(0, 60).every((status) => status === 204)).toBe(true)
+    expect(statuses[60]).toBe(429)
+    expect(inserts).toHaveLength(60)
+    await view(app, { 'x-forwarded-for': '203.0.113.10' }).expect(204)
+    expect(inserts).toHaveLength(61)
+  })
 })
 
 describe('view and click beacons', () => {

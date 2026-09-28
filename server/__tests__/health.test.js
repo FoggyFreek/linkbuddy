@@ -3,7 +3,7 @@ import request from 'supertest'
 import { createApp } from '../app.js'
 
 beforeAll(() => {
-  process.env.GIGBUDDY_SYNC_SECRET = 'health-test'
+  process.env.LINKBUDDY_SECRET = 'health-test'
 })
 
 describe('health endpoint', () => {

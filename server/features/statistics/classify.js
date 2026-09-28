@@ -37,17 +37,14 @@ export function classifySource(referrer, utmSource, ownHost) {
   return 'direct'
 }
 
-// Country from CDN/proxy geo headers (Cloudflare, Vercel, Fastly, or a
-// generic reverse-proxy header). We never do IP-based lookups ourselves —
-// if no trusted edge supplies a country, it stays 'unknown'.
-const COUNTRY_HEADERS = ['cf-ipcountry', 'x-vercel-ip-country', 'fastly-country-code', 'x-country-code']
-
-export function resolveCountry(getHeader) {
-  for (const name of COUNTRY_HEADERS) {
-    const value = getHeader(name)
-    if (typeof value === 'string' && /^[A-Za-z]{2}$/.test(value) && value.toUpperCase() !== 'XX') {
-      return value.toUpperCase()
-    }
+// Country from the one geo header the deployment's edge sets (and overwrites),
+// e.g. cf-ipcountry. Any other geo header could come from the visitor, so it is
+// ignored. No IP-based lookups here — without a trusted header it stays 'unknown'.
+export function resolveCountry(getHeader, trustedHeader) {
+  if (!trustedHeader) return 'unknown'
+  const value = getHeader(trustedHeader)
+  if (typeof value === 'string' && /^[A-Za-z]{2}$/.test(value) && value.toUpperCase() !== 'XX') {
+    return value.toUpperCase()
   }
   return 'unknown'
 }

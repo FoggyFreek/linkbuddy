@@ -16,6 +16,12 @@
 
 // track 152px; episode/show 232px; album/playlist/artist 352px — the standard
 // Spotify embed heights.
+const SPOTIFY_ORIGIN = 'https://open.spotify.com'
+const YOUTUBE_ORIGIN = 'https://www.youtube-nocookie.com'
+const SOUNDCLOUD_ORIGIN = 'https://w.soundcloud.com'
+// The only origins an embed iframe can load; the page's frame-src allows exactly these.
+export const EMBED_ORIGINS = [SPOTIFY_ORIGIN, YOUTUBE_ORIGIN, SOUNDCLOUD_ORIGIN]
+
 const SPOTIFY_HEIGHTS = { track: 152, episode: 232, show: 232, album: 352, playlist: 352, artist: 352 }
 
 const YOUTUBE_ID = /^[\w-]{6,15}$/
@@ -59,7 +65,7 @@ export function detectEmbed(rawUrl) {
     return {
       type: 'spotify',
       display: 'inline',
-      src: `https://open.spotify.com/embed/${kind}/${id}`,
+      src: `${SPOTIFY_ORIGIN}/embed/${kind}/${id}`,
       height: SPOTIFY_HEIGHTS[kind],
     }
   }
@@ -71,7 +77,7 @@ export function detectEmbed(rawUrl) {
       display: 'overlay',
       // Privacy-enhanced host; autoplay is fine because the iframe only
       // mounts after the visitor clicked play.
-      src: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`,
+      src: `${YOUTUBE_ORIGIN}/embed/${videoId}?autoplay=1`,
     }
   }
 
@@ -79,7 +85,7 @@ export function detectEmbed(rawUrl) {
     return {
       type: 'soundcloud',
       display: 'inline',
-      src: `https://w.soundcloud.com/player/?url=${encodeURIComponent(url.href)}&visual=false&show_teaser=false`,
+      src: `${SOUNDCLOUD_ORIGIN}/player/?url=${encodeURIComponent(url.href)}&visual=false&show_teaser=false`,
       height: 166,
     }
   }

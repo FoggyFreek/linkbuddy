@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import request from 'supertest'
 import { createApp } from '../../../app.js'
 import { validateLayout } from '../../editor/layout.js'
-import { signPayload } from '../../editor/tokens.js'
+import { signSession } from '../../editor/tokens.js'
 import { resolvePage } from '../resolve.js'
 
 const raw = { sections: [{ id: 'music', title: null, widgets: [{ id: 'd', type: 'discography', title: ' Records ', discography: [{ title: 'Forged' }] }] }] }
@@ -25,12 +25,14 @@ describe('discography content contract', () => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  delete process.env.GIGBUDDY_SYNC_SECRET
+  delete process.env.GIGBUDDY_EXPORT_TOKEN
+  delete process.env.LINKBUDDY_SECRET
   delete process.env.GIGBUDDY_URL
 })
 
 it('removes albums from the published collection when a later GigBuddy export omits them', async () => {
-  process.env.GIGBUDDY_SYNC_SECRET = 'discography-test-secret'
+  process.env.GIGBUDDY_EXPORT_TOKEN = 'discography-test-secret'
+  process.env.LINKBUDDY_SECRET = 'discography-session-secret'
   process.env.GIGBUDDY_URL = 'https://gigbuddy.test'
   const retained = { id: 1, title: 'Retained', releaseDate: '2020-01-01' }
   const removed = { id: 2, title: 'Removed', releaseDate: '2021-01-01' }
@@ -56,7 +58,7 @@ it('removes albums from the published collection when a later GigBuddy export om
     throw new Error(`Unexpected query: ${sql}`)
   })
   const app = createApp({ query })
-  const session = signPayload({ t: 'session', tenantId: 42, mainSlug: 'the-band', slugRevision: 1, exp: Math.floor(Date.now() / 1000) + 600 })
+  const session = signSession({ t: 'session', tenantId: 42, userId: 5, mainSlug: 'the-band', slugRevision: 1, exp: Math.floor(Date.now() / 1000) + 600 })
   const publicAlbums = async () => {
     const res = await request(app).get('/api/pages/the-band')
     expect(res.status).toBe(200)
@@ -65,7 +67,12 @@ it('removes albums from the published collection when a later GigBuddy export om
   expect(await publicAlbums()).toEqual([retained, removed])
 
   const exportContent = { discography: [retained] }
-  const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => exportContent }))
+  const fetchMock = vi.fn(async (url) => ({
+    ok: true,
+    status: 200,
+    json: async () => (String(url).includes('/access/') ? { allowed: true } : exportContent),
+  }))
+  const exportCalls = () => fetchMock.mock.calls.filter(([url]) => url.includes('/export/'))
   vi.stubGlobal('fetch', fetchMock)
   const refresh = () => request(app).post('/api/editor/pages/7/refresh-content').set('Authorization', `Bearer ${session}`)
   const first = await refresh()
@@ -82,9 +89,10 @@ it('removes albums from the published collection when a later GigBuddy export om
   const empty = await request(app).get('/api/pages/the-band')
   expect(empty.status).toBe(200)
   expect(empty.body.sections).toEqual([])
-  expect(fetchMock).toHaveBeenCalledTimes(2)
+  expect(exportCalls()).toHaveLength(2)
   expect(fetchMock).toHaveBeenCalledWith('https://gigbuddy.test/api/public/linkpage/export/the-band', {
     headers: { authorization: 'Bearer discography-test-secret' },
+    signal: expect.any(AbortSignal),
   })
   expect(query.mock.calls.filter(([sql]) => sql.includes('SET content ='))).toHaveLength(2)
 })

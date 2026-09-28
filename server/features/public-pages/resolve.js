@@ -8,19 +8,43 @@ import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../../shared/f
 import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
 import { pageThemeForScheme } from '../../../shared/features/appearance/pageThemes.js'
 
+// Snapshot URLs end up in hrefs and image sources, so only http(s) survives.
+function httpUrl(value) {
+  if (typeof value !== 'string') return null
+  try {
+    const { protocol } = new URL(value)
+    return protocol === 'http:' || protocol === 'https:' ? value : null
+  } catch {
+    return null
+  }
+}
+
+// A copy of `record` with each of `keys` it carries reduced to an http(s) URL.
+function withHttpUrls(record, keys) {
+  const copy = { ...record }
+  for (const key of keys) {
+    if (Object.hasOwn(copy, key)) copy[key] = httpUrl(copy[key])
+  }
+  return copy
+}
+
+function webLinks(song) {
+  return (song?.links || []).filter((link) => httpUrl(link.url))
+}
+
 function resolveWidget(widget, content) {
   switch (widget.type) {
     case 'song': {
       const song = (content.songs || []).find((s) => s.id === widget.songId)
       const hidden = new Set(widget.hiddenLinks || [])
-      const links = (song?.links || []).filter((link) => !hidden.has(link.url.trim()))
+      const links = webLinks(song).filter((link) => !hidden.has(link.url.trim()))
       if (!links.length) return null
       return {
         id: widget.id,
         type: 'song',
         title: song.title,
         artist: song.artist,
-        coverUrl: song.coverUrl,
+        coverUrl: httpUrl(song.coverUrl),
         // Tag each link with its detected platform so the stack can render a
         // recognized platform's icon in place of a text pill (id 'other' when
         // the host matches no known platform).
@@ -28,30 +52,34 @@ function resolveWidget(widget, content) {
       }
     }
     case 'platforms': {
-      const song = (content.songs || []).find((s) => s.id === widget.songId)
-      if (!song?.links?.length) return null
+      const links = webLinks((content.songs || []).find((s) => s.id === widget.songId))
+      if (!links.length) return null
       return {
         id: widget.id,
         type: 'platforms',
         title: widget.title,
-        platforms: song.links.map((link) => {
+        platforms: links.map((link) => {
           const platform = detectPlatform(link.url, link.label)
           return { ...platform, url: link.url, embed: detectEmbed(link.url) }
         }),
       }
     }
     case 'accolades': {
-      const accolades = content.accolades || []
+      const accolades = (content.accolades || []).map((accolade) => withHttpUrls(accolade, ['url', 'imageUrl']))
       if (!accolades.length) return null
       return { id: widget.id, type: 'accolades', title: widget.title || 'Accolades', accolades }
     }
     case 'discography': {
-      const discography = content.discography || []
+      const discography = (content.discography || []).map((album) =>
+        withHttpUrls(album, ['coverUrl', 'coverHighResolutionUrl']),
+      )
       if (!discography.length) return null
       return { id: widget.id, type: 'discography', title: widget.title || 'Discography', discography }
     }
     case 'gigs': {
-      const gigs = (content.gigs || []).slice(0, widget.limit || 10)
+      const gigs = (content.gigs || [])
+        .slice(0, widget.limit || 10)
+        .map((gig) => withHttpUrls(gig, ['eventUrl']))
       return {
         id: widget.id,
         type: 'gigs',
@@ -131,7 +159,11 @@ function resolveBooking(booking) {
 }
 
 function resolveBand(band) {
-  return band ? { ...band, booking: resolveBooking(band.booking) } : null
+  if (!band) return null
+  return {
+    ...withHttpUrls(band, ['logoUrl', 'logoDarkUrl', 'avatarUrl', 'bannerUrl']),
+    booking: resolveBooking(band.booking),
+  }
 }
 
 // `release` is the page's stored release snapshot ({songId, title, artist})
@@ -154,7 +186,7 @@ export function resolvePage(content, layout, release = null) {
     resolvedRelease = {
       title: release.title,
       artist: release.artist || content.band?.name || null,
-      coverUrl: song?.coverHighResolutionUrl || song?.coverUrl || null,
+      coverUrl: httpUrl(song?.coverHighResolutionUrl) || httpUrl(song?.coverUrl),
     }
   }
   const theme = normalizeTheme(layout?.theme, release ? 'dark' : 'light')

@@ -6,11 +6,11 @@ const SECRET = 'stats-endpoint-secret'
 const route = '/api/integrations/gigbuddy/tenants/42/stats'
 
 beforeAll(() => {
-  process.env.GIGBUDDY_SYNC_SECRET = SECRET
+  process.env.GIGBUDDY_INTEGRATION_TOKEN = SECRET
 })
 
 afterAll(() => {
-  delete process.env.GIGBUDDY_SYNC_SECRET
+  delete process.env.GIGBUDDY_INTEGRATION_TOKEN
   delete process.env.STATS_DISABLED
   vi.restoreAllMocks()
 })

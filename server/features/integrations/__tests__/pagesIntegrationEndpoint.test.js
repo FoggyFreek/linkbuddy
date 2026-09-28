@@ -6,11 +6,11 @@ const SECRET = 'pages-endpoint-secret'
 const route = '/api/integrations/gigbuddy/tenants/42/pages'
 
 beforeAll(() => {
-  process.env.GIGBUDDY_SYNC_SECRET = SECRET
+  process.env.GIGBUDDY_INTEGRATION_TOKEN = SECRET
 })
 
 afterAll(() => {
-  delete process.env.GIGBUDDY_SYNC_SECRET
+  delete process.env.GIGBUDDY_INTEGRATION_TOKEN
   vi.restoreAllMocks()
 })
 
