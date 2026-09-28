@@ -64,6 +64,8 @@ jobs:
             GIGBUDDY_INTEGRATION_TOKEN=${{ secrets.GIGBUDDY_INTEGRATION_TOKEN }}
             LINKPAGE_CONTENT_TTL_MINUTES=15
             STATS_RETENTION_DAYS=30
+            # Bunny.net's GeoIP header on every origin request (ISO alpha-2).
+            STATS_COUNTRY_HEADER=cdn-requestcountrycode
             EOF
             chmod 600 .env
             sudo /usr/bin/docker compose build

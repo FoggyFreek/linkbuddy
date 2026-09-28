@@ -50,6 +50,8 @@ let distDir
 beforeAll(() => {
   distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'linkbuddy-dist-'))
   fs.writeFileSync(path.join(distDir, 'index.html'), TEMPLATE)
+  fs.mkdirSync(path.join(distDir, 'assets'))
+  fs.writeFileSync(path.join(distDir, 'assets', 'index-Ab12Cd34.js'), 'export {}')
 })
 
 afterAll(() => {
@@ -119,6 +121,30 @@ describe('share cards on the served HTML', () => {
     for (const route of ['/edit', '/privacy', '/']) {
       const res = await request(app()).get(route).expect(200)
       expect(res.text).toBe(TEMPLATE)
+    }
+  })
+
+  it('asks CDNs and browsers to revalidate every shell that is not a published page', async () => {
+    for (const route of ['/edit', '/privacy', '/', '/nobody-here', '/draftband']) {
+      const res = await request(app()).get(route).expect(200)
+      expect(res.headers['cache-control'], route).toBe('no-cache')
+    }
+    const published = await request(app()).get('/thewoods').expect(200)
+    expect(published.headers['cache-control']).toBe('public, max-age=60')
+  })
+
+  it('lets CDNs keep the hashed bundles for good', async () => {
+    const res = await request(app()).get('/assets/index-Ab12Cd34.js').expect(200)
+    expect(res.headers['content-type']).toMatch(/javascript/)
+    expect(res.headers['cache-control']).toBe('public, max-age=31536000, immutable')
+  })
+
+  it('answers a bundle from an older build with 404, never the HTML shell', async () => {
+    for (const asset of ['/assets/index-OldBuild.js', '/assets/index-OldBuild.css', '/assets/nested/chunk.js']) {
+      const res = await request(app()).get(asset)
+      expect(res.status, asset).toBe(404)
+      expect(res.headers['content-type'], asset).not.toMatch(/html/)
+      expect(res.headers['cache-control'], asset).toBe('no-store')
     }
   })
 

@@ -176,6 +176,11 @@ export function createApp(pool, overrides = {}) {
   const hasShell = Boolean(shellPath && fs.existsSync(shellPath))
   app.set('trust proxy', trustedProxyHops())
   app.use(securityHeaders({ shellHtml: hasShell ? fs.readFileSync(shellPath, 'utf8') : '' }))
+  // Session- and bearer-authenticated responses must never land in a shared (CDN) cache.
+  app.use(['/api/editor', '/api/integrations'], (_req, res, next) => {
+    res.set('Cache-Control', 'private, no-store')
+    next()
+  })
   app.use(express.json({ limit: '256kb' }))
 
   // Liveness probe for the container/reverse proxy. Deliberately trivial (no
@@ -779,7 +784,14 @@ export function createApp(pool, overrides = {}) {
   // bundle, so the card a shared link previews with can only come from the
   // server.
   if (hasShell) {
-    app.use(express.static(overrides.distDir))
+    // Build output is content-hashed, so a CDN may keep it for good. A bundle
+    // from another build must 404: the HTML shell under a .js URL breaks the
+    // page and would be cached as if it were the script.
+    app.use('/assets', express.static(path.join(overrides.distDir, 'assets'), { maxAge: '1y', immutable: true }))
+    app.use('/assets', (_req, res) => {
+      res.set('Cache-Control', 'no-store').status(404).type('text').send('Not found')
+    })
+    app.use(express.static(overrides.distDir, { index: false }))
 
     async function shareCardMeta(pathname) {
       const slug = slugFromSegments(pathname.split('/').filter(Boolean))
@@ -793,12 +805,14 @@ export function createApp(pool, overrides = {}) {
       return pageMetaFor(resolved, { pageUrl: base ? `${base}/${slug}` : null })
     }
 
-    // SPA fallback for /:slug, /edit and /privacy.
-    app.get('/*splat', async (req, res, next) => {
+    // SPA fallback for /, /:slug, /edit and /privacy.
+    app.get(['/', '/*splat'], async (req, res, next) => {
       try {
         const shell = await fs.promises.readFile(shellPath, 'utf8')
         const meta = await shareCardMeta(req.path)
-        if (meta) res.set('Cache-Control', 'public, max-age=60')
+        // Any other shell names the current build's bundle, so it must be
+        // revalidated rather than outlive a deploy in a CDN.
+        res.set('Cache-Control', meta ? 'public, max-age=60' : 'no-cache')
         res.type('html').send(meta ? injectMetaTags(shell, meta) : shell)
       } catch (err) {
         next(err)

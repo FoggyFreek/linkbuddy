@@ -98,7 +98,9 @@ describe('editor access', () => {
     const pool = makePool()
     const app = createApp(pool)
 
-    expect((await draft(app)).status).toBe(200)
+    const saved = await draft(app)
+    expect(saved.status).toBe(200)
+    expect(saved.headers['cache-control']).toBe('private, no-store')
     expect((await as(session())(request(app).post('/api/editor/pages/7/publish'))).status).toBe(200)
 
     expect(accessCalls).toEqual([{

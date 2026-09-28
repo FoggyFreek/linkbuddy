@@ -35,6 +35,33 @@ function directives(res) {
   )
 }
 
+describe('cache headers behind a CDN', () => {
+  it('keep every editor and integration response out of shared caches', async () => {
+    process.env.GIGBUDDY_INTEGRATION_TOKEN = 'cache-test-token'
+    const app = createApp(pool)
+    try {
+      const responses = [
+        await request(app).get('/api/editor/pages'),
+        await request(app).post('/api/editor/session').send({ token: 'nope' }),
+        await request(app).get('/api/integrations/gigbuddy/tenants/1/pages'),
+        await request(app).get('/api/integrations/gigbuddy/tenants/1/pages').set('authorization', 'Bearer cache-test-token'),
+      ]
+      expect(responses.map((res) => res.status)).toEqual([401, 401, 401, 200])
+      for (const res of responses) expect(res.headers['cache-control']).toBe('private, no-store')
+    } finally {
+      delete process.env.GIGBUDDY_INTEGRATION_TOKEN
+    }
+  })
+
+  it('leave published pages publicly cacheable', async () => {
+    const page = { id: 1, slug: 'band', published_layout: { sections: [] }, content: {}, release: null, content_synced_at: new Date() }
+    const res = await request(createApp({ query: async () => ({ rows: [page] }) })).get('/api/pages/band')
+
+    expect(res.status).toBe(200)
+    expect(res.headers['cache-control']).toBe('public, max-age=60')
+  })
+})
+
 describe('inline script hashes', () => {
   it('hash what the browser executes, with line endings normalized to LF', () => {
     const body = "\r\n  var mode = 'dark';\r\n  var legacy = 1;\r"
