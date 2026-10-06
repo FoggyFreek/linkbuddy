@@ -1,5 +1,5 @@
-// The "new release page" dialog: pick a song and a slug tail, create a landing
-// page at /<mainSlug>/<tail>. Slug defaults to the song title, slugified.
+// The "new release page" dialog: pick a song or album and a slug tail, create a
+// landing page at /<mainSlug>/<tail>. Slug defaults to its title, slugified.
 import { useState, type FormEvent } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
@@ -11,34 +11,42 @@ import Typography from '@mui/material/Typography'
 import TextField from '@mui/material/TextField'
 import InputAdornment from '@mui/material/InputAdornment'
 import Button from '@mui/material/Button'
-import { SongSelect } from './WidgetEditors.js'
+import { ReleaseSelect } from './WidgetEditors.js'
 import { slugify } from '../utils/editorUtils.js'
-import type { Song } from '../../../types.js'
+import type { ReleaseRef, Song, StreamingAlbum } from '../../../types.js'
 import { errorMessage } from '../../../types.js'
 
-export default function NewReleaseForm({ songs, mainSlug, onCreate, onCancel }: Readonly<{
+function firstSource(songs: Song[], albums: StreamingAlbum[]): { ref: ReleaseRef; title: string } | null {
+  if (songs[0]) return { ref: { songId: songs[0].id }, title: songs[0].title }
+  if (albums[0]) return { ref: { albumId: albums[0].id }, title: albums[0].title }
+  return null
+}
+
+export default function NewReleaseForm({ songs, albums, mainSlug, onCreate, onCancel }: Readonly<{
   songs: Song[]
+  albums: StreamingAlbum[]
   mainSlug: string
-  onCreate: (songId: number, slug: string) => Promise<void>
+  onCreate: (source: ReleaseRef, slug: string) => Promise<void>
   onCancel: () => void
 }>) {
-  const [songId, setSongId] = useState(songs[0]?.id ?? 0)
-  const [slugTail, setSlugTail] = useState(songs[0] ? slugify(songs[0].title) : '')
+  const initial = firstSource(songs, albums)
+  const [source, setSource] = useState(initial?.ref ?? null)
+  const [slugTail, setSlugTail] = useState(slugify(initial?.title ?? ''))
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const pickSong = (id: number) => {
-    setSongId(id)
-    const song = songs.find((s) => s.id === id)
-    if (song) setSlugTail(slugify(song.title))
+  const pick = (ref: ReleaseRef, title: string) => {
+    setSource(ref)
+    setSlugTail(slugify(title))
   }
 
   const create = async (event: FormEvent) => {
     event.preventDefault()
+    if (!source) return
     setBusy(true)
     setError(null)
     try {
-      await onCreate(songId, `${mainSlug}/${slugTail}`)
+      await onCreate(source, `${mainSlug}/${slugTail}`)
     } catch (err) {
       setError(errorMessage(err))
       setBusy(false)
@@ -64,7 +72,7 @@ export default function NewReleaseForm({ songs, mainSlug, onCreate, onCancel }: 
           else you add. Share its link in your campaign.
         </DialogContentText>
         <Stack spacing={2}>
-          <SongSelect value={songId} songs={songs} onChange={pickSong} />
+          <ReleaseSelect value={source} songs={songs} albums={albums} onChange={pick} />
           <TextField
             size="small"
             label="Page address"
@@ -77,7 +85,7 @@ export default function NewReleaseForm({ songs, mainSlug, onCreate, onCancel }: 
       </DialogContent>
       <DialogActions>
         <Button variant="outlined" onClick={onCancel} disabled={busy}>Cancel</Button>
-        <Button type="submit" variant="contained" disabled={busy || !songId || !slugTail}>Create</Button>
+        <Button type="submit" variant="contained" disabled={busy || !source || !slugTail}>Create</Button>
       </DialogActions>
     </Dialog>
   )

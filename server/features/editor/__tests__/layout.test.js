@@ -64,6 +64,16 @@ describe('validateLayout', () => {
     expect(validateLayout({ sections: [{ widgets: [{ type: 'platforms' }] }] }).error).toBeTruthy()
   })
 
+  it('accepts a platforms widget for an album, naming exactly one source', () => {
+    const ok = validateLayout({ sections: [{ widgets: [{ type: 'platforms', albumId: 6, title: null }] }] })
+    expect(ok.layout.sections[0].widgets[0]).toEqual({ id: expect.any(String), type: 'platforms', albumId: 6, title: null })
+    const both = validateLayout({ sections: [{ widgets: [{ type: 'platforms', songId: 4, albumId: 6 }] }] })
+    expect(both.error).toBeTruthy()
+    expect(validateLayout({ sections: [{ widgets: [{ type: 'platforms', albumId: 'x' }] }] }).error).toBeTruthy()
+    expect(validateLayout({ sections: [{ widgets: [{ type: 'platforms', albumId: true }] }] }).error).toBeTruthy()
+    expect(validateLayout({ sections: [{ widgets: [{ type: 'platforms', albumId: [6] }] }] }).error).toBeTruthy()
+  })
+
   it('accepts embed widgets and requires a safe url', () => {
     const ok = validateLayout({
       sections: [{ widgets: [{ type: 'embed', url: 'https://open.spotify.com/track/x', title: 'Single', imageUrl: 'https://cdn.example.com/a.jpg' }] }],

@@ -19,6 +19,10 @@ describe('makeWidget', () => {
     ])
   })
 
+  it('seeds a platforms widget from the first album when there are no songs', () => {
+    expect(makeWidget('platforms', { albums: [{ id: 5, title: 'Debut LP' }] })).toMatchObject({ type: 'platforms', albumId: 5, title: null })
+  })
+
   it('returns null when the content a widget needs is missing', () => {
     expect(makeWidget('song', {})).toBeNull()
     expect(makeWidget('platforms', {})).toBeNull()
@@ -41,6 +45,12 @@ describe('widgetSummary', () => {
   it('labels content-backed widgets by song title', () => {
     expect(widgetSummary({ type: 'song', songId: 3 }, CONTENT)).toBe('Song · Midnight Signal')
     expect(widgetSummary({ type: 'platforms', songId: 3 }, CONTENT)).toBe('Platform buttons · Midnight Signal')
+  })
+
+  it('labels album platform buttons by album title', () => {
+    const content = { albums: [{ id: 5, title: 'Debut LP' }] }
+    expect(widgetSummary({ type: 'platforms', albumId: 5 }, content)).toBe('Platform buttons · Debut LP')
+    expect(widgetSummary({ type: 'platforms', albumId: 6 }, content)).toBe('Platform buttons · missing album')
   })
 
   it('says so when the referenced song is gone', () => {

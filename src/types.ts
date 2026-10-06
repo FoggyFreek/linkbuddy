@@ -62,6 +62,30 @@ export interface Song {
   links?: Link[]
 }
 
+export interface Track {
+  number: number | null
+  title: string
+}
+
+// An album with streaming links: the album counterpart of `Song`.
+export interface StreamingAlbum {
+  id: number
+  title: string
+  artist?: string | null
+  coverUrl?: string | null
+  links?: Link[]
+  tracks?: Track[]
+}
+
+// The song or the album (exactly one) a smart link or platforms widget points at.
+export interface ReleaseRef {
+  songId?: number
+  albumId?: number
+}
+
+// Synced content a widget type needs before it can be added; a release is a song or an album.
+export type ContentNeed = 'songs' | 'releases' | 'products'
+
 export interface Product {
   id: number
   name: string
@@ -122,6 +146,7 @@ export interface ContentSnapshot {
   discography?: Album[]
   band?: Band | null
   songs?: Song[]
+  albums?: StreamingAlbum[]
   products?: Product[]
   gigs?: Gig[]
   [key: string]: unknown
@@ -138,9 +163,8 @@ export interface SongWidgetDraft extends WidgetBase {
   hiddenLinks?: string[]
 }
 
-export interface PlatformsWidgetDraft extends WidgetBase {
+export interface PlatformsWidgetDraft extends WidgetBase, ReleaseRef {
   type: 'platforms'
-  songId: number
   title: string | null
 }
 
@@ -264,9 +288,11 @@ export interface ResolvedSection {
 }
 
 export interface Release {
+  kind: 'song' | 'album'
   title: string
   artist?: string | null
   coverUrl?: string | null
+  tracks?: Track[]
 }
 
 export interface ResolvedPage {
@@ -281,8 +307,7 @@ export interface ResolvedPage {
   gigbuddyUrl?: string
 }
 
-export interface ReleaseSnapshot {
-  songId: number
+export interface ReleaseSnapshot extends ReleaseRef {
   title: string
   artist?: string | null
 }

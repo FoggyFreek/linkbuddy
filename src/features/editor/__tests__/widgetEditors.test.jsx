@@ -18,6 +18,7 @@ const content = {
     },
     { id: 2, title: 'Second Song', artist: null },
   ],
+  albums: [{ id: 5, title: 'Debut LP', artist: 'The Testers', links: [{ label: 'Spotify', url: 'https://open.spotify.com/album/5' }] }],
   products: [
     { id: 10, name: 'T-shirt', priceCents: 2000 },
     { id: 20, name: 'Vinyl', priceCents: 2500 },
@@ -75,6 +76,14 @@ describe('WidgetEditor', () => {
     const { screen, handlers } = await renderEditor({ id: 'platforms', type: 'platforms', songId: 1, title: null })
     await screen.getByLabelText('Title (optional)').fill('Listen everywhere')
     expect(handlers.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Listen everywhere' }))
+  })
+
+  it('points platform buttons at an album instead of a song', async () => {
+    const widget = { id: 'platforms', type: 'platforms', songId: 1, title: 'Listen' }
+    const { screen, handlers } = await renderEditor(widget)
+    await screen.getByLabelText('Song or album').click()
+    await screen.getByRole('option', { name: /Debut LP/ }).click()
+    expect(handlers.onChange).toHaveBeenLastCalledWith({ id: 'platforms', type: 'platforms', albumId: 5, title: 'Listen' })
   })
 
   it('edits gigs and applies the default limit for an empty value', async () => {

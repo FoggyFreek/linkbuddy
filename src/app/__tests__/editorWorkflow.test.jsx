@@ -157,7 +157,7 @@ describe('Editor workflow', () => {
     await screen.getByRole('button', { name: 'Create' }).click()
 
     await expect.poll(() => api.createReleasePage.mock.calls.length).toBe(1)
-    expect(api.createReleasePage).toHaveBeenCalledWith('session-token', 11, 'the-testers/first-single')
+    expect(api.createReleasePage).toHaveBeenCalledWith('session-token', { songId: 11 }, 'the-testers/first-single')
     await expect.element(screen.getByRole('heading', { level: 1, name: 'New Release' })).toBeInTheDocument()
   })
 })

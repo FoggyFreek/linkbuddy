@@ -8,6 +8,7 @@ import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
+import ListSubheader from '@mui/material/ListSubheader'
 import Button from '@mui/material/Button'
 import Checkbox from '@mui/material/Checkbox'
 import FormControlLabel from '@mui/material/FormControlLabel'
@@ -16,8 +17,8 @@ import { LINK_ICON_KEYS } from '../../../../shared/features/links/linkIcons.js'
 import { LINK_ICON_COMPONENTS } from '../../../components/icons.js'
 import type {
   ContentSnapshot, DraftWidget, EmbedWidgetDraft, GigsWidgetDraft, Link, LinkWidgetDraft,
-  MerchItemDraft, MerchWidgetDraft, PlatformsWidgetDraft, Product, Song,
-  SongWidgetDraft, UnfurlResult,
+  MerchItemDraft, MerchWidgetDraft, PlatformsWidgetDraft, Product, ReleaseRef, Song,
+  SongWidgetDraft, StreamingAlbum, UnfurlResult,
 } from '../../../types.js'
 import { errorMessage } from '../../../types.js'
 
@@ -34,7 +35,22 @@ const Hint = ({ children }: Readonly<{ children: ReactNode }>) => (
   <Typography variant="caption" color="text.secondary">{children}</Typography>
 )
 
-export function SongSelect({ value, songs, onChange, label = 'Song' }: Readonly<{ value: number; songs: Song[]; onChange: (id: number) => void; label?: string }>) {
+interface PickerItem { title: string; artist?: string | null }
+
+const pickerOption = (value: string | number, item: PickerItem) => (
+  <MenuItem key={value} value={value}>
+    {item.title}
+    {item.artist ? ` — ${item.artist}` : ''}
+  </MenuItem>
+)
+
+function PickerField({ label, value, values, onChange, children }: Readonly<{
+  label: string
+  value: string | number
+  values: (string | number)[]
+  onChange: (value: string) => void
+  children: ReactNode
+}>) {
   return (
     <TextField
       select
@@ -43,16 +59,53 @@ export function SongSelect({ value, songs, onChange, label = 'Song' }: Readonly<
       sx={{ pl: 3 }}
       fullWidth
       label={label}
-      value={songs.some((song) => song.id === value) ? value : ''}
-      onChange={(e) => onChange(Number(e.target.value))}
+      value={values.includes(value) ? value : ''}
+      onChange={(e) => onChange(e.target.value)}
     >
-      {songs.map((song) => (
-        <MenuItem key={song.id} value={song.id}>
-          {song.title}
-          {song.artist ? ` — ${song.artist}` : ''}
-        </MenuItem>
-      ))}
+      {children}
     </TextField>
+  )
+}
+
+export function SongSelect({ value, songs, onChange }: Readonly<{ value: number; songs: Song[]; onChange: (id: number) => void }>) {
+  return (
+    <PickerField label="Song" value={value} values={songs.map((song) => song.id)} onChange={(id) => onChange(Number(id))}>
+      {songs.map((song) => pickerOption(song.id, song))}
+    </PickerField>
+  )
+}
+
+const refKey = (ref: ReleaseRef | null) => {
+  if (ref?.albumId) return `album:${ref.albumId}`
+  return ref?.songId ? `song:${ref.songId}` : ''
+}
+
+// Picks the song or the album a smart link or platforms widget points at.
+export function ReleaseSelect({ value, songs, albums, onChange }: Readonly<{
+  value: ReleaseRef | null
+  songs: Song[]
+  albums: StreamingAlbum[]
+  onChange: (ref: ReleaseRef, title: string) => void
+}>) {
+  const songOptions = songs.map((song) => ({ key: refKey({ songId: song.id }), ref: { songId: song.id }, item: song as PickerItem }))
+  const albumOptions = albums.map((album) => ({ key: refKey({ albumId: album.id }), ref: { albumId: album.id }, item: album as PickerItem }))
+  const options = [...songOptions, ...albumOptions]
+  const grouped = songOptions.length > 0 && albumOptions.length > 0
+  return (
+    <PickerField
+      label="Song or album"
+      value={refKey(value)}
+      values={options.map((option) => option.key)}
+      onChange={(key) => {
+        const option = options.find((o) => o.key === key)
+        if (option) onChange(option.ref, option.item.title)
+      }}
+    >
+      {grouped && <ListSubheader>Songs</ListSubheader>}
+      {songOptions.map(({ key, item }) => pickerOption(key, item))}
+      {grouped && <ListSubheader>Albums</ListSubheader>}
+      {albumOptions.map(({ key, item }) => pickerOption(key, item))}
+    </PickerField>
   )
 }
 
@@ -99,11 +152,11 @@ function SongWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: SongWi
   )
 }
 
-function PlatformsWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: PlatformsWidgetDraft; songs: Song[]; onChange: (widget: PlatformsWidgetDraft) => void }>) {
+function PlatformsWidgetEditor({ widget, songs, albums, onChange }: Readonly<{ widget: PlatformsWidgetDraft; songs: Song[]; albums: StreamingAlbum[]; onChange: (widget: PlatformsWidgetDraft) => void }>) {
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
-        Fetches the album art and any streaming links for the selected song from gigBuddy and displays them in a list.  
+        Fetches the streaming links for the selected song or album from gigBuddy and displays them in a list.
       </Typography>
       <TextField
         size="small"
@@ -114,8 +167,13 @@ function PlatformsWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: P
         value={widget.title || ''}
         onChange={(e) => onChange({ ...widget, title: e.target.value || null })}
       />
-      <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId })} />
-      <Hint>One button per streaming link of this song, platform detected automatically.</Hint>
+      <ReleaseSelect
+        value={widget}
+        songs={songs}
+        albums={albums}
+        onChange={(ref) => onChange({ id: widget.id, type: 'platforms', ...ref, title: widget.title })}
+      />
+      <Hint>One button per streaming link, platform detected automatically.</Hint>
     </Stack>
   )
 }
@@ -341,7 +399,7 @@ export function WidgetEditor({ widget, content, onChange, onUnfurl }: Readonly<{
     case 'song':
       return <SongWidgetEditor widget={widget} songs={content.songs || []} onChange={onChange} />
     case 'platforms':
-      return <PlatformsWidgetEditor widget={widget} songs={content.songs || []} onChange={onChange} />
+      return <PlatformsWidgetEditor widget={widget} songs={content.songs || []} albums={content.albums || []} onChange={onChange} />
     case 'accolades':
       return <Stack spacing={1}>
         <Typography variant="caption" color="text.secondary">Awards and quotes from GigBuddy appear in a swipeable carousel.</Typography>

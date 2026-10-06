@@ -25,8 +25,8 @@ import { ensureTenantMainPage, migrateTenantNamespace, NamespaceError } from './
 import { MAIN_SLUG_RE, RELEASE_TAIL_RE, slugFromSegments, mainSlugOf } from './features/pages/slugs.js'
 import { insertView, insertClick, aggregateStats, summaryStats } from './features/statistics/statsRepo.js'
 import { classifyDevice, classifySource, resolveCountry, visitorHash } from './features/statistics/classify.js'
-import { validateLayout } from './features/editor/layout.js'
-import { resolvePage } from './features/public-pages/resolve.js'
+import { parseReleaseRef, validateLayout } from './features/editor/layout.js'
+import { releaseSource, resolvePage } from './features/public-pages/resolve.js'
 import { pageMetaFor, injectMetaTags } from './features/public-pages/metaTags.js'
 import { sanitizeClickTarget } from './features/public-pages/platforms.js'
 import { pageEntitlements, DEFAULT_STATS_RETENTION_DAYS } from './features/editor/entitlements.js'
@@ -624,7 +624,7 @@ export function createApp(pool, overrides = {}) {
     }
   })
 
-  // Create a release landing page for a song at /<mainSlug>/<tail>: the slug is
+  // Create a release landing page for a song or album at /<mainSlug>/<tail>: the slug is
   // namespaced under the band's main slug (so it can never collide with any
   // band's main page), the layout starts with a platforms widget, and the
   // content snapshot is inherited so the page previews instantly.
@@ -635,11 +635,11 @@ export function createApp(pool, overrides = {}) {
       if (!main || main.gigbuddy_tenant_id !== tenantId) {
         return res.status(401).json({ error: 'Session expired — reopen the editor from GigBuddy' })
       }
-      const songId = Number(req.body?.songId)
-      const song = (main.content?.songs || []).find((s) => s.id === songId)
-      if (!song) return res.status(400).json({ error: 'Pick a song from the list' })
-      if (!(song.links || []).length) {
-        return res.status(400).json({ error: `“${song.title}” has no streaming links — add them in GigBuddy first` })
+      const ref = parseReleaseRef(req.body)
+      const item = ref && releaseSource(main.content || {}, ref)
+      if (!item) return res.status(400).json({ error: 'Pick a song or album from the list' })
+      if (!(item.links || []).length) {
+        return res.status(400).json({ error: `“${item.title}” has no streaming links — add them in GigBuddy first` })
       }
 
       // Plan cap on smart link pages (silver 3, gold 30; the main page is free).
@@ -665,13 +665,13 @@ export function createApp(pool, overrides = {}) {
       }
       const slug = `${mainSlug}/${tail}`
 
-      const release = { songId: song.id, title: song.title, artist: song.artist }
+      const release = { ...ref, title: item.title, artist: item.artist }
       const layout = {
         sections: [
           {
             id: crypto.randomUUID(),
             title: null,
-            widgets: [{ id: crypto.randomUUID(), type: 'platforms', songId: song.id, title: null }],
+            widgets: [{ id: crypto.randomUUID(), type: 'platforms', ...ref, title: null }],
           },
         ],
       }

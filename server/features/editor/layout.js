@@ -51,6 +51,7 @@ function widgetId(raw) {
 }
 
 function positiveId(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null
   const n = Number(value)
   return Number.isInteger(n) && n > 0 ? n : null
 }
@@ -72,12 +73,20 @@ function parseSong(raw, id) {
   return { widget: { id, type: 'song', songId, hiddenLinks: parseHiddenLinks(raw.hiddenLinks) } }
 }
 
-// One button per streaming platform for a song's links — the core widget of a
-// release landing page, but usable on any page.
+// One button per streaming platform for a song's or an album's links — the core
+// widget of a release landing page, but usable on any page.
 function parsePlatforms(raw, id) {
-  const songId = positiveId(raw.songId)
-  if (!songId) return fail('Platforms widget needs a songId')
-  return { widget: { id, type: 'platforms', songId, title: cleanString(raw.title, MAX_TITLE) } }
+  const source = parseReleaseRef(raw)
+  if (!source) return fail('Platforms widget needs a songId or an albumId')
+  return { widget: { id, type: 'platforms', ...source, title: cleanString(raw.title, MAX_TITLE) } }
+}
+
+// `{songId}` or `{albumId}` when `raw` names exactly one valid id, else null.
+export function parseReleaseRef(raw) {
+  const songId = positiveId(raw?.songId)
+  const albumId = positiveId(raw?.albumId)
+  if (Boolean(songId) === Boolean(albumId)) return null
+  return songId ? { songId } : { albumId }
 }
 
 function parseGigs(raw, id) {

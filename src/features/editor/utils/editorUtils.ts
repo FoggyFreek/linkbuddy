@@ -1,7 +1,7 @@
 // Small pure helpers shared across the editor UI. No React, no I/O.
 import { trim } from '../../../utils/trimChars.js'
 import type { DropTarget } from './dropTarget.js'
-import type { ApiError, ContentSnapshot, DragLocation, DraftSection, EditorPage, Layout, PageListEntry, PageTheme, SaveState } from '../../../types.js'
+import type { ApiError, ContentNeed, ContentSnapshot, DragLocation, DraftSection, EditorPage, Layout, PageListEntry, PageTheme, SaveState } from '../../../types.js'
 
 // Immutably move list[index] by `delta` positions; returns the list unchanged
 // when the move would fall off either end.
@@ -65,6 +65,12 @@ export function dropWidget(sections: DraftSection[], from: DragLocation, target:
     const widgets = section.widgets.map((w) => (w === a ? b : w === b ? a : w))
     return { ...section, widgets }
   })
+}
+
+export function hasContentFor(content: ContentSnapshot, needs?: ContentNeed): boolean {
+  if (!needs) return true
+  if (needs === 'releases') return hasContentFor(content, 'songs') || Boolean(content.albums?.length)
+  return Boolean(content[needs]?.length)
 }
 
 // Turn free text into a URL-safe release slug tail (lowercase, ASCII, dashes),

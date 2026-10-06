@@ -25,12 +25,12 @@ import { useEditorSession } from '../../features/editor/hooks/useEditorSession.j
 import { useLayoutEditor } from '../../features/editor/hooks/useLayoutEditor.js'
 import NewReleaseForm from '../../features/editor/components/NewReleaseForm.js'
 import { makeWidget } from '../../features/editor/utils/widgetModel.js'
-import { pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
+import { hasContentFor, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
 import { DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
 import { DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
 import type {
-  ContentSnapshot, DraftSection, DraftTheme, EditorPage, EditorTab,
-  Layout, PageListEntry, ResolvedPage, WidgetType,
+  ContentNeed, ContentSnapshot, DraftSection, DraftTheme, EditorPage, EditorTab,
+  Layout, PageListEntry, ReleaseRef, ResolvedPage, WidgetType,
 } from '../../types.js'
 import { errorMessage } from '../../types.js'
 
@@ -89,8 +89,8 @@ export default function Editor() {
     }
   }
 
-  const createRelease = async (songId: number, slug: string) => {
-    const { page: created } = await createReleasePage(currentSession(), songId, slug)
+  const createRelease = async (source: ReleaseRef, slug: string) => {
+    const { page: created } = await createReleasePage(currentSession(), source, slug)
     setPages((prev) => [...prev, toListEntry(created)])
     setCreatingRelease(false)
     adoptPage(created)
@@ -218,7 +218,7 @@ export default function Editor() {
     expired: 'Session expired — reopen from GigBuddy',
   }[saveState]
 
-  const canAdd = (needs?: 'songs' | 'products') => !needs || Array.isArray(content[needs]) && content[needs].length > 0
+  const canAdd = (needs?: ContentNeed) => hasContentFor(content, needs)
 
   return (
     <AppShell sx={{ px: 2, pt: 3, pb: 10 }}>
@@ -235,7 +235,7 @@ export default function Editor() {
       <PageSwitcher
         pages={pages}
         currentId={page.id}
-        hasSongs={!!content.songs?.length}
+        canCreateRelease={hasContentFor(content, 'releases')}
         labelFor={(p: PageListEntry) => pageLabel(p, content)}
         onSelect={selectPage}
         onNewRelease={() => setCreatingRelease(true)}
@@ -298,6 +298,7 @@ export default function Editor() {
       {creatingRelease && (
         <NewReleaseForm
           songs={content.songs || []}
+          albums={content.albums || []}
           mainSlug={mainSlug}
           onCreate={createRelease}
           onCancel={() => setCreatingRelease(false)}

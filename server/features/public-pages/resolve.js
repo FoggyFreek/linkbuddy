@@ -32,6 +32,27 @@ function webLinks(song) {
   return (song?.links || []).filter((link) => httpUrl(link.url))
 }
 
+const MAX_TRACKS = 100
+const MAX_TRACK_TITLE = 120
+
+// The song or album a platforms widget or release page points at.
+export function releaseSource(content, ref) {
+  if (ref?.albumId) return (content.albums || []).find((a) => a.id === ref.albumId)
+  return (content.songs || []).find((s) => s.id === ref?.songId)
+}
+
+// An album's tracklist as published: titled entries only, numbers positive or null.
+function resolveTracks(tracks) {
+  if (!Array.isArray(tracks)) return []
+  return tracks
+    .filter((track) => typeof track?.title === 'string' && track.title.trim())
+    .slice(0, MAX_TRACKS)
+    .map((track) => ({
+      number: Number.isSafeInteger(track.number) && track.number > 0 ? track.number : null,
+      title: track.title.slice(0, MAX_TRACK_TITLE),
+    }))
+}
+
 function resolveWidget(widget, content) {
   switch (widget.type) {
     case 'song': {
@@ -52,7 +73,7 @@ function resolveWidget(widget, content) {
       }
     }
     case 'platforms': {
-      const links = webLinks((content.songs || []).find((s) => s.id === widget.songId))
+      const links = webLinks(releaseSource(content, widget))
       if (!links.length) return null
       return {
         id: widget.id,
@@ -166,12 +187,8 @@ function resolveBand(band) {
   }
 }
 
-// `release` is the page's stored release snapshot ({songId, title, artist})
-// for release landing pages; null for the main page. The cover comes from the
-// live content snapshot when the song still exists (fresh signed image URL).
-// A release page shows the art full-bleed, so it takes gigbuddy's
-// high-resolution cover; song widgets elsewhere stay on the thumbnail-sized
-// one. Songs exported without a high-resolution cover fall back to it.
+// `release` is the stored {songId|albumId, title, artist} snapshot, null on the main page.
+// Its full-bleed cover prefers the live high-resolution art; albums add their tracklist.
 export function resolvePage(content, layout, release = null) {
   const sections = (layout?.sections || [])
     .map((section) => ({
@@ -182,12 +199,14 @@ export function resolvePage(content, layout, release = null) {
     .filter((section) => section.widgets.length > 0)
   let resolvedRelease = null
   if (release) {
-    const song = (content.songs || []).find((s) => s.id === release.songId)
+    const source = releaseSource(content, release)
     resolvedRelease = {
+      kind: release.albumId ? 'album' : 'song',
       title: release.title,
       artist: release.artist || content.band?.name || null,
-      coverUrl: httpUrl(song?.coverHighResolutionUrl) || httpUrl(song?.coverUrl),
+      coverUrl: httpUrl(source?.coverHighResolutionUrl) || httpUrl(source?.coverUrl),
     }
+    if (release.albumId) resolvedRelease.tracks = resolveTracks(source?.tracks)
   }
   const theme = normalizeTheme(layout?.theme, release ? 'dark' : 'light')
   return {

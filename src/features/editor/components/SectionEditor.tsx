@@ -17,16 +17,16 @@ import WidgetListItem from './WidgetListItem.js'
 import type { HTMLAttributes, RefCallback } from 'react'
 import type useDragReorder from '../hooks/useDragReorder.js'
 import type { ItemDropState } from '../hooks/useDragReorder.js'
-import type { ContentSnapshot, DraftSection, DraftWidget, PageType, UnfurlResult, WidgetType } from '../../../types.js'
+import type { ContentNeed, ContentSnapshot, DraftSection, DraftWidget, PageType, UnfurlResult, WidgetType } from '../../../types.js'
 
 // The widget types the add menu offers, and the content each one needs before
-// it can be added (a song/platforms widget needs songs, merch needs products).
+// it can be added (a song widget needs songs, platforms a song or album, merch products).
 // `releaseOnly` types are hidden on the main link page: platform buttons point
 // at one release's streaming links, so they only make sense on a release page.
-interface AddType { type: WidgetType; label: string; needs?: 'songs' | 'products'; releaseOnly?: boolean }
+interface AddType { type: WidgetType; label: string; needs?: ContentNeed; releaseOnly?: boolean }
 const ADD_TYPES: AddType[] = [
   { type: 'song', label: 'Song', needs: 'songs' },
-  { type: 'platforms', label: 'Platform buttons', needs: 'songs', releaseOnly: true },
+  { type: 'platforms', label: 'Platform buttons', needs: 'releases', releaseOnly: true },
   { type: 'gigs', label: 'Gigs' },
   { type: 'accolades', label: 'Accolades' },
   { type: 'discography', label: 'Discography' },
@@ -65,7 +65,7 @@ export default function SectionEditor({
   content: ContentSnapshot
   openWidget: string | null
   setOpenWidget: (id: string | null) => void
-  canAdd: (needs?: 'songs' | 'products') => boolean
+  canAdd: (needs?: ContentNeed) => boolean
   pageType: PageType
   collapsed?: boolean
   drop: ItemDropState

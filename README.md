@@ -54,9 +54,10 @@ into its own repository — nothing else needs to change.
 - **Preview**: the editor's preview tab renders the draft through the exact
   same resolution + React components as the public page.
 - **Release pages**: from the editor's "New release page" button a member
-  picks a song (from GigBuddy, with its streaming links) and gets a landing
-  page with big artwork, title/artist, and one platform button per link —
-  extendable with any other widget. Slugs are always prefixed with the band's
+  picks a song or an album (from GigBuddy, with its streaming links) and gets a
+  landing page with big artwork, title/artist, and one platform button per link —
+  extendable with any other widget. An album's tracklist appears over its
+  artwork on hover (or focus/tap). Slugs are always prefixed with the band's
   own slug, so bands cannot squat each other's names.
 - **Statistics** land in this app's own database (`page_views` +
   `page_clicks`) — views by device class, traffic source, country and day,
@@ -71,7 +72,7 @@ into its own repository — nothing else needs to change.
 | Type | Content | Notes |
 |---|---|---|
 | `song` | a song + its streaming links | first link is the card target, extra links render as pills |
-| `platforms` | one button per streaming link of a song | platform (Spotify, Apple Music, YouTube (Music), Deezer, TIDAL, Amazon, SoundCloud, Bandcamp) detected from the URL; the core of a release page. Embeddable platforms get a ▶ preview button (Spotify inline player, YouTube overlay) |
+| `platforms` | one button per streaming link of a song or album | platform (Spotify, Apple Music, YouTube (Music), Deezer, TIDAL, Amazon, SoundCloud, Bandcamp) detected from the URL; the core of a release page. Embeddable platforms get a ▶ preview button (Spotify inline player, YouTube overlay) |
 | `embed` | any pasted URL | metadata (title/artwork/description) pulled via oEmbed (Spotify, YouTube, SoundCloud, Vimeo, TikTok) or Open Graph tags; renders as a click-to-play card that opens the player in a closable modal overlay — an audio player (Spotify/SoundCloud) or a 16:9 video lightbox (YouTube, privacy-enhanced `youtube-nocookie.com`) — or as a rich link card |
 | `gigs` | announced upcoming gigs | expandable card; only gigs with status `announced` are ever exported |
 | `accolades` | awards and quotes from GigBuddy | touch-friendly horizontal carousel with description, date, optional link and signed image |
@@ -204,6 +205,7 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
   (their artwork-led layout is dark-first), main pages light.
 - The export includes `accolades: [{ id, description, date, url, imageUrl }]`, newest first (up to 50). Dates use `YYYY-MM-DD`; `url` and `imageUrl` are nullable. Older snapshots without accolades are supported. Add an Accolades widget in the editor, refresh content, then publish; empty carousels are hidden.
 - The export includes `discography: [{ id, title, artist, releaseDate, releaseYear, coverUrl, coverHighResolutionUrl }]` for albums marked as discography, newest first. `releaseDate` uses `YYYY-MM-DD`; dates and art can be null. Add a Discography widget in the editor, refresh content, then publish; empty carousels are hidden.
+- The export includes `albums: [{ id, title, artist, coverUrl, coverHighResolutionUrl, links, tracks: [{ number, title }] }]` for albums with at least one streaming link; `tracks` is in album order, `number` nullable. Album release pages and album platform widgets resolve against it.
 - The `band` object carries `booking: { feeLowCents, feeHighCents, currency, repertoire, contactEnabled, email, phone }` from GigBuddy's profile.
   `contactEnabled` is the band's opt-in: when it is false GigBuddy nulls every
   booking value (fees, currency, repertoire, contacts), and this app publishes no

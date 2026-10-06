@@ -17,7 +17,7 @@ async function renderSwitcher(props = {}) {
   const handlers = {
     pages: PAGES,
     currentId: 1,
-    hasSongs: true,
+    canCreateRelease: true,
     labelFor: (p) => p.slug,
     onSelect: vi.fn(),
     onNewRelease: vi.fn(),
@@ -67,12 +67,12 @@ describe('PageSwitcher', () => {
     await expect.element(screen.getByRole('tooltip')).toHaveTextContent('New release page')
   })
 
-  it('disables the "+" tab and explains why when the tenant has no songs', async () => {
-    const { screen, handlers } = await renderSwitcher({ hasSongs: false })
+  it('disables the "+" tab and explains why when the tenant has no linked songs or albums', async () => {
+    const { screen, handlers } = await renderSwitcher({ canCreateRelease: false })
     const add = screen.getByRole('tab', { name: 'New release page' })
     await expect.element(add).toBeDisabled()
     await userEvent.hover(add)
-    await expect.element(screen.getByRole('tooltip')).toHaveTextContent('Add streaming links to a song in GigBuddy first')
+    await expect.element(screen.getByRole('tooltip')).toHaveTextContent('Add streaming links to a song or album in GigBuddy first')
     expect(handlers.onNewRelease).not.toHaveBeenCalled()
   })
 })

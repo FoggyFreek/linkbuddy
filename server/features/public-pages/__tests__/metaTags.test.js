@@ -10,7 +10,7 @@ function bandPage(overrides = {}) {
 function releasePage(overrides = {}) {
   return {
     band: BAND,
-    release: { title: 'Hollow Ground', artist: 'The Woods', coverUrl: 'https://cdn.example/cover.jpg' },
+    release: { kind: 'song', title: 'Hollow Ground', artist: 'The Woods', coverUrl: 'https://cdn.example/cover.jpg' },
     sections: [],
     ...overrides,
   }
@@ -34,6 +34,14 @@ describe('pageMetaFor', () => {
     expect(meta.description).toBe('Listen to Hollow Ground by The Woods.')
     expect(meta.imageUrl).toBe('https://cdn.example/cover.jpg')
     expect(meta.type).toBe('music.song')
+  })
+
+  it('describes an album release as an album', () => {
+    const release = { kind: 'album', title: 'Woodland LP', artist: 'The Woods', coverUrl: null, tracks: [] }
+    const meta = pageMetaFor(releasePage({ release }), URL_OPTS)
+    expect(meta.type).toBe('music.album')
+    expect(meta.description).toBe('Listen to Woodland LP by The Woods.')
+    expect(pageMetaFor(releasePage(), URL_OPTS).type).toBe('music.song')
   })
 
   it('falls back to the band artwork when a release has no cover', () => {

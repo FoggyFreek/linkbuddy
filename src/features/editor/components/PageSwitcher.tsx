@@ -10,12 +10,12 @@ const NEW_RELEASE = 'new-release'
 
 // The tab bar for switching between the tenant's pages, plus a trailing "+" tab
 // that starts a new release page instead of selecting one. `labelFor` maps a
-// page-list entry to its visitor-facing name; `hasSongs` gates release creation
-// (a release needs a song with links).
-export default function PageSwitcher({ pages, currentId, hasSongs, labelFor, onSelect, onNewRelease }: Readonly<{
+// page-list entry to its visitor-facing name; `canCreateRelease` gates release
+// creation (a release needs a song or album with links).
+export default function PageSwitcher({ pages, currentId, canCreateRelease, labelFor, onSelect, onNewRelease }: Readonly<{
   pages: PageListEntry[]
   currentId: number
-  hasSongs: boolean
+  canCreateRelease: boolean
   labelFor: (page: PageListEntry) => string
   onSelect: (pageId: number) => void
   onNewRelease: () => void
@@ -43,10 +43,10 @@ export default function PageSwitcher({ pages, currentId, hasSongs, labelFor, onS
       <Tab
         value={NEW_RELEASE}
         aria-label="New release page"
-        disabled={!hasSongs}
+        disabled={!canCreateRelease}
         sx={{ minWidth: 48 }}
         label={(
-          <Tooltip title={hasSongs ? 'New release page' : 'Add streaming links to a song in GigBuddy first'}>
+          <Tooltip title={canCreateRelease ? 'New release page' : 'Add streaming links to a song or album in GigBuddy first'}>
             {/* A disabled Tab drops pointer events, which would swallow the hover too. */}
             <Box component="span" sx={{ display: 'flex', pointerEvents: 'auto' }}><AddIcon fontSize="small" /></Box>
           </Tooltip>

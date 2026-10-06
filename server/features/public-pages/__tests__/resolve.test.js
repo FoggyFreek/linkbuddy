@@ -24,6 +24,21 @@ const content = {
       links: [{ label: 'Spotify', url: 'https://open.spotify.com/track/y' }],
     },
   ],
+  albums: [
+    {
+      id: 5,
+      title: 'Woodland LP',
+      artist: null,
+      coverUrl: 'https://gb.example/img?t=lp',
+      coverHighResolutionUrl: 'https://gb.example/img?t=lp-hi',
+      links: [{ label: 'Spotify', url: 'https://open.spotify.com/album/lp' }],
+      tracks: [
+        { number: 1, title: 'Opener' },
+        { number: 2, title: 'Closer' },
+        { number: null, title: 'Bonus' },
+      ],
+    },
+  ],
   products: [{ id: 7, name: 'CD', priceCents: 999 }],
   gigs: [
     { id: 1, date: '2026-08-01', title: 'Festival', venue: 'Vera', city: 'Groningen' },
@@ -102,6 +117,14 @@ describe('resolvePage', () => {
     expect(widget.platforms[1]).toMatchObject({ id: 'apple', label: 'Apple Music', embed: null })
   })
 
+  it('resolves a platforms widget for an album from the album links', () => {
+    const layout = { sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'platforms', albumId: 5, title: null }] }] }
+    const widget = resolvePage(content, layout).sections[0].widgets[0]
+    expect(widget.platforms).toEqual([expect.objectContaining({ id: 'spotify', url: 'https://open.spotify.com/album/lp' })])
+    const gone = { sections: [{ id: 's', title: null, widgets: [{ id: 'w', type: 'platforms', albumId: 99, title: null }] }] }
+    expect(resolvePage(content, gone).sections).toEqual([])
+  })
+
   it('resolves embed widgets with a server-derived player descriptor', () => {
     const layout = {
       sections: [
@@ -125,6 +148,7 @@ describe('resolvePage', () => {
     const page = resolvePage(content, layout, { songId: 1, title: 'Good To See You', artist: null })
     // A release page is artwork-led, so it takes the high-resolution cover.
     expect(page.release).toEqual({
+      kind: 'song',
       title: 'Good To See You',
       artist: 'The Woods',
       coverUrl: 'https://gb.example/img?t=abc-hi',
@@ -134,9 +158,44 @@ describe('resolvePage', () => {
     expect(lowRes.release.coverUrl).toBe('https://gb.example/img?t=low')
     // Song deleted in gigbuddy: title survives (snapshot), cover degrades.
     const gone = resolvePage(content, layout, { songId: 99, title: 'Old Single', artist: 'X' })
-    expect(gone.release).toEqual({ title: 'Old Single', artist: 'X', coverUrl: null })
+    expect(gone.release).toEqual({ kind: 'song', title: 'Old Single', artist: 'X', coverUrl: null })
     // Main pages carry no release.
     expect(resolvePage(content, layout).release).toBeNull()
+  })
+
+  it('resolves an album release header with its tracklist', () => {
+    const layout = { sections: [] }
+    const page = resolvePage(content, layout, { albumId: 5, title: 'Woodland LP', artist: null })
+    expect(page.release).toEqual({
+      kind: 'album',
+      title: 'Woodland LP',
+      artist: 'The Woods',
+      coverUrl: 'https://gb.example/img?t=lp-hi',
+      tracks: [
+        { number: 1, title: 'Opener' },
+        { number: 2, title: 'Closer' },
+        { number: null, title: 'Bonus' },
+      ],
+    })
+    // Album gone from gigbuddy: the snapshot title survives, with no cover or tracks.
+    const gone = resolvePage(content, layout, { albumId: 99, title: 'Old LP', artist: 'X' })
+    expect(gone.release).toEqual({ kind: 'album', title: 'Old LP', artist: 'X', coverUrl: null, tracks: [] })
+  })
+
+  it('keeps only well-formed tracks from the snapshot', () => {
+    const album = {
+      id: 8, title: 'Messy', links: [],
+      tracks: [{ number: 1, title: 'Fine' }, { number: -2, title: 'Bad number' }, { number: 3, title: '' }, null, { number: 4.5, title: 7 }],
+    }
+    const page = resolvePage({ albums: [album] }, { sections: [] }, { albumId: 8, title: 'Messy' })
+    expect(page.release.tracks).toEqual([{ number: 1, title: 'Fine' }, { number: null, title: 'Bad number' }])
+  })
+
+  it('bounds the published tracklist in length and title size', () => {
+    const tracks = Array.from({ length: 150 }, (_, i) => ({ number: i + 1, title: `${'x'.repeat(300)}${i}` }))
+    const page = resolvePage({ albums: [{ id: 8, title: 'Box set', links: [], tracks }] }, { sections: [] }, { albumId: 8, title: 'Box set' })
+    expect(page.release.tracks).toHaveLength(100)
+    expect(page.release.tracks.every((track) => track.title.length <= 120)).toBe(true)
   })
 
   it('passes the band through, normalizing booking, or null when absent', () => {

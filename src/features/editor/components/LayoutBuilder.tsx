@@ -5,7 +5,7 @@ import AddIcon from '@mui/icons-material/Add'
 import SectionEditor, { SECTION_COLLAPSE_MS } from './SectionEditor.js'
 import useDragReorder from '../hooks/useDragReorder.js'
 import { dropItem, dropWidget, moveItem, moveWidget } from '../utils/editorUtils.js'
-import type { ContentSnapshot, DraftSection, PageType, UnfurlResult, WidgetType } from '../../../types.js'
+import type { ContentNeed, ContentSnapshot, DraftSection, PageType, UnfurlResult, WidgetType } from '../../../types.js'
 
 // The Build tab body: the ordered list of section cards plus the "Add section"
 // button. It maps each section to a SectionEditor and translates the section's
@@ -33,7 +33,7 @@ export default function LayoutBuilder({
   content: ContentSnapshot
   openWidget: string | null
   setOpenWidget: (id: string | null) => void
-  canAdd: (needs?: 'songs' | 'products') => boolean
+  canAdd: (needs?: ContentNeed) => boolean
   pageType: PageType
   onUpdateSection: (sectionId: string, patch: Partial<DraftSection>) => void
   onReorder: (sections: DraftSection[]) => void

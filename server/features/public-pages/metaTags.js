@@ -35,6 +35,11 @@ function truncate(text, max = MAX_DESCRIPTION) {
   return `${(lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`
 }
 
+function ogType(release) {
+  if (!release) return 'profile'
+  return release.kind === 'album' ? 'music.album' : 'music.song'
+}
+
 export function pageMetaFor(page, { pageUrl }) {
   const band = page?.band || null
   const release = page?.release || null
@@ -61,7 +66,7 @@ export function pageMetaFor(page, { pageUrl }) {
     imageUrl,
     imageAlt: release ? `${release.title} cover art` : `${band?.name || 'Band'} artwork`,
     url: pageUrl,
-    type: release ? 'music.song' : 'profile',
+    type: ogType(release),
     siteName: band?.name || null,
     card: imageUrl ? 'summary_large_image' : 'summary',
   }

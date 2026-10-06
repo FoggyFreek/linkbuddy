@@ -12,11 +12,13 @@ function newId() {
 // the content required by the selected widget type is missing.
 export function makeWidget(type: WidgetType, content: ContentSnapshot): DraftWidget | null {
   const firstSong = (content.songs || [])[0]
+  const firstAlbum = (content.albums || [])[0]
   switch (type) {
     case 'song':
       return firstSong ? { id: newId(), type: 'song', songId: firstSong.id, hiddenLinks: [] } : null
     case 'platforms':
-      return firstSong ? { id: newId(), type: 'platforms', songId: firstSong.id, title: null } : null
+      if (firstSong) return { id: newId(), type: 'platforms', songId: firstSong.id, title: null }
+      return firstAlbum ? { id: newId(), type: 'platforms', albumId: firstAlbum.id, title: null } : null
     case 'accolades':
       return { id: newId(), type: 'accolades', title: 'Accolades' }
     case 'discography':
@@ -41,12 +43,13 @@ const productCount = (count: number) => `${count} products`
 // One-line label for a widget in the editor's section list. The fallback is
 // intentional: old or future widget records remain identifiable in diagnostics.
 export function widgetSummary(widget: DraftWidget, content: ContentSnapshot): string {
-  const songTitle = (songId: number) => (content.songs || []).find((song) => song.id === songId)?.title || 'missing song'
+  const songTitle = (songId?: number) => (content.songs || []).find((song) => song.id === songId)?.title || 'missing song'
+  const albumTitle = (albumId: number) => (content.albums || []).find((album) => album.id === albumId)?.title || 'missing album'
   switch (widget.type) {
     case 'song':
       return `Song · ${songTitle(widget.songId)}`
     case 'platforms':
-      return `Platform buttons · ${songTitle(widget.songId)}`
+      return `Platform buttons · ${widget.albumId ? albumTitle(widget.albumId) : songTitle(widget.songId)}`
     case 'accolades':
       return `Accolades · ${widget.title || 'Accolades'}`
     case 'discography':

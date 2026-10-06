@@ -2,7 +2,7 @@
 // session token lives in sessionStorage (editor surface only; the public
 // page stores nothing on the visitor's device).
 
-import type { EditorPage, Layout, PageListEntry, ResolvedPage, Stats, UnfurlResult } from '../types.js'
+import type { EditorPage, Layout, PageListEntry, ReleaseRef, ResolvedPage, Stats, UnfurlResult } from '../types.js'
 import { ApiError } from '../types.js'
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -100,8 +100,8 @@ export function listEditorPages(session: string) {
   return request<PageListResponse>('/api/editor/pages', authed(session))
 }
 
-export function createReleasePage(session: string, songId: number, slug: string) {
-  return request<{ page: EditorPage }>('/api/editor/pages', authed(session, { method: 'POST', body: JSON.stringify({ songId, slug }) }))
+export function createReleasePage(session: string, source: ReleaseRef, slug: string) {
+  return request<{ page: EditorPage }>('/api/editor/pages', authed(session, { method: 'POST', body: JSON.stringify({ ...source, slug }) }))
 }
 
 export function getEditorPage(session: string, pageId: number) {

@@ -9,6 +9,7 @@ import {
   pageLabel,
   pageSchemeMode,
   toListEntry,
+  hasContentFor,
 } from '../utils/editorUtils.js'
 
 describe('moveItem', () => {
@@ -208,5 +209,20 @@ describe('toListEntry', () => {
       release: { title: 'Sun' },
       publishedAt: '2026-01-01',
     })
+  })
+})
+
+describe('hasContentFor', () => {
+  it('lets a widget be added once the content it needs is synced', () => {
+    expect(hasContentFor({}, undefined)).toBe(true)
+    expect(hasContentFor({ songs: [{ id: 1 }] }, 'songs')).toBe(true)
+    expect(hasContentFor({ songs: [] }, 'songs')).toBe(false)
+    expect(hasContentFor({ products: [] }, 'products')).toBe(false)
+  })
+
+  it('counts a song or an album as a release', () => {
+    expect(hasContentFor({ albums: [{ id: 5 }] }, 'releases')).toBe(true)
+    expect(hasContentFor({ songs: [{ id: 1 }] }, 'releases')).toBe(true)
+    expect(hasContentFor({ songs: [], albums: [] }, 'releases')).toBe(false)
   })
 })
