@@ -51,7 +51,7 @@ const api = {
   getStats: vi.fn(async () => ({
     enabled: true, retentionDays: 30, totalViews: 0, uniqueVisits: 0, totalClicks: 0,
     clickThroughRate: null, byDay: [], byDevice: [], bySource: [], byCountry: [],
-    byTarget: [], conversionBySource: [],
+    byPlatform: [], byTarget: [], conversionBySource: [],
   })),
 }
 
@@ -132,6 +132,22 @@ describe('Editor workflow', () => {
     await screen.getByRole('tab', { name: 'Statistics' }).click()
     await expect.poll(() => api.getStats.mock.calls.length).toBe(1)
     expect(api.getStats).toHaveBeenCalledWith('session-token', 1, 30)
+    await expect.element(screen.getByRole('heading', { name: 'Links and actions' })).toBeInTheDocument()
+  })
+
+  it('keeps the editor usable when a tab fails to render', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    api.getStats.mockResolvedValueOnce({})
+    const screen = await renderEditor()
+    await expect.element(screen.getByRole('tab', { name: 'Statistics' })).toBeInTheDocument()
+
+    await screen.getByRole('tab', { name: 'Statistics' }).click()
+    await expect.element(screen.getByRole('alert')).toHaveTextContent('Something went wrong showing this part of the page.')
+    await expect.element(screen.getByRole('heading', { level: 1, name: 'The Testers' })).toBeInTheDocument()
+
+    await screen.getByRole('tab', { name: 'Build' }).click()
+    await expect.element(screen.getByRole('button', { name: 'Add section' })).toBeInTheDocument()
+    expect(screen.getByRole('alert').elements()).toHaveLength(0)
   })
 
   it('switches pages after flushing the draft and deletes a release confirmed in a dialog', async () => {

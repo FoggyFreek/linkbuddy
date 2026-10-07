@@ -3,6 +3,7 @@ import Typography from '@mui/material/Typography'
 import Link from '@mui/material/Link'
 import AppShell from '../../components/AppShell.js'
 import CenteredStatus from '../../components/CenteredStatus.js'
+import ErrorBoundary from '../../components/ErrorBoundary.js'
 import {
   unfurlUrl,
   createReleasePage,
@@ -255,48 +256,51 @@ export default function Editor() {
         </Typography>
       )}
 
-      {tab === 'build' && (
-        <LayoutBuilder
-          sections={layout.sections}
-          content={content}
-          openWidget={openWidget}
-          setOpenWidget={setOpenWidget}
-          canAdd={canAdd}
-          pageType={page.pageType}
-          onUpdateSection={updateSection}
-          onReorder={reorderSections}
-          onRemoveSection={removeSection}
-          onAddWidget={addWidget}
-          onAddSection={addSection}
-          onUnfurl={(url: string) => unfurlUrl(currentSession(), url)}
-        />
-      )}
+      {/* Keyed on page and tab, so moving on clears a failed tab. */}
+      <ErrorBoundary resetKey={`${page.id}:${tab}`}>
+        {tab === 'build' && (
+          <LayoutBuilder
+            sections={layout.sections}
+            content={content}
+            openWidget={openWidget}
+            setOpenWidget={setOpenWidget}
+            canAdd={canAdd}
+            pageType={page.pageType}
+            onUpdateSection={updateSection}
+            onReorder={reorderSections}
+            onRemoveSection={removeSection}
+            onAddWidget={addWidget}
+            onAddSection={addSection}
+            onUnfurl={(url: string) => unfurlUrl(currentSession(), url)}
+          />
+        )}
 
-      {tab === 'appearance' && (
-        <AppearancePanel
-          background={layout.background || DEFAULT_PAGE_BACKGROUND}
-          schemeMode={pageSchemeMode(page, layout)}
-          onSetBackground={setBackground}
-          bannerUrl={content.band?.bannerUrl}
-          showBanner={!!layout.showBanner}
-          onSetShowBanner={setShowBanner}
-          theme={layout.theme ?? null}
-          autoTheme={page.pageType === 'release' ? 'dark' : 'light'}
-          onSetTheme={setTheme}
-          themeVariant={layout.themeVariant ?? null}
-          onSetThemeVariant={setThemeVariant}
-          font={layout.font || DEFAULT_PAGE_FONT}
-          onSetFont={setFont}
-        />
-      )}
+        {tab === 'appearance' && (
+          <AppearancePanel
+            background={layout.background || DEFAULT_PAGE_BACKGROUND}
+            schemeMode={pageSchemeMode(page, layout)}
+            onSetBackground={setBackground}
+            bannerUrl={content.band?.bannerUrl}
+            showBanner={!!layout.showBanner}
+            onSetShowBanner={setShowBanner}
+            theme={layout.theme ?? null}
+            autoTheme={page.pageType === 'release' ? 'dark' : 'light'}
+            onSetTheme={setTheme}
+            themeVariant={layout.themeVariant ?? null}
+            onSetThemeVariant={setThemeVariant}
+            font={layout.font || DEFAULT_PAGE_FONT}
+            onSetFont={setFont}
+          />
+        )}
 
-      {tab === 'preview' && preview && <PagePreview preview={preview} />}
+        {tab === 'preview' && preview && <PagePreview preview={preview} />}
 
-      {tab === 'stats' && (
-        <Suspense fallback={<CenteredStatus busy />}>
-          <StatsPanel session={session} pageId={page.id} pageType={page.pageType} />
-        </Suspense>
-      )}
+        {tab === 'stats' && (
+          <Suspense fallback={<CenteredStatus busy />}>
+            <StatsPanel session={session} pageId={page.id} pageType={page.pageType} />
+          </Suspense>
+        )}
+      </ErrorBoundary>
 
       {/* Mounted only while open so each run starts on a fresh song/slug. */}
       {creatingRelease && (
