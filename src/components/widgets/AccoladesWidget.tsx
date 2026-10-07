@@ -19,7 +19,7 @@ function AccoladeContent({ accolade }: Readonly<{ accolade: Accolade }>) {
 export default function AccoladesWidget({ widget, onLinkClick }: Readonly<{ widget: ResolvedAccoladesWidget; onLinkClick: LinkClickHandler }>) {
   return <Carousel title={widget.title || 'Accolades'} itemLabel="accolade" items={widget.accolades} itemBorderRadius="18px"
     renderItem={(accolade) => accolade.url
-      ? <CardActionArea component="a" href={accolade.url} target="_blank" rel="noopener noreferrer" onClick={() => onLinkClick(`accolade:${accolade.id}`)} sx={{ flex: 1, display: 'block', borderRadius: 'inherit' }}>
+      ? <CardActionArea component="a" href={accolade.url} target="_blank" rel="noopener noreferrer" onClick={() => onLinkClick(`accolade:${new URL(accolade.url!).hostname.replace(/^www\./, '')}`)} sx={{ flex: 1, display: 'block', borderRadius: 'inherit' }}>
           <AccoladeContent accolade={accolade} />
         </CardActionArea>
       : <AccoladeContent accolade={accolade} />} />

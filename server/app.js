@@ -58,14 +58,6 @@ const INTEGRATION_RATE_WINDOW_MS = 60 * 1000
 const BEACON_RATE_LIMIT = 60
 const BEACON_RATE_WINDOW_MS = 60 * 1000
 
-// URL/namespace design: a band's main page lives at /<mainSlug> (the band's
-// GigBuddy slug); each release page lives one segment deeper at
-// /<mainSlug>/<releaseTail>. A main slug can never contain '/', so the stored
-// slugs 'foo' (main) and 'foo/bar' (release) occupy separate namespaces and
-// can NEVER collide — a release page can no longer shadow, or be mistaken for,
-// another band's main page. Both are validated segment-by-segment.
-export { MAIN_SLUG_RE, RELEASE_TAIL_RE, slugFromSegments, mainSlugOf }
-
 function contentTtlMs() {
   const minutes = Number(process.env.LINKPAGE_CONTENT_TTL_MINUTES)
   return (Number.isFinite(minutes) && minutes > 0 ? minutes : 15) * 60 * 1000
@@ -148,7 +140,7 @@ function trustedProxyHops() {
 // Tenant and page ids arrive as text on the GigBuddy integration routes; only
 // a positive integer is ever a real one.
 function parseId(text) {
-  return /^[1-9]\d*$/.test(text) ? Number(text) : NaN
+  return /^[1-9]\d*$/.test(text) ? Number(text) : Number.NaN
 }
 
 // The requested statistics window, clamped into [1, the page's plan window].

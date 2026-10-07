@@ -67,7 +67,7 @@ function PickerField({ label, value, values, onChange, children }: Readonly<{
   )
 }
 
-export function SongSelect({ value, songs, onChange }: Readonly<{ value: number; songs: Song[]; onChange: (id: number) => void }>) {
+function SongSelect({ value, songs, onChange }: Readonly<{ value: number; songs: Song[]; onChange: (id: number) => void }>) {
   return (
     <PickerField label="Song" value={value} values={songs.map((song) => song.id)} onChange={(id) => onChange(Number(id))}>
       {songs.map((song) => pickerOption(song.id, song))}

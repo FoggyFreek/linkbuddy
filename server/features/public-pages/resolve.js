@@ -53,6 +53,22 @@ function resolveTracks(tracks) {
     }))
 }
 
+function resolveMerch(widget, content) {
+  const products = widget.items.flatMap((item) => {
+    const product = (content.products || []).find((p) => p.id === item.productId)
+    if (!product) return []
+    return [{
+      id: product.id,
+      name: product.name,
+      priceCents: product.priceCents,
+      imageUrl: item.imageUrl,
+      badge: item.badge,
+    }]
+  })
+  if (!products.length) return null
+  return { id: widget.id, type: 'merch', title: widget.title, shopUrl: widget.shopUrl || null, products }
+}
+
 function resolveWidget(widget, content) {
   switch (widget.type) {
     case 'song': {
@@ -108,22 +124,8 @@ function resolveWidget(widget, content) {
         gigs,
       }
     }
-    case 'merch': {
-      const products = []
-      for (const item of widget.items) {
-        const product = (content.products || []).find((p) => p.id === item.productId)
-        if (!product) continue
-        products.push({
-          id: product.id,
-          name: product.name,
-          priceCents: product.priceCents,
-          imageUrl: item.imageUrl,
-          badge: item.badge,
-        })
-      }
-      if (!products.length) return null
-      return { id: widget.id, type: 'merch', title: widget.title, shopUrl: widget.shopUrl || null, products }
-    }
+    case 'merch':
+      return resolveMerch(widget, content)
     case 'embed':
       // The player descriptor is derived from the stored URL here, server-side.
       return { ...widget, embed: detectEmbed(widget.url) }
@@ -139,7 +141,7 @@ function resolveWidget(widget, content) {
 // the band's explicit opt-in, and without it nothing booking-related — the fee
 // indication included — leaves this server. The same holds when the opt-in is
 // on but no contact survives normalization: there would be no way to act on it.
-const BOOKING_REPERTOIRES = ['covers', 'tribute', 'original']
+const BOOKING_REPERTOIRES = new Set(['covers', 'tribute', 'original'])
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_PATTERN = /^[\d+][\d\s()./-]*$/
 
@@ -161,7 +163,7 @@ function feeCents(value) {
 }
 
 function resolveBooking(booking) {
-  if (!booking || booking.contactEnabled !== true) return null
+  if (booking?.contactEnabled !== true) return null
   const email = bookingMatch(booking.email, 254, EMAIL_PATTERN)
   const phone = bookingMatch(booking.phone, 40, PHONE_PATTERN)
   if (!email && !phone) return null
@@ -175,7 +177,7 @@ function resolveBooking(booking) {
     feeLowCents,
     feeHighCents,
     currency: currency ? currency.toUpperCase() : 'EUR',
-    repertoire: BOOKING_REPERTOIRES.includes(booking.repertoire) ? booking.repertoire : null,
+    repertoire: BOOKING_REPERTOIRES.has(booking.repertoire) ? booking.repertoire : null,
   }
 }
 

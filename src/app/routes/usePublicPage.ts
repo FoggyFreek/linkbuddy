@@ -27,7 +27,7 @@ export default function usePublicPage(slug: string) {
         if (cancelled) return
         setPage(data)
         setStatus('ready')
-        sendView(slug, { referrer: document.referrer, utmSource: utmSourceFromLocation() })
+        void sendView(slug, { referrer: document.referrer, utmSource: utmSourceFromLocation() })
       })
       .catch((err) => {
         if (!cancelled) setStatus(err instanceof ApiError && err.status === 404 ? 'notfound' : 'error')

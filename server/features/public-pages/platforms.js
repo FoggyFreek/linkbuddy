@@ -37,10 +37,18 @@ export function detectPlatform(url, linkLabel = null) {
 }
 
 // Click targets are stored in statistics — keep them short, printable, and
-// impossible to abuse as a free-text channel.
+// impossible to abuse as a free-text channel. Anything but letters, digits and
+// the key punctuation becomes a space, so a label's '!' or '&' can't drop the click.
 export function sanitizeClickTarget(raw) {
   if (typeof raw !== 'string') return null
-  const target = raw.trim().toLowerCase().slice(0, 80)
-  if (!target || !/^[\w :./+-]+$/.test(target)) return null
-  return target
+  const target = raw
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{M}\p{N}_ :./+-]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^([^:]*?) ?: ?/, '$1:')
+    .trim()
+    .slice(0, 80)
+    .trim()
+  return target || null
 }

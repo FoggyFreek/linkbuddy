@@ -12,7 +12,7 @@
 // would mix, say, a forest-green canvas with midnight-blue cards. The scheme's
 // own default variant restates the theme's colours verbatim (src/lib/theme.ts),
 // which costs nothing and keeps all three variants of a scheme one list.
-import { PAGE_THEME_KEYS, DEFAULT_PAGE_THEMES, pageThemeForScheme } from '../../shared/features/appearance/pageThemes.js'
+import { PAGE_THEME_KEYS, pageThemeForScheme } from '../../shared/features/appearance/pageThemes.js'
 import type { PageTheme } from '../types.js'
 
 export { pageThemeForScheme }
@@ -100,7 +100,7 @@ const VARIANTS: Record<string, ThemeVariant> = {
 // "#rrggbb" → "r g b", the space-separated form MUI's `*Channel` variables hold
 // so styles can compose translucent colours (`rgba(<channel> / 0.08)`).
 function channel(hex: string): string {
-  const n = parseInt(hex.slice(1), 16)
+  const n = Number.parseInt(hex.slice(1), 16)
   return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`
 }
 
@@ -156,5 +156,3 @@ function variantsFor(scheme: PageTheme): ThemeVariantOption[] {
     .filter((key) => VARIANTS[key]?.scheme === scheme)
     .map((key) => ({ key, label: VARIANTS[key].label }))
 }
-
-export { DEFAULT_PAGE_THEMES }

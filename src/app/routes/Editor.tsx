@@ -24,13 +24,14 @@ import PagePreview from '../../features/editor/components/PagePreview.js'
 import { useEditorSession } from '../../features/editor/hooks/useEditorSession.js'
 import { useLayoutEditor } from '../../features/editor/hooks/useLayoutEditor.js'
 import NewReleaseForm from '../../features/editor/components/NewReleaseForm.js'
+import DeleteReleaseDialog from '../../features/editor/components/DeleteReleaseDialog.js'
 import { makeWidget } from '../../features/editor/utils/widgetModel.js'
 import { hasContentFor, pageLabel, pageSchemeMode, saveErrorState, toListEntry } from '../../features/editor/utils/editorUtils.js'
 import { DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
 import { DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
 import type {
-  ContentNeed, ContentSnapshot, DraftSection, DraftTheme, EditorPage, EditorTab,
-  Layout, PageListEntry, ReleaseRef, ResolvedPage, WidgetType,
+  ContentNeed, DraftSection, DraftTheme, EditorPage, EditorTab,
+  PageListEntry, ReleaseRef, ResolvedPage, WidgetType,
 } from '../../types.js'
 import { errorMessage } from '../../types.js'
 
@@ -50,6 +51,7 @@ export default function Editor() {
   const [publishedAt, setPublishedAt] = useState<string | null>(null)
   const [openWidget, setOpenWidget] = useState<string | null>(null)
   const [creatingRelease, setCreatingRelease] = useState(false)
+  const [deletingRelease, setDeletingRelease] = useState(false)
 
   const { layout, saveState, setSaveState, applyLayout, flushSave, loadLayout } = useLayoutEditor(sessionRef)
 
@@ -96,13 +98,15 @@ export default function Editor() {
     adoptPage(created)
   }
 
+  // A failed delete rejects into the dialog; once the page is gone, a failed
+  // reload of the main page is fatal because there is nothing left to show.
   const removeCurrentPage = async () => {
     if (page.pageType !== 'release') return
-    if (!window.confirm(`Delete the release page /${page.slug}? Its statistics are deleted too.`)) return
+    await deleteEditorPage(currentSession(), page.id)
+    const remaining = pages.filter((p) => p.id !== page.id)
+    const main = remaining.find((p) => p.pageType === 'main') || remaining[0]
+    setDeletingRelease(false)
     try {
-      await deleteEditorPage(currentSession(), page.id)
-      const remaining = pages.filter((p) => p.id !== page.id)
-      const main = remaining.find((p) => p.pageType === 'main') || remaining[0]
       const loaded = await getEditorPage(currentSession(), main.id)
       setPages(remaining)
       adoptPage(loaded)
@@ -228,7 +232,7 @@ export default function Editor() {
         saveLabel={saveLabel}
         publishedAt={publishedAt}
         onRefresh={refresh}
-        onDelete={removeCurrentPage}
+        onDelete={() => setDeletingRelease(true)}
         onPublish={publish}
       />
 
@@ -290,7 +294,7 @@ export default function Editor() {
 
       {tab === 'stats' && (
         <Suspense fallback={<CenteredStatus busy />}>
-          <StatsPanel session={session} pageId={page.id} />
+          <StatsPanel session={session} pageId={page.id} pageType={page.pageType} />
         </Suspense>
       )}
 
@@ -302,6 +306,15 @@ export default function Editor() {
           mainSlug={mainSlug}
           onCreate={createRelease}
           onCancel={() => setCreatingRelease(false)}
+        />
+      )}
+
+      {deletingRelease && (
+        <DeleteReleaseDialog
+          title={title}
+          slug={page.slug}
+          onConfirm={removeCurrentPage}
+          onCancel={() => setDeletingRelease(false)}
         />
       )}
     </AppShell>

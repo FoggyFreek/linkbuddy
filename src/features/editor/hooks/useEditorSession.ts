@@ -4,7 +4,7 @@
 // visit. Either way it adopts an initial page via the `adoptPage` callback the
 // editor supplies. `sessionRef` is owned by the caller so the layout hook can
 // read the current token without this hook re-rendering it.
-import { useEffect, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { useEffect, useState, type Dispatch, type RefObject, type SetStateAction } from 'react'
 import type { EditorPage, PageListEntry } from '../../../types.js'
 import { errorMessage } from '../../../types.js'
 import {
@@ -23,7 +23,7 @@ function exchangeOnce(token: string) {
 }
 
 export function useEditorSession(
-  sessionRef: MutableRefObject<string | null>,
+  sessionRef: RefObject<string | null>,
   adoptPage: (page: EditorPage) => void,
 ): {
   session: string | null
@@ -66,7 +66,7 @@ export function useEditorSession(
         setFatal(errorMessage(err))
       }
     }
-    boot()
+    void boot()
   }, [sessionRef, adoptPage])
 
   return { session, pages, setPages, fatal, setFatal }

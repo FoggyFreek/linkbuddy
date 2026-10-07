@@ -35,10 +35,24 @@ describe('sanitizeClickTarget', () => {
     }
   })
 
+  // Targets carry the band's own labels; a punctuation mark or an accent must
+  // never cost the click its record.
+  it('keeps a click whose label has punctuation, accents or emoji', () => {
+    expect(sanitizeClickTarget('link:Pre-save (Spotify)')).toBe('link:pre-save spotify')
+    expect(sanitizeClickTarget('link:Buy tickets!')).toBe('link:buy tickets')
+    expect(sanitizeClickTarget('link:Rock & Roll')).toBe('link:rock roll')
+    expect(sanitizeClickTarget('gig:Live @ Paradiso')).toBe('gig:live paradiso')
+    expect(sanitizeClickTarget("gig:O'Reilly's")).toBe('gig:o reilly s')
+    expect(sanitizeClickTarget('song:Björk')).toBe('song:björk')
+    expect(sanitizeClickTarget('link:🎟 Tickets')).toBe('link:tickets')
+    expect(sanitizeClickTarget('link:Album: out now')).toBe('link:album: out now')
+  })
+
   it('rejects garbage and free-text abuse', () => {
     expect(sanitizeClickTarget('')).toBeNull()
     expect(sanitizeClickTarget(null)).toBeNull()
-    expect(sanitizeClickTarget('<script>alert(1)</script>')).toBeNull()
+    expect(sanitizeClickTarget('!!! ???')).toBeNull()
+    expect(sanitizeClickTarget('<script>alert("x")</script>')).not.toMatch(/[<>"()]/)
     expect(sanitizeClickTarget('a'.repeat(200))).toBe('a'.repeat(80))
   })
 })

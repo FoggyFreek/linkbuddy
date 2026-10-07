@@ -152,6 +152,17 @@ describe('view and click beacons', () => {
     expect(inserts[0].params[1]).toBe('platform:spotify')
   })
 
+  it('records a click on a link whose label has punctuation', async () => {
+    const app = createApp(makePool())
+    await request(app)
+      .post('/api/pages/thewoods/click')
+      .set('user-agent', CHROME_UA)
+      .send({ target: 'link:Pre-save (Spotify)' })
+      .expect(204)
+    expect(inserts).toHaveLength(1)
+    expect(inserts[0].params[1]).toBe('link:pre-save spotify')
+  })
+
   it('accepts beacons on a release path as well as a main one', async () => {
     const release = { ...PAGE, id: 2, slug: 'thewoods/sun', page_type: 'release' }
     const app = createApp(makePool([PAGE, release]))

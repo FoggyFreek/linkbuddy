@@ -29,6 +29,7 @@ interface Session {
 
 const SCROLL_ZONE = 56
 const MAX_SCROLL_STEP = 18
+const KEY_DELTAS: Record<string, number> = { ArrowUp: -1, ArrowDown: 1 }
 
 const sameSpot = (a: ReorderSpot | null, b: ReorderSpot | null) => !!a && !!b && a.list === b.list && a.index === b.index
 const sameTarget = (a: DropTarget | null, b: DropTarget | null) => a === b || (sameSpot(a, b) && a?.mode === b?.mode)
@@ -212,7 +213,7 @@ export default function useDragReorder({
       },
       onPointerDown: (e: ReactPointerEvent<HTMLElement>) => grab(spot, id, e),
       onKeyDown: (e: ReactKeyboardEvent<HTMLElement>) => {
-        const delta = e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0
+        const delta = KEY_DELTAS[e.key] ?? 0
         if (!delta) return
         e.preventDefault()
         if (onKeyMove(delta)) setFocusRequest({ id })

@@ -134,8 +134,8 @@ describe('Editor workflow', () => {
     expect(api.getStats).toHaveBeenCalledWith('session-token', 1, 30)
   })
 
-  it('switches pages after flushing the draft and deletes a confirmed release', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('switches pages after flushing the draft and deletes a release confirmed in a dialog', async () => {
+    const nativeConfirm = vi.spyOn(window, 'confirm')
     const screen = await renderEditor()
     await expect.element(screen.getByRole('tab', { name: /First Single/ })).toBeInTheDocument()
 
@@ -144,9 +144,32 @@ describe('Editor workflow', () => {
     expect(api.getEditorPage).toHaveBeenCalledWith('session-token', 2)
 
     await screen.getByRole('button', { name: 'Delete page' }).click()
+    await screen.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click()
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
+    expect(api.deleteEditorPage).not.toHaveBeenCalled()
+    expect(screen.getByText('release page', { exact: true }).elements()).toHaveLength(1)
+
+    await screen.getByRole('button', { name: 'Delete page' }).click()
+    await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
     await expect.poll(() => api.deleteEditorPage.mock.calls.length).toBe(1)
     expect(api.deleteEditorPage).toHaveBeenCalledWith('session-token', 2)
     await expect.element(screen.getByText('link page')).toBeInTheDocument()
+    await expect.element(screen.getByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /First Single/ }).elements()).toHaveLength(0)
+    expect(nativeConfirm).not.toHaveBeenCalled()
+  })
+
+  it('keeps the release page open when its deletion fails', async () => {
+    api.deleteEditorPage.mockRejectedValueOnce(new Error('Delete failed'))
+    const screen = await renderEditor()
+    await screen.getByRole('tab', { name: /First Single/ }).click()
+    await expect.element(screen.getByText('release page')).toBeInTheDocument()
+
+    await screen.getByRole('button', { name: 'Delete page' }).click()
+    await screen.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+
+    await expect.element(screen.getByRole('dialog').getByText('Delete failed')).toBeInTheDocument()
+    expect(screen.getByText('release page', { exact: true }).elements()).toHaveLength(1)
   })
 
   it('creates a release page from the page switcher', async () => {

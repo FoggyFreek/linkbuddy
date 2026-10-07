@@ -158,6 +158,11 @@ export default function SectionEditor({
   )
 }
 
+function dropZoneBorder(targeted: boolean, active: boolean) {
+  if (targeted) return 'primary.main'
+  return active ? 'text.disabled' : 'divider'
+}
+
 // An empty section's list: always the same size, so a drag never shifts layout.
 function EmptyDropZone({ active, targeted }: Readonly<{ active: boolean; targeted: boolean }>) {
   return (
@@ -170,7 +175,7 @@ function EmptyDropZone({ active, targeted }: Readonly<{ active: boolean; targete
         typography: 'body2',
         color: targeted ? 'primary.main' : 'text.secondary',
         border: '1px dashed',
-        borderColor: targeted ? 'primary.main' : active ? 'text.disabled' : 'divider',
+        borderColor: dropZoneBorder(targeted, active),
         borderRadius: `${theme.shape.item}px`,
         bgcolor: targeted ? `rgba(${theme.vars!.palette.primary.mainChannel} / 0.08)` : 'transparent',
       })}

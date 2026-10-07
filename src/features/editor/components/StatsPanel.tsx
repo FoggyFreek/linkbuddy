@@ -4,7 +4,6 @@ import Card from '@mui/material/Card'
 import Stack from '@mui/material/Stack'
 import Typography from '@mui/material/Typography'
 import Link from '@mui/material/Link'
-import LinearProgress from '@mui/material/LinearProgress'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import { BarChart, type BarSeries } from '@mui/x-charts/BarChart'
@@ -16,6 +15,7 @@ import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import { getStats } from '../../../lib/api.js'
 import CenteredStatus from '../../../components/CenteredStatus.js'
+import { PLATFORM_ICON_COMPONENTS } from '../../../components/icons.js'
 import { PLATFORM_LABELS } from '../../../../shared/features/links/platforms.js'
 import type { DailyStatsRow, Stats, StatsRow, TargetStatsRow } from '../../../types.js'
 import { errorMessage } from '../../../types.js'
@@ -49,11 +49,12 @@ const SLOT = (n: number) => `var(--mui-palette-chart-c${n})`
 const NEUTRAL = 'var(--mui-palette-text-secondary)'
 
 // Click targets are stored as 'kind:value'; the kind drives the daily stack.
-// Order here is the stacking order (and the slot assignment).
+// Order here is the stacking order (and the slot assignment). The eight slots
+// are spent, so outbound links from the band's own content join 'Links'.
 const CLICK_KINDS = [
   { kind: 'platform', label: 'Streaming', color: SLOT(1) },
   { kind: 'song', label: 'Songs', color: SLOT(2) },
-  { kind: 'link', label: 'Links', color: SLOT(3) },
+  { kind: 'link', label: 'Links', color: SLOT(3), also: ['gig', 'accolade'] },
   { kind: 'embed', label: 'Previews', color: SLOT(4) },
   { kind: 'share', label: 'Shares', color: SLOT(5) },
   { kind: 'social', label: 'Socials', color: SLOT(6) },
@@ -61,7 +62,11 @@ const CLICK_KINDS = [
   { kind: 'book', label: 'Booking', color: SLOT(8) },
   { kind: 'other', label: 'Other', color: NEUTRAL },
 ]
-const KNOWN_KINDS = new Set(CLICK_KINDS.map((k) => k.kind))
+const KIND_GROUP: Record<string, string> = Object.fromEntries(
+  CLICK_KINDS.flatMap(({ kind, also = [] }) => [kind, ...also].map((member) => [member, kind])),
+)
+// Ink for a click that isn't a link click (shares, previews, opening the booking dialog).
+const MUTED = 'var(--mui-palette-text-disabled)'
 
 const DEVICE_SLOTS: Record<string, string> = { mobile: SLOT(1), desktop: SLOT(2), tablet: SLOT(3), bot: SLOT(7) }
 const DEVICE_LABELS: Record<string, string> = { mobile: 'Mobile', desktop: 'Desktop', tablet: 'Tablet', bot: 'Bots', unknown: 'Unknown' }
@@ -102,6 +107,10 @@ function formatTarget(key: string): string {
       return `Social · ${value.charAt(0).toUpperCase()}${value.slice(1)}`
     case 'link':
       return `Link · ${value}`
+    case 'gig':
+      return `Gig · ${value}`
+    case 'accolade':
+      return `Press · ${value}`
     case 'song':
       return `Song · ${value}`
     case 'embed':
@@ -115,46 +124,124 @@ function formatTarget(key: string): string {
   }
 }
 
-function StatsBlock({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
+function StatsBlock({ title, meta, children }: Readonly<{ title: string; meta?: ReactNode; children: ReactNode }>) {
   return (
     <Card variant="panel">
-      <Typography variant="h6" sx={{ mb: '10px' }}>{title}</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1, mb: '10px' }}>
+        <Typography variant="h6">{title}</Typography>
+        {meta && <Typography variant="caption" color="text.secondary" noWrap>{meta}</Typography>}
+      </Box>
       {children}
     </Card>
   )
 }
 
-type CountRow = StatsRow | TargetStatsRow
-
-function rowCount(row: CountRow, valueKey: 'views' | 'clicks'): number {
-  return valueKey === 'views' && 'views' in row ? row.views : valueKey === 'clicks' && 'clicks' in row ? row.clicks : 0
+interface BarRowData {
+  key: string
+  label: string
+  value: number
+  // Bar length as a fraction of the track.
+  fraction: number
+  color: string
+  share?: string
+  icon?: ReactNode
 }
 
-function BarList({ title, rows, total, valueKey = 'views', formatKey = (key) => key }: Readonly<{
-  title: string
-  rows: CountRow[]
-  total: number
-  valueKey?: 'views' | 'clicks'
-  formatKey?: (key: string) => string
-}>) {
+const NUMERIC_SX = { fontVariantNumeric: 'tabular-nums' }
+
+// A ranked list of horizontal bars, each with its label and exact count.
+function BarRows({ rows }: Readonly<{ rows: BarRowData[] }>) {
+  const withIcon = rows.some((row) => row.icon)
+  const withShare = rows.some((row) => row.share)
+  const columns = [withIcon && '20px', '118px', 'minmax(0, 1fr)', '34px', withShare && '40px'].filter(Boolean).join(' ')
   return (
-    <StatsBlock title={title}>
+    <Stack spacing={0.75}>
+      {rows.map((row) => (
+        <Box
+          key={row.key}
+          data-bar-row
+          title={`${row.label}: ${row.value}${row.share ? ` (${row.share})` : ''}`}
+          sx={{ display: 'grid', gridTemplateColumns: columns, alignItems: 'center', gap: 1 }}
+        >
+          {withIcon && <Box sx={{ display: 'inline-flex' }}>{row.icon}</Box>}
+          <Typography variant="caption" noWrap>{row.label}</Typography>
+          <Box data-bar-track aria-hidden sx={(theme) => ({ height: 8, borderRadius: theme.shape.pill, bgcolor: 'surface.s2', overflow: 'hidden' })}>
+            <Box
+              data-bar-fill
+              sx={(theme) => ({
+                height: '100%',
+                width: `${row.value > 0 ? Math.max(row.fraction * 100, 2) : 0}%`,
+                bgcolor: row.color,
+                borderRadius: theme.shape.pill,
+              })}
+            />
+          </Box>
+          <Typography variant="caption" color="text.secondary" align="right" sx={NUMERIC_SX}>{row.value}</Typography>
+          {withShare && <Typography variant="caption" color="text.secondary" align="right" sx={NUMERIC_SX}>{row.share}</Typography>}
+        </Box>
+      ))}
+    </Stack>
+  )
+}
+
+const OtherPlatformIcon = PLATFORM_ICON_COMPONENTS.other
+
+// Which service visitors picked. One measure, so one colour (the daily chart's
+// Streaming slot); the icon and name tell the platforms apart.
+function PlatformBreakdown({ rows }: Readonly<{ rows: TargetStatsRow[] }>) {
+  const total = rows.reduce((sum, row) => sum + row.clicks, 0)
+  // Unrecognised services share one 'Other' bucket, kept last and neutral.
+  const ordered = [...rows.filter((row) => row.key !== 'other'), ...rows.filter((row) => row.key === 'other')]
+  return (
+    <StatsBlock title="Streaming platforms" meta={total > 0 ? `${total} ${total === 1 ? 'click' : 'clicks'}` : null}>
+      {total === 0 ? (
+        <Typography variant="body2" color="text.secondary">No platform clicks yet</Typography>
+      ) : (
+        <BarRows
+          rows={ordered.map((row) => {
+            const Icon = PLATFORM_ICON_COMPONENTS[row.key] || OtherPlatformIcon
+            return {
+              key: row.key,
+              label: PLATFORM_NAMES[row.key] || row.key,
+              value: row.clicks,
+              fraction: row.clicks / total,
+              share: `${Math.round((row.clicks / total) * 100)}%`,
+              color: row.key === 'other' ? NEUTRAL : SLOT(1),
+              icon: <Icon size={20} />,
+            }
+          })}
+        />
+      )}
+    </StatsBlock>
+  )
+}
+
+// Every other target. The list is capped and mixes link clicks with shares and
+// previews, so bars are scaled to its longest row rather than to a total.
+function TargetList({ rows }: Readonly<{ rows: TargetStatsRow[] }>) {
+  const max = Math.max(0, ...rows.map((row) => row.clicks))
+  const hasMuted = rows.some((row) => row.outbound === false)
+  return (
+    <StatsBlock title="Links and actions">
       {rows.length === 0 ? (
         <Typography variant="body2" color="text.secondary">No data yet</Typography>
       ) : (
-        <Stack spacing={0.75}>
-          {rows.map((row) => (
-            <Box key={row.key} sx={{ display: 'grid', gridTemplateColumns: '118px 1fr 34px', alignItems: 'center', gap: 1 }}>
-              <Typography variant="caption" noWrap title={formatKey(row.key)}>{formatKey(row.key)}</Typography>
-              <LinearProgress
-                variant="determinate"
-                value={total ? Math.min(Math.max((rowCount(row, valueKey) / total) * 100, 2), 100) : 0}
-                sx={(theme) => ({ height: 8, borderRadius: theme.shape.pill, bgcolor: 'surface.s2', '& .MuiLinearProgress-bar': { bgcolor: 'text.primary', borderRadius: theme.shape.pill } })}
-              />
-              <Typography variant="caption" color="text.secondary" align="right">{rowCount(row, valueKey)}</Typography>
-            </Box>
-          ))}
-        </Stack>
+        <>
+          <BarRows
+            rows={rows.map((row) => ({
+              key: row.key,
+              label: formatTarget(row.key),
+              value: row.clicks,
+              fraction: max ? row.clicks / max : 0,
+              color: row.outbound === false ? MUTED : 'var(--mui-palette-text-primary)',
+            }))}
+          />
+          {hasMuted && (
+            <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1.5 }}>
+              Lighter bars (shares, previews, opening the booking dialog) are not counted as link clicks.
+            </Typography>
+          )}
+        </>
       )}
     </StatsBlock>
   )
@@ -247,7 +334,7 @@ function dailyDataset(byDay: DailyStatsRow[]): DailyChartRow[] {
   return byDay.map((d) => {
     const row: DailyChartRow = { day: d.day, views: d.views }
     for (const [kind, clicks] of Object.entries(d.clicks || {})) {
-      const key = KNOWN_KINDS.has(kind) ? kind : 'other'
+      const key = KIND_GROUP[kind] ?? 'other'
       row[key] = Number(row[key] || 0) + clicks
     }
     return row
@@ -255,8 +342,8 @@ function dailyDataset(byDay: DailyStatsRow[]): DailyChartRow[] {
 }
 
 // Aggregate-only statistics: views + outbound clicks (conversion) by device
-// class, source, country, and click target (platform).
-export default function StatsPanel({ session, pageId }: Readonly<{ session: string | null; pageId: number }>) {
+// class, source, country, streaming platform and click target.
+export default function StatsPanel({ session, pageId, pageType }: Readonly<{ session: string | null; pageId: number; pageType: string }>) {
   const [days, setDays] = useState<number>(30)
   const [stats, setStats] = useState<Stats | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -376,9 +463,13 @@ export default function StatsPanel({ session, pageId }: Readonly<{ session: stri
         </StatsBlock>
       )}
 
+      {/* A release page exists to send fans to a platform, so it always shows
+          the block; a main page only once a song's platform link was clicked. */}
+      {(pageType === 'release' || stats.byPlatform.length > 0) && <PlatformBreakdown rows={stats.byPlatform} />}
+
       {/* The target list is a long, full-width list; the two share pies split the
           row below it. */}
-      <BarList title="Clicks by platform / target" rows={stats.byTarget} total={stats.totalClicks} valueKey="clicks" formatKey={formatTarget} />
+      <TargetList rows={stats.byTarget} />
 
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 1.5 }}>
         <SharePie

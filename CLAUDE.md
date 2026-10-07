@@ -23,6 +23,10 @@ page (`BandPage`), `/<mainSlug>/<tail>` a release smart link (`ReleasePage`).
   backend + pure logic.
 - `npm run test:browser` — real-browser component tests (Vitest browser mode +
   Playwright, co-located `src/**/__tests__/*.test.jsx`).
+- `npx knip` — unused files, exports and types (not a dependency). Known false
+  positives: the `shared/features/**/*.d.ts` files (types for the shared `.js`
+  modules), the `@mui/system` augmentation in `src/mui.d.ts`, and
+  `namespacesRepo.js` (consumed via `import * as defaultRepo`).
 
 ## Map
 
@@ -48,7 +52,7 @@ src/app/routes/           BandPage · ReleasePage · Editor · Privacy
 src/components/           shared UI (below)
 src/features/<name>/       components/ · hooks/ · utils/ · __tests__/ — only what that feature owns
 src/lib/                  api.ts · theme.ts · pageBackgrounds.ts
-src/utils/                pure helpers: format · socials · pathSlug · trimChars
+src/utils/                pure helpers: format · socials · pathSlug · trimChars · sx
 ```
 
 **Visitor-facing rendering** — two page kinds, two routes, no shared branch.
@@ -125,6 +129,27 @@ artwork/asset maps live client-side (`components/icons.tsx`,
 
 - Keep comments to the minimum and concise. Only add them where relevant for
   understanding code; otherwise, let the code speak for itself.
+
+## SonarCloud compliance
+
+CI analysis ("Sonar way comprehensive") gates new code on A ratings, ≤ 3%
+duplication, ≥ 80% coverage and every hotspot reviewed. Write code that passes
+the rules this codebase has tripped before:
+
+- **Linear regexes** (S8786): anchor (`^…` + `m`), and never put two quantifiers
+  that can match the same text side by side (`\s*\n?`, an unanchored leading
+  `[ \t]*`). Trim repeated characters with `utils/trimChars`, not a regex.
+- **No nested ternaries** (S3358): extract a small function, a lookup map, or
+  early returns. For an `sx` prop use `toSxArray(sx)` (`utils/sx.ts`).
+- **Floating promises** (S9383): `await`, `.catch`, or mark with `void`.
+- **Cognitive complexity ≤ 15** (S3776) and **≤ 7 parameters** (S107): split a
+  growing `switch` case into its own function.
+- **Modern built-ins**: `replaceAll`, `Number.NaN`/`Number.parseInt`, `.at(-1)`,
+  a `Set` + `.has()` for membership lists, optional chains, one `push(a, b)`
+  instead of consecutive pushes, no assignment inside an expression.
+- **No deprecated or unused symbols** (S1874, S1128): React 19's `RefObject`
+  (not `MutableRefObject`) and `SubmitEvent` (not `FormEvent`); remove unused
+  imports — `npx knip` finds dead exports.
 
 ## Front end: MUI component-first, no stylesheet
 

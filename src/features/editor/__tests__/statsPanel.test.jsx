@@ -29,6 +29,7 @@ function mockStats(overrides = {}) {
     bySource: [],
     byCountry: [],
     byTarget: [],
+    byPlatform: [],
     conversionBySource: [],
     ...overrides,
     byDay,
@@ -43,12 +44,12 @@ function days(count, viewsFor, clicksFor = () => ({})) {
   }))
 }
 
-async function renderPanel(stats) {
+async function renderPanel(stats, { pageType = 'main' } = {}) {
   state.stats = stats
   const screen = await render(
     <ThemeProvider theme={theme} defaultMode="light">
       <CssBaseline enableColorScheme />
-      <StatsPanel session="s" pageId="p1" />
+      <StatsPanel session="s" pageId="p1" pageType={pageType} />
     </ThemeProvider>,
   )
   return screen
@@ -105,6 +106,14 @@ describe('StatsPanel views-per-day chart', () => {
     expect(fills.size).toBe(3)
   })
 
+  it('counts gig and press clicks as links rather than Other', async () => {
+    const screen = await renderPanel(mockStats({ byDay: days(2, () => 4, () => ({ gig: 1, accolade: 2 })) }))
+    await expect.element(screen.getByText('Views and clicks per day')).toBeVisible()
+
+    const legend = [...document.querySelectorAll('.MuiChartsLegend-series')].map((el) => el.textContent)
+    expect(legend).toEqual(['Views', 'Links'])
+  })
+
   it('folds an unknown click kind into Other rather than dropping it', async () => {
     const screen = await renderPanel(mockStats({ byDay: days(2, () => 4, () => ({ mystery: 2 })) }))
     await expect.element(screen.getByText('Views and clicks per day')).toBeVisible()
@@ -159,23 +168,107 @@ describe('StatsPanel device / country pies', () => {
     expect(screen.container.textContent).not.toContain(region.of('IT'))
   })
 
-  it('names each booking target the visitor reached', async () => {
-    const screen = await renderPanel(mockStats({
-      byTarget: [
-        { key: 'book:open', views: 12 },
-        { key: 'book:email', views: 5 },
-        { key: 'book:phone', views: 2 },
-      ],
-    }))
-    await expect.element(screen.getByText('Booking · Opened')).toBeVisible()
-    await expect.element(screen.getByText('Booking · Email')).toBeVisible()
-    await expect.element(screen.getByText('Booking · Phone')).toBeVisible()
-  })
-
   it('says so when a dimension has no data', async () => {
     const screen = await renderPanel(mockStats({ byDevice: [] }))
     await expect.element(screen.getByText('Devices')).toBeVisible()
     await expect.element(screen.getByText('No data yet').first()).toBeVisible()
     expect(document.querySelectorAll('.MuiPieChart-arc')).toHaveLength(0)
+  })
+})
+
+// Fill width as a fraction of its track.
+function barFill(row) {
+  const track = row.querySelector('[data-bar-track]').getBoundingClientRect().width
+  return row.querySelector('[data-bar-fill]').getBoundingClientRect().width / track
+}
+
+const blockRows = (screen, title) => [...screen.getByText(title, { exact: true }).element().closest('.MuiCard-root').querySelectorAll('[data-bar-row]')]
+
+describe('StatsPanel streaming platforms', () => {
+  const byPlatform = [
+    { key: 'spotify', clicks: 6 },
+    { key: 'other', clicks: 3 },
+    { key: 'apple', clicks: 1 },
+  ]
+
+  it('names every platform clicked with its count and share of platform clicks', async () => {
+    const screen = await renderPanel(mockStats({ byPlatform }))
+    await expect.element(screen.getByText('Streaming platforms')).toBeVisible()
+
+    const rows = blockRows(screen, 'Streaming platforms')
+    expect(rows.map((row) => row.textContent)).toEqual(['Spotify660%', 'Apple Music110%', 'Other330%'])
+    // An icon per platform carries its identity; the bars all share one colour.
+    for (const row of rows) expect(row.querySelector('svg')).not.toBeNull()
+    await expect.element(screen.getByText('10 clicks')).toBeVisible()
+  })
+
+  it("draws each bar as the platform's share of all platform clicks", async () => {
+    const screen = await renderPanel(mockStats({ byPlatform }))
+    await expect.element(screen.getByText('Streaming platforms')).toBeVisible()
+
+    const [spotify, apple, other] = blockRows(screen, 'Streaming platforms')
+    expect(barFill(spotify)).toBeCloseTo(0.6, 1)
+    expect(barFill(apple)).toBeCloseTo(0.1, 1)
+    expect(barFill(other)).toBeCloseTo(0.3, 1)
+  })
+
+  it('waits for the first platform click on a release page', async () => {
+    const screen = await renderPanel(mockStats(), { pageType: 'release' })
+    await expect.element(screen.getByText('Streaming platforms')).toBeVisible()
+    await expect.element(screen.getByText('No platform clicks yet')).toBeVisible()
+  })
+
+  it('stays out of the way on a main page without platform links', async () => {
+    const screen = await renderPanel(mockStats())
+    await expect.element(screen.getByText('Devices')).toBeVisible()
+    expect(screen.container.textContent).not.toContain('Streaming platforms')
+  })
+})
+
+describe('StatsPanel link and action list', () => {
+  it('names each target the visitor reached', async () => {
+    const screen = await renderPanel(mockStats({
+      byTarget: [
+        { key: 'book:email', clicks: 5, outbound: true },
+        { key: 'book:phone', clicks: 2, outbound: true },
+        { key: 'gig:live paradiso', clicks: 2, outbound: true },
+        { key: 'accolade:pitchfork.com', clicks: 1, outbound: true },
+      ],
+    }))
+    await expect.element(screen.getByText('Booking · Email')).toBeVisible()
+    await expect.element(screen.getByText('Booking · Phone')).toBeVisible()
+    await expect.element(screen.getByText('Gig · live paradiso')).toBeVisible()
+    await expect.element(screen.getByText('Press · pitchfork.com')).toBeVisible()
+  })
+
+  it('scales the bars to the most clicked target, even one that is not a link click', async () => {
+    // totalClicks leaves shares out, so measuring against it would overflow.
+    const screen = await renderPanel(mockStats({
+      totalClicks: 4,
+      byTarget: [
+        { key: 'share:whatsapp', clicks: 8, outbound: false },
+        { key: 'link:tickets', clicks: 4, outbound: true },
+      ],
+    }))
+    await expect.element(screen.getByText('Share · WhatsApp')).toBeVisible()
+
+    const [share, tickets] = blockRows(screen, 'Links and actions')
+    expect(barFill(share)).toBeCloseTo(1, 1)
+    expect(barFill(tickets)).toBeCloseTo(0.5, 1)
+  })
+
+  it('sets apart the targets that do not count as link clicks', async () => {
+    const screen = await renderPanel(mockStats({
+      byTarget: [
+        { key: 'share:whatsapp', clicks: 8, outbound: false },
+        { key: 'link:tickets', clicks: 4, outbound: true },
+      ],
+    }))
+    await expect.element(screen.getByText('Share · WhatsApp')).toBeVisible()
+
+    const [share, tickets] = blockRows(screen, 'Links and actions')
+    const fillColor = (row) => getComputedStyle(row.querySelector('[data-bar-fill]')).backgroundColor
+    expect(fillColor(share)).not.toBe(fillColor(tickets))
+    await expect.element(screen.getByText(/not counted as link clicks/)).toBeVisible()
   })
 })

@@ -1,6 +1,6 @@
 // The "new release page" dialog: pick a song or album and a slug tail, create a
 // landing page at /<mainSlug>/<tail>. Slug defaults to its title, slugified.
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -40,7 +40,7 @@ export default function NewReleaseForm({ songs, albums, mainSlug, onCreate, onCa
     setSlugTail(slugify(title))
   }
 
-  const create = async (event: FormEvent) => {
+  const create = async (event: SubmitEvent) => {
     event.preventDefault()
     if (!source) return
     setBusy(true)

@@ -10,11 +10,12 @@ const MAX_EDGE = 16
 
 function gapPositions(list: ListGeometry): Array<{ index: number; top: number; bottom: number }> {
   const { items } = list
-  if (!items.length) return [{ index: 0, top: list.top, bottom: list.bottom }]
+  const last = items.at(-1)
+  if (!last) return [{ index: 0, top: list.top, bottom: list.bottom }]
   return items.map((item, i) => {
     const y = i === 0 ? item.top : (items[i - 1].bottom + item.top) / 2
     return { index: i, top: y, bottom: y }
-  }).concat({ index: items.length, top: items[items.length - 1].bottom, bottom: items[items.length - 1].bottom })
+  }).concat({ index: items.length, top: last.bottom, bottom: last.bottom })
 }
 
 export function findDropTarget(y: number, lists: ListGeometry[]): DropTarget | null {

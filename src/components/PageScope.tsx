@@ -5,12 +5,13 @@ import { themeVariantSx } from '../lib/pageThemes.js'
 import type { ReactNode } from 'react'
 import type { SxProps, Theme } from '@mui/material/styles'
 import type { ResolvedPage } from '../types.js'
+import { toSxArray } from '../utils/sx.js'
 
 // A resolved page turned into its colour scheme, palette variant, background
 // artwork and font variable; `bleed` (public routes only) paints the artwork
 // from `sm` up.
 export default function PageScope({ page, sx, bleed = false, children }: Readonly<{ page: ResolvedPage; sx?: SxProps<Theme>; bleed?: boolean; children: ReactNode }>) {
-  const ownSx = Array.isArray(sx) ? sx : sx ? [sx] : []
+  const ownSx = toSxArray(sx)
   const background = pageBackgroundSx(page.background, page.themeVariant)
   const scopedBackground = background && bleed
     ? (theme: Theme) => ({ [theme.breakpoints.up('sm')]: background(theme) })

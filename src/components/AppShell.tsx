@@ -1,5 +1,6 @@
 import Paper from '@mui/material/Paper'
 import type { PaperProps } from '@mui/material/Paper'
+import { toSxArray } from '../utils/sx.js'
 
 // The application chrome's container: one vertical paper column, centred on the
 // darker `surface.canvas` backdrop the theme paints on `body`. It runs the full
@@ -20,7 +21,7 @@ export default function AppShell({ maxWidth = 760, sx, children, ...props }: Rea
           borderInline: '1px solid',
           borderColor: 'divider',
         },
-        ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+        ...toSxArray(sx),
       ]}
       {...props}
     >

@@ -33,6 +33,22 @@ export async function insertClick(executor, pageId, { target, device, source, co
   )
 }
 
+const TARGET_LIST_LIMIT = 15
+const PLATFORM_PREFIX = 'platform:'
+
+// Per-target click counts (most clicked first) split for the editor: every
+// streaming platform on its own, and the top other targets flagged with
+// whether they count as a link click.
+export function clickBreakdown(rows) {
+  const byPlatform = []
+  const byTarget = []
+  for (const { key, clicks } of rows) {
+    if (key.startsWith(PLATFORM_PREFIX)) byPlatform.push({ key: key.slice(PLATFORM_PREFIX.length), clicks })
+    else if (byTarget.length < TARGET_LIST_LIMIT) byTarget.push({ key, clicks, outbound: isOutboundClick(key) })
+  }
+  return { byPlatform, byTarget }
+}
+
 async function countBy(executor, pageId, since, table, column, limit) {
   const { rows } = await executor.query(
     `SELECT ${column} AS key, COUNT(*)::int AS views
@@ -121,16 +137,23 @@ export async function summaryStats(executor, pageId, since) {
   }
 }
 
-// The summary plus the conversion view: clicks per platform/target and a
+// The summary plus the conversion view: clicks per platform and per target and a
 // per-source table combining views + clicks into a click-through rate — the
 // launch-campaign question ("which channel converts?") in one payload.
 export async function aggregateStats(executor, pageId, since) {
-  const [summary, byDevice, bySource, byCountry, byTarget, clicksBySource] = await Promise.all([
+  const [summary, byDevice, bySource, byCountry, clicks, clicksBySource] = await Promise.all([
     summaryStats(executor, pageId, since),
     countBy(executor, pageId, since, 'page_views', 'device', 10),
     countBy(executor, pageId, since, 'page_views', 'source', 12),
     countBy(executor, pageId, since, 'page_views', 'country', 12),
-    countBy(executor, pageId, since, 'page_clicks', 'target', 15),
+    executor.query(
+      `SELECT target AS key, COUNT(*)::int AS clicks
+         FROM page_clicks
+        WHERE page_id = $1 AND occurred_at >= $2
+        GROUP BY target
+        ORDER BY clicks DESC, key`,
+      [pageId, since],
+    ).then((r) => clickBreakdown(r.rows)),
     executor.query(
       `SELECT source AS key, COUNT(*)::int AS views
          FROM page_clicks
@@ -159,7 +182,7 @@ export async function aggregateStats(executor, pageId, since) {
     byDevice,
     bySource,
     byCountry,
-    byTarget: byTarget.map((r) => ({ key: r.key, clicks: r.views })),
+    ...clicks,
     conversionBySource,
   }
 }

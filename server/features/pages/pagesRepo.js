@@ -98,13 +98,6 @@ export async function publishDraft(executor, pageId) {
   return rows[0] || null
 }
 
-export async function unpublish(executor, pageId) {
-  await executor.query(
-    'UPDATE pages SET published_layout = NULL, published_at = NULL, updated_at = NOW() WHERE id = $1',
-    [pageId],
-  )
-}
-
 export async function saveContentForNamespace(
   executor,
   pageId,

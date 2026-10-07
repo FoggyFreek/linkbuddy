@@ -7,7 +7,7 @@ import type { ItemDropState } from '../hooks/useDragReorder.js'
 // Drop feedback for the Build tab's drag-to-reorder: an insertion line centred
 // in the gap (`gap` in theme spacing units) and a badge on a row it would swap with.
 
-export function DropLine({ edge, gap }: Readonly<{ edge: 'top' | 'bottom'; gap: number }>) {
+function DropLine({ edge, gap }: Readonly<{ edge: 'top' | 'bottom'; gap: number }>) {
   return (
     <Box
       aria-hidden
@@ -37,7 +37,7 @@ export function DropLine({ edge, gap }: Readonly<{ edge: 'top' | 'bottom'; gap: 
   )
 }
 
-export function SwapBadge() {
+function SwapBadge() {
   return (
     <Chip
       data-drop-indicator="swap"

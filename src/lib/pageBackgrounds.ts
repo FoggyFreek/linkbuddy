@@ -790,7 +790,9 @@ const COLOURWAYS: Record<string, BackgroundColourway[]> = {}
 for (const key of PAGE_BACKGROUND_KEYS) {
   const bg = BACKGROUNDS[key as BackgroundKey]
   if (!bg || !('colourway' in bg)) continue
-  ;(COLOURWAYS[baseKeyOf(key)] ??= []).push({
+  const base = baseKeyOf(key)
+  COLOURWAYS[base] ??= []
+  COLOURWAYS[base].push({
     key,
     label: bg.colourway,
     colors: { light: paletteColors(bg.light), dark: paletteColors(bg.dark) },

@@ -81,7 +81,8 @@ it('renders accolade details and a horizontally scrollable, keyboard-accessible 
   expect(linkBox.height).toBe(articleBox.height)
   link.addEventListener('click', (event) => event.preventDefault())
   link.click()
-  expect(onLinkClick).toHaveBeenCalledWith('accolade:0')
+  // The outlet's host, so the statistics name where the click went.
+  expect(onLinkClick).toHaveBeenCalledWith('accolade:example.org')
   expect(screen.container.querySelectorAll('a')).toHaveLength(1)
 })
 

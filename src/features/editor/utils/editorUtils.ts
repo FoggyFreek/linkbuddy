@@ -62,7 +62,8 @@ export function dropWidget(sections: DraftSection[], from: DragLocation, target:
   if (!a || !b || a === b) return sections
   return sections.map((section) => {
     if (section.id !== from.sectionId && section.id !== target.list) return section
-    const widgets = section.widgets.map((w) => (w === a ? b : w === b ? a : w))
+    const swapped = new Map([[a, b], [b, a]])
+    const widgets = section.widgets.map((w) => swapped.get(w) ?? w)
     return { ...section, widgets }
   })
 }

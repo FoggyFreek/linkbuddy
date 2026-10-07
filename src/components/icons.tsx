@@ -69,7 +69,7 @@ export function SpotifyIcon({ size, mono = false }: IconProps) {
   )
 }
 
-export function GlobeIcon({ size }: IconProps) {
+function GlobeIcon({ size }: IconProps) {
   return (
     <Svg size={size} fill="none" stroke="currentColor" strokeWidth="1.8">
       <circle cx="12" cy="12" r="9.2" />
@@ -88,7 +88,7 @@ export function CalendarIcon({ size }: IconProps) {
   )
 }
 
-export function MusicIcon({ size }: IconProps) {
+function MusicIcon({ size }: IconProps) {
   return (
     <Svg size={size}>
       <path d="M9 3v10.55A4 4 0 1 0 11 17V7h8v6.55A4 4 0 1 0 21 17V3H9z" />
@@ -96,7 +96,7 @@ export function MusicIcon({ size }: IconProps) {
   )
 }
 
-export function ShopIcon({ size }: IconProps) {
+function ShopIcon({ size }: IconProps) {
   return (
     <Svg size={size} fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M4 8h16l-1.2 12a1.8 1.8 0 0 1-1.8 1.6H7a1.8 1.8 0 0 1-1.8-1.6L4 8z" />
@@ -108,7 +108,7 @@ export function ShopIcon({ size }: IconProps) {
 // The Apple Music mark is the full-colour app tile (gradient + white glyph),
 // so unlike the other icons it doesn't inherit `currentColor`. The gradient id
 // comes from `useId` so two instances on one page can't collide.
-export function AppleIcon({ size }: IconProps) {
+function AppleIcon({ size }: IconProps) {
   const gradientId = useId()
   return (
     <Svg size={size} viewBox="0 0 361 361">
@@ -139,7 +139,7 @@ export function AppleIcon({ size }: IconProps) {
   )
 }
 
-export function DeezerIcon({ size }: IconProps) {
+function DeezerIcon({ size }: IconProps) {
   return (
     <Svg size={size}>
       {/* Deezer brand purple rather than `currentColor`, per the supplied mark. */}
@@ -151,7 +151,7 @@ export function DeezerIcon({ size }: IconProps) {
   )
 }
 
-export function TidalIcon({ size }: IconProps) {
+function TidalIcon({ size }: IconProps) {
   return (
     <Svg size={size} viewBox="0 0 1001 667">
       {/* Traced mark: authored at 10x in a y-up space, hence the group transform. */}
@@ -162,7 +162,7 @@ export function TidalIcon({ size }: IconProps) {
   )
 }
 
-export function SoundcloudIcon({ size }: IconProps) {
+function SoundcloudIcon({ size }: IconProps) {
   return (
     <Svg size={size} viewBox="0 0 75 33.51">
       <path d="M75,23.6a10.5,10.5,0,0,1-10.63,9.91H38.82a2.14,2.14,0,0,1-2.12-2.13V3.87a2.34,2.34,0,0,1,1.41-2.24S40.46,0,45.41,0A16.74,16.74,0,0,1,54,2.36a17,17,0,0,1,8,11.08,9.8,9.8,0,0,1,2.71-.37A10.23,10.23,0,0,1,75,23.6Z" />
@@ -177,7 +177,7 @@ export function SoundcloudIcon({ size }: IconProps) {
   )
 }
 
-export function BandcampIcon({ size }: IconProps) {
+function BandcampIcon({ size }: IconProps) {
   return (
     <Svg size={size}>
       <path d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24zm3.05 15.5H6.5l2.45-7h8.55z" />

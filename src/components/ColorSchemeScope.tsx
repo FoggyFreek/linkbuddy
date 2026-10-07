@@ -1,9 +1,10 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
 import Box from '@mui/material/Box'
-import { ThemeProvider, type SxProps, type Theme } from '@mui/material/styles'
+import { ThemeProvider, type Theme } from '@mui/material/styles'
 import type { BoxProps } from '@mui/material/Box'
 import type { CSSObject } from '@mui/system'
 import type { PageTheme } from '../types.js'
+import { toSxArray } from '../utils/sx.js'
 
 // Portal container for a colour-scheme scope. MUI surfaces that portal to
 // `document.body` (Menu, Popover, Select, Tooltip, Dialog…) would otherwise
@@ -13,7 +14,7 @@ import type { PageTheme } from '../types.js'
 // MUI default — `document.body`, i.e. the application/editor scheme.
 const PortalContainerContext = createContext<HTMLElement | null>(null)
 
-export function usePortalContainer() {
+function usePortalContainer() {
   return useContext(PortalContainerContext)
 }
 
@@ -54,11 +55,6 @@ export function useScopedPortalProps() {
 // mode test — no selector, nothing for an ancestor to override. It wraps the
 // scope's own Box too, so `sx` passed in here (the page background artwork) gets
 // the same treatment.
-function toSxArray(sx: SxProps<Theme> | undefined) {
-  if (Array.isArray(sx)) return sx
-  return sx ? [sx] : []
-}
-
 interface ColorSchemeScopeProps extends Omit<BoxProps, 'children'> {
   mode: PageTheme
   children: ReactNode

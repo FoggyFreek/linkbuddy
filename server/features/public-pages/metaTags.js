@@ -8,11 +8,11 @@ const MAX_DESCRIPTION = 200
 
 function escapeHtml(value) {
   return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
 }
 
 // Crawlers only follow absolute http(s) image URLs; anything else (relative,
@@ -81,26 +81,33 @@ export function renderMetaTags(meta) {
     `<meta property="og:type" content="${meta.type}" />`,
   ]
   if (meta.url) {
-    tags.push(`<meta property="og:url" content="${escapeHtml(meta.url)}" />`)
-    tags.push(`<link rel="canonical" href="${escapeHtml(meta.url)}" />`)
+    tags.push(
+      `<meta property="og:url" content="${escapeHtml(meta.url)}" />`,
+      `<link rel="canonical" href="${escapeHtml(meta.url)}" />`,
+    )
   }
   if (meta.siteName) tags.push(`<meta property="og:site_name" content="${escapeHtml(meta.siteName)}" />`)
   if (meta.imageUrl) {
-    tags.push(`<meta property="og:image" content="${escapeHtml(meta.imageUrl)}" />`)
-    tags.push(`<meta property="og:image:alt" content="${escapeHtml(meta.imageAlt)}" />`)
-    tags.push(`<meta name="twitter:image" content="${escapeHtml(meta.imageUrl)}" />`)
+    tags.push(
+      `<meta property="og:image" content="${escapeHtml(meta.imageUrl)}" />`,
+      `<meta property="og:image:alt" content="${escapeHtml(meta.imageAlt)}" />`,
+      `<meta name="twitter:image" content="${escapeHtml(meta.imageUrl)}" />`,
+    )
   }
-  tags.push(`<meta name="twitter:card" content="${meta.card}" />`)
-  tags.push(`<meta name="twitter:title" content="${escapeHtml(meta.title)}" />`)
-  tags.push(`<meta name="twitter:description" content="${escapeHtml(meta.description)}" />`)
+  tags.push(
+    `<meta name="twitter:card" content="${meta.card}" />`,
+    `<meta name="twitter:title" content="${escapeHtml(meta.title)}" />`,
+    `<meta name="twitter:description" content="${escapeHtml(meta.description)}" />`,
+  )
   return tags.map((tag) => `    ${tag}`).join('\n')
 }
 
 // index.html ships a placeholder title and description; they are stripped
 // rather than left in place, or a crawler reading the first match would get
 // "Band Links" for every page.
-const PLACEHOLDER_TITLE = /[ \t]*<title>[\s\S]*?<\/title>\s*\n?/i
-const PLACEHOLDER_DESCRIPTION = /[ \t]*<meta\s+name=["']description["'][^>]*>\s*\n?/i
+const PLACEHOLDER_TITLE = /^[ \t]*<title>[^<]*<\/title>[ \t]*\r?\n/im
+const PLACEHOLDER_DESCRIPTION = /^[ \t]*<meta\s+name=["']description["'][^>]*>[ \t]*\r?\n/im
+const HEAD_CLOSE = /(?<![ \t])([ \t]*)<\/head>/
 
 export function injectMetaTags(html, meta) {
   if (!meta || !html.includes('</head>')) return html
@@ -108,5 +115,5 @@ export function injectMetaTags(html, meta) {
     .replace(PLACEHOLDER_TITLE, '')
     .replace(PLACEHOLDER_DESCRIPTION, '')
     // A replacer function, so `$` sequences in band text stay literal.
-    .replace('</head>', () => `${renderMetaTags(meta)}\n  </head>`)
+    .replace(HEAD_CLOSE, (_, indent) => `${renderMetaTags(meta)}\n${indent}</head>`)
 }

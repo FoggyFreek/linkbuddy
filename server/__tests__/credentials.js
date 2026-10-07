@@ -20,13 +20,3 @@ export function signHandoff(payload, { key = privateKey, claims = { iss: 'gigbud
   return `${body}.${crypto.sign(null, Buffer.from(body), key).toString('base64url')}`
 }
 
-export function handoffFor(slug, tenantId, extra = {}) {
-  return signHandoff({
-    t: 'handoff',
-    slug,
-    tenantId,
-    exp: Math.floor(Date.now() / 1000) + 600,
-    n: crypto.randomUUID(),
-    ...extra,
-  })
-}

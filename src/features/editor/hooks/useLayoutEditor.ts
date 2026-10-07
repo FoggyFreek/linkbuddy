@@ -3,14 +3,14 @@
 // it dirty and schedules a save; `flushSave` forces a pending save through
 // before navigation/publish. `loadLayout` swaps in a different page's draft,
 // discarding any save still queued for the previous one.
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react'
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { saveDraft } from '../../../lib/api.js'
 import { saveErrorState } from '../utils/editorUtils.js'
 import type { Layout, SaveState } from '../../../types.js'
 
 const AUTOSAVE_DELAY_MS = 800
 
-export function useLayoutEditor(sessionRef: MutableRefObject<string | null>) {
+export function useLayoutEditor(sessionRef: RefObject<string | null>) {
   const [layout, setLayout] = useState<Layout | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('saved')
   const layoutRef = useRef<Layout | null>(null)

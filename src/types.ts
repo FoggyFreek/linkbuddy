@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react'
-
 export type PageType = 'main' | 'release'
 export type PageTheme = 'light' | 'dark'
 export type DraftTheme = PageTheme | null
@@ -336,7 +334,7 @@ export interface UnfurlResult {
 }
 
 export interface StatsRow { key: string; views: number }
-export interface TargetStatsRow { key: string; clicks: number }
+export interface TargetStatsRow { key: string; clicks: number; outbound?: boolean }
 export interface ConversionStatsRow extends StatsRow { clicks: number; ctr: number | null }
 export interface DailyStatsRow { day: string; views: number; clicks: Record<string, number> }
 export interface Stats {
@@ -352,16 +350,11 @@ export interface Stats {
   bySource: StatsRow[]
   byCountry: StatsRow[]
   byTarget: TargetStatsRow[]
+  byPlatform: TargetStatsRow[]
   conversionBySource: ConversionStatsRow[]
 }
 
 export interface DragLocation { sectionId: string; index: number }
-export type NullableNode = ReactNode | null
-
-export interface WidgetRendererProps<T extends ResolvedWidget = ResolvedWidget> {
-  widget: T
-  onLinkClick: LinkClickHandler
-}
 
 export class ApiError extends Error {
   status?: number

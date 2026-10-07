@@ -163,6 +163,21 @@ describe('injectMetaTags', () => {
     }
   })
 
+  it('strips the placeholders without leaving blank lines, for LF and CRLF documents', () => {
+    for (const eol of ['\n', '\r\n']) {
+      const html = injectMetaTags(TEMPLATE.replaceAll('\n', eol), pageMetaFor(bandPage(), URL_OPTS))
+      expect(html).not.toMatch(/\n[ \t]*\r?\n/)
+      expect(html).toContain(`<meta charset="UTF-8" />${eol}    <title>The Woods</title>`)
+    }
+  })
+
+  it('stays linear on whitespace-heavy documents', () => {
+    const html = `<html><head>${' '.repeat(100_000)}x</head></html>`
+    const started = performance.now()
+    injectMetaTags(html, pageMetaFor(bandPage(), URL_OPTS))
+    expect(performance.now() - started).toBeLessThan(250)
+  })
+
   it('returns the document unchanged when it has no head to inject into', () => {
     expect(injectMetaTags('<p>no head</p>', pageMetaFor(bandPage(), URL_OPTS))).toBe('<p>no head</p>')
   })

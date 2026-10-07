@@ -19,10 +19,10 @@ const MAX_TITLE = 120
 const MAX_LABEL = 160
 const MAX_URL = 2000
 
-export const LINK_ICONS = new Set(LINK_ICON_KEYS)
-export const PAGE_BACKGROUNDS = new Set(PAGE_BACKGROUND_KEYS)
-export const PAGE_FONTS = new Set(PAGE_FONT_KEYS)
-export const PAGE_THEMES = new Set(PAGE_THEME_KEYS)
+const LINK_ICONS = new Set(LINK_ICON_KEYS)
+const PAGE_BACKGROUNDS = new Set(PAGE_BACKGROUND_KEYS)
+const PAGE_FONTS = new Set(PAGE_FONT_KEYS)
+const PAGE_THEMES = new Set(PAGE_THEME_KEYS)
 
 function fail(message) {
   return { error: message }
