@@ -16,6 +16,10 @@ const launchOptions = existsSync(PREINSTALLED_CHROMIUM)
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    // The renderer loads this lazily; discovering it during tests reloads the runner.
+    include: ['react-dom/client'],
+  },
   test: {
     include: ['src/**/__tests__/**/*.test.jsx'],
     setupFiles: ['src/__tests__/browser.setup.js'],

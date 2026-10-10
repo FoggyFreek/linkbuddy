@@ -76,6 +76,12 @@ const visible = (id) => item(id).checkVisibility({ visibilityProperty: true })
 const collapsed = () => expect.poll(() => visible('w1')).toBe(false)
 const frame = () => new Promise((resolve) => requestAnimationFrame(() => resolve()))
 
+function delayFrame(ms) {
+  const until = performance.now() + ms
+  // Keep the main thread busy so animation completion falls between frame callbacks.
+  while (performance.now() < until) { /* Intentionally block. */ }
+}
+
 const pointer = (clientY) => ({
   bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, clientX: 20, clientY,
 })
@@ -221,19 +227,22 @@ describe('section reorder', () => {
     expect(screen.getByText('3 widgets').elements()).toHaveLength(0)
   })
 
-  it('keeps the grabbed section under the pointer while the others collapse and expand', async () => {
-    await renderBuilder({ padding: '1200px 0' })
+  it.each([0, 250])('keeps the grabbed section under the pointer while the others collapse and expand (frame delayed %i ms)', async (frameDelay) => {
+    const { onReorder } = await renderBuilder({ padding: '1200px 0' })
     window.scrollTo(0, window.scrollY + box('s3').top - 400)
     const before = box('s3').top
     await grab('s3')
+    delayFrame(frameDelay)
     await collapsed()
     await frame()
     expect(Math.abs(box('s3').top - before)).toBeLessThan(2)
 
     await drop(before + 20)
+    delayFrame(frameDelay)
     await expect.poll(() => visible('w1')).toBe(true)
     await new Promise((resolve) => setTimeout(resolve, 300))
     expect(Math.abs(box('s3').top - before)).toBeLessThan(2)
+    expect(onReorder).not.toHaveBeenCalled()
   })
 
   it('swaps two sections dropped on the middle of one another', async () => {

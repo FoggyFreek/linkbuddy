@@ -107,7 +107,7 @@ export default function useDragReorder({
     const p = pin.current
     if (!p || p.started) return
     p.started = true
-    const hold = () => {
+    const hold = (final = false) => {
       if (pin.current !== p) return
       const el = handles.current.get(p.id)?.closest<HTMLElement>(`[data-reorder-item="${group}"]`)
       if (el) {
@@ -116,8 +116,12 @@ export default function useDragReorder({
         if (Math.abs(delta) > 1) window.scrollBy(0, delta)
       }
       track()
-      if (performance.now() < p.until) requestAnimationFrame(hold)
-      else pin.current = null
+      if (final) pin.current = null
+      else {
+        // Sample once more after the deadline: transition completion can update layout after this frame.
+        const finalFrame = performance.now() >= p.until
+        requestAnimationFrame(() => hold(finalFrame))
+      }
     }
     hold()
   })
