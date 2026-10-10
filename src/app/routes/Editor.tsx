@@ -21,6 +21,7 @@ import PageSwitcher from '../../features/editor/components/PageSwitcher.js'
 import EditorTabs from '../../features/editor/components/EditorTabs.js'
 import LayoutBuilder from '../../features/editor/components/LayoutBuilder.js'
 import AppearancePanel from '../../features/editor/components/AppearancePanel.js'
+import TrackingPanel from '../../features/editor/components/TrackingPanel.js'
 import PagePreview from '../../features/editor/components/PagePreview.js'
 import { useEditorSession } from '../../features/editor/hooks/useEditorSession.js'
 import { useLayoutEditor } from '../../features/editor/hooks/useLayoutEditor.js'
@@ -246,7 +247,7 @@ export default function Editor() {
         onNewRelease={() => setCreatingRelease(true)}
       />
 
-      <EditorTabs value={tab} onChange={(_event: SyntheticEvent, value: EditorTab) => (value === 'preview' ? openPreview() : setTab(value))} />
+      <EditorTabs value={tab} pageType={page.pageType} onChange={(_event: SyntheticEvent, value: EditorTab) => (value === 'preview' ? openPreview() : setTab(value))} />
 
       {publishedAt && tab === 'build' && (
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -291,6 +292,10 @@ export default function Editor() {
             font={layout.font || DEFAULT_PAGE_FONT}
             onSetFont={setFont}
           />
+        )}
+
+        {tab === 'tracking' && page.pageType === 'release' && (
+          <TrackingPanel key={page.id} value={layout.metaTracking || null} onChange={(metaTracking) => applyLayout({ ...layout, metaTracking })} />
         )}
 
         {tab === 'preview' && preview && <PagePreview preview={preview} />}

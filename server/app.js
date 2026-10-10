@@ -711,7 +711,7 @@ export function createApp(pool, overrides = {}) {
 
   app.put('/api/editor/pages/:pageId/draft', requireEditor, loadPage, async (req, res, next) => {
     try {
-      const result = validateLayout(req.body?.layout)
+      const result = validateLayout(req.body?.layout, req.page.page_type)
       if (result.error) return res.status(400).json({ error: result.error })
       await saveDraftLayout(pool, req.page.id, result.layout)
       res.json({ draftLayout: result.layout })

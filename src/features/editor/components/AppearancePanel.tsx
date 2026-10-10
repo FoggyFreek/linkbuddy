@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box'
-import Card from '@mui/material/Card'
 import Stack from '@mui/material/Stack'
 import Switch from '@mui/material/Switch'
 import Typography from '@mui/material/Typography'
@@ -9,22 +8,8 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import BackgroundPicker from './BackgroundPicker.js'
 import FontPicker from './FontPicker.js'
 import ThemeVariantPicker from './ThemeVariantPicker.js'
-import type { ReactNode } from 'react'
+import PanelSection from './PanelSection.js'
 import type { DraftTheme, PageTheme } from '../../../types.js'
-
-// One titled block of the Appearance tab. Every appearance setting gets the same
-// panel card, heading and helper line, so adding the next one (colour scheme,
-// card style, fonts…) is a matter of dropping another <AppearanceSection> in
-// below rather than inventing new chrome.
-function AppearanceSection({ title, hint, children }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
-  return (
-    <Card variant="panel">
-      <Typography variant="h6" component="h2">{title}</Typography>
-      {hint && <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>{hint}</Typography>}
-      {children}
-    </Card>
-  )
-}
 
 // The Appearance tab body: how the page looks, as opposed to what's on it (the
 // Build tab). These settings are stored on the layout like everything else the
@@ -60,7 +45,7 @@ export default function AppearancePanel({
 }>) {
   return (
     <Stack spacing={2}>
-      <AppearanceSection
+      <PanelSection
         title="Banner image"
         hint={
           bannerUrl
@@ -81,8 +66,8 @@ export default function AppearancePanel({
             sx={{ mt: 1.5, width: '100%', maxWidth: 420, height: 140, objectFit: 'cover', borderRadius: 1, display: 'block' }}
           />
         )}
-      </AppearanceSection>
-      <AppearanceSection
+      </PanelSection>
+      <PanelSection
         title="Theme"
         hint={`Determines light or dark theme colors for this page's card and content. Auto picks ${autoTheme} for this page.`}
       >
@@ -100,23 +85,21 @@ export default function AppearancePanel({
           Colours for the {schemeMode} theme.
         </Typography>
         <ThemeVariantPicker value={themeVariant} mode={schemeMode} onChange={onSetThemeVariant} />
-      </AppearanceSection>
+      </PanelSection>
 
-      <AppearanceSection
+      <PanelSection
         title="Background"
         hint="Artwork behind your page. Your content card stays on top of it, so text stays readable."
       >
         <BackgroundPicker value={background} mode={schemeMode} themeVariant={themeVariant} onChange={onSetBackground} />
-      </AppearanceSection>
+      </PanelSection>
 
-      <AppearanceSection
+      <PanelSection
         title="Font"
         hint="The typeface for everything on this page. Each of your pages can use a different one."
       >
         <FontPicker value={font} mode={schemeMode} onChange={onSetFont} />
-      </AppearanceSection>
-
-      
+      </PanelSection>
     </Stack>
   )
 }

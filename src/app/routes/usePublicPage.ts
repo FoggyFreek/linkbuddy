@@ -6,7 +6,7 @@ import { ApiError } from '../../types.js'
 
 // The network half of a public page, shared by both page kinds: fetch the
 // resolved payload, report the one view beacon, and hand back a click reporter.
-// Sets no cookies and stores nothing on the device; the beacons carry only the
+// These LinkBuddy beacons set no cookies and store nothing on the device; they carry only the
 // referrer/utm_source already known to the browser (see PRIVACY.md).
 //
 // It deliberately doesn't touch document.title — the title is written from

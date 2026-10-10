@@ -7,6 +7,7 @@ import { detectEmbed } from './embeds.js'
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
 import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
 import { pageThemeForScheme } from '../../../shared/features/appearance/pageThemes.js'
+import { normalizeMetaTracking } from '../../../shared/features/tracking/metaTracking.js'
 
 // Snapshot URLs end up in hrefs and image sources, so only http(s) survives.
 function httpUrl(value) {
@@ -211,9 +212,11 @@ export function resolvePage(content, layout, release = null) {
     if (release.albumId) resolvedRelease.tracks = resolveTracks(source?.tracks)
   }
   const theme = normalizeTheme(layout?.theme, release ? 'dark' : 'light')
+  const metaTracking = release ? normalizeMetaTracking(layout?.metaTracking) : null
   return {
     band: resolveBand(content.band),
     release: resolvedRelease,
+    ...(metaTracking ? { metaTracking: { ...metaTracking, releaseId: release.albumId ? `album:${release.albumId}` : `song:${release.songId}` } } : {}),
     background: normalizeBackground(layout?.background),
     font: normalizeFont(layout?.font),
     showBanner: layout?.showBanner === true,

@@ -1,4 +1,4 @@
-// Response headers for every route. The CSP allows only this origin's scripts
+// Response headers for every route. The CSP allows this origin and the opt-in Meta Pixel
 // plus the HTML shell's own inline script (by hash), and frames only the embed
 // players the resolver emits. Emotion injects <style> tags, hence inline styles.
 import crypto from 'node:crypto'
@@ -21,11 +21,11 @@ export function securityHeaders({ shellHtml = '' } = {}) {
       useDefaults: false,
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", ...inlineScriptHashes(shellHtml)],
+        scriptSrc: ["'self'", 'https://connect.facebook.net', ...inlineScriptHashes(shellHtml)],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
         fontSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", 'https://www.facebook.com'],
         frameSrc: EMBED_ORIGINS,
         objectSrc: ["'none'"],
         baseUri: ["'self'"],

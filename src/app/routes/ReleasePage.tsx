@@ -8,12 +8,21 @@ import PageStatus from '../../components/PageStatus.js'
 import PrivacyNote from '../../components/PrivacyNote.js'
 import PoweredByGigBuddy from '../../components/PoweredByGigBuddy.js'
 import ShareButton from '../../components/ShareButton.js'
+import Button from '@mui/material/Button'
+import MarketingConsent from '../../components/MarketingConsent.js'
+import useMetaTracking from './useMetaTracking.js'
 
 // A release's smart link (/<mainSlug>/<tail>): artwork-led and full-bleed, its
 // chrome floating over the viewport and its attribution riding in the footer.
 export default function ReleasePage({ slug }: Readonly<{ slug: string }>) {
   const { page, status, onLinkClick } = usePublicPage(slug)
   const release = page?.release
+  const tracking = release ? page?.metaTracking : undefined
+  const consent = useMetaTracking(slug, tracking)
+  const reportClick = (target: string, platformId?: string) => {
+    onLinkClick(target)
+    consent.trackClick(platformId ? `platform:${platformId}` : target)
+  }
 
   useEffect(() => {
     if (release) document.title = `${release.title} — ${release.artist || 'Listen'}`
@@ -36,7 +45,8 @@ export default function ReleasePage({ slug }: Readonly<{ slug: string }>) {
       }}
     >
       <PoweredByGigBuddy href={page.gigbuddyUrl} variant="inline" />
-      <PrivacyNote />
+      <PrivacyNote smartLinkSlug={tracking ? slug : undefined} />
+      {tracking && <Button size="small" onClick={consent.reopen} sx={{ color: 'text.secondary' }}>Cookie settings</Button>}
     </Box>
   )
 
@@ -50,7 +60,8 @@ export default function ReleasePage({ slug }: Readonly<{ slug: string }>) {
         variant="floating"
         onShare={(channel) => onLinkClick(`share:${channel}`)}
       />
-      <SmartLinkPage page={releasePage} onLinkClick={onLinkClick} footer={footer} />
+      <SmartLinkPage page={releasePage} onLinkClick={reportClick} footer={footer} />
+      {tracking && <MarketingConsent open={consent.open} slug={slug} bandName={page.band?.name} onChoose={consent.choose} onClose={consent.dismiss} />}
     </PageScope>
   )
 }

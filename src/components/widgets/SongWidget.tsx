@@ -23,7 +23,7 @@ export default function SongWidget({ widget, onLinkClick }: Readonly<{ widget: R
         href={primary.url}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => onLinkClick(`song:${primary.label || 'listen'}`)}
+        onClick={() => onLinkClick(`song:${primary.label || 'listen'}`, primary.platform?.id)}
         sx={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '8px' }}
       >
         <Thumb src={widget.coverUrl} />
@@ -67,7 +67,7 @@ export default function SongWidget({ widget, onLinkClick }: Readonly<{ widget: R
                 clickable
                 size="small"
                 label={link.label || 'Listen'}
-                onClick={() => onLinkClick(`song:${link.label || 'listen'}`)}
+                onClick={() => onLinkClick(`song:${link.label || 'listen'}`, platform?.id)}
                 sx={{ bgcolor: 'surface.s2', '&:hover': { bgcolor: 'surface.s3' } }}
               />
             )

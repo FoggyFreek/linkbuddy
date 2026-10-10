@@ -106,7 +106,9 @@ artwork/asset maps live client-side (`components/icons.tsx`,
   visitors get a click-to-play facade, and the iframe mounts only after
   interaction, inside a closable overlay that unmounts it on close
   (`src/components/embeds.tsx`, `server/features/public-pages/embeds.js`). The public page sets no cookies and
-  stores nothing on the device. See `PRIVACY.md`.
+  stores nothing on the device unless a release smart link has a configured Meta Pixel:
+  that page remembers its consent choice and loads Meta only after acceptance.
+  Main pages, unconfigured smart links, and editor previews never load Meta. See `PRIVACY.md`.
 - **Client input is untrusted.** `server/features/editor/layout.js` whitelists field-by-field:
   unknown widget types rejected, unknown fields dropped, strings capped, URLs
   http(s) only. Iframe sources are recomputed server-side from stored URLs —

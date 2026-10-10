@@ -67,6 +67,30 @@ into its own repository — nothing else needs to change.
   on the gold plan. See [PRIVACY.md](./PRIVACY.md) for the hard privacy rules
   (no cookies, no IPs, no fingerprints, retention).
 
+### Meta ads on smart links
+
+Open a release smart link in the editor, select **Tracking**, enter the band's
+Meta Pixel ID, and choose which streaming platforms count as conversions.
+Save the settings and **Publish**. No database migration or API token is needed.
+
+Only configured release smart links show the consent overlay, Cookie settings,
+and advertising privacy wording. Visitors can accept or reject with equal
+prominence; Meta is loaded only after acceptance. Choices are remembered for
+180 days separately for each smart link and Pixel. Main pages, unconfigured
+smart links, and editor previews never load Meta.
+
+The Pixel sends `PageView` and `SmartLinkClick` (selected platform clicks), with
+`release_id` (for example `song:12` or `album:5`) and `platform` parameters.
+In Meta Events Manager, accept consent on the published page and test a click.
+Create a custom conversion for `SmartLinkClick`, optionally filter by release
+or platform, and select it in an eligible website-conversion ad set. The event
+measures an outgoing click, not a confirmed stream. This integration uses the
+browser Pixel; Conversions API is not enabled.
+
+Selecting **Disable Meta tracking** and publishing removes tracking and its
+consent UI from that smart link. Anonymous LinkBuddy statistics remain separate.
+See [PRIVACY.md](./PRIVACY.md) for the optional advertising exception.
+
 ### Widget types
 
 | Type | Content | Notes |

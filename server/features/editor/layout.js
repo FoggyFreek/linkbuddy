@@ -10,6 +10,7 @@ import { LINK_ICON_KEYS } from '../../../shared/features/links/linkIcons.js'
 import { PAGE_BACKGROUND_KEYS, DEFAULT_PAGE_BACKGROUND } from '../../../shared/features/appearance/pageBackgrounds.js'
 import { PAGE_FONT_KEYS, DEFAULT_PAGE_FONT } from '../../../shared/features/appearance/pageFonts.js'
 import { PAGE_THEME_KEYS } from '../../../shared/features/appearance/pageThemes.js'
+import { metaTrackingError, normalizeMetaTracking } from '../../../shared/features/tracking/metaTracking.js'
 
 const MAX_SECTIONS = 20
 const MAX_WIDGETS_PER_SECTION = 30
@@ -186,11 +187,16 @@ function parseWidget(raw) {
 }
 
 // Returns { layout } (normalized, safe to store) or { error }.
-export function validateLayout(raw) {
+export function validateLayout(raw, pageType = 'main') {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.sections)) {
     return fail('Layout must have a sections array')
   }
   if (raw.sections.length > MAX_SECTIONS) return fail('Too many sections')
+  if (raw.metaTracking != null) {
+    if (pageType !== 'release') return fail('Meta tracking is available only for smart links')
+    const error = metaTrackingError(raw.metaTracking)
+    if (error) return fail(error)
+  }
   const sections = []
   for (const rawSection of raw.sections) {
     if (!rawSection || typeof rawSection !== 'object' || !Array.isArray(rawSection.widgets)) {
@@ -212,6 +218,7 @@ export function validateLayout(raw) {
       showBanner: raw.showBanner === true,
       theme: parseTheme(raw.theme),
       themeVariant: parseThemeVariant(raw.themeVariant),
+      ...(raw.metaTracking ? { metaTracking: normalizeMetaTracking(raw.metaTracking) } : {}),
       sections,
     },
   }

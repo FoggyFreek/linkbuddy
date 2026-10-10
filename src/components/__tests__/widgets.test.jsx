@@ -64,7 +64,7 @@ describe('visitor widgets', () => {
     await screen.getByRole('link', { name: /New Single/ }).click()
     await screen.getByRole('link', { name: 'YouTube' }).click()
     await screen.getByRole('link', { name: 'Band site' }).click()
-    expect(onLinkClick.mock.calls).toEqual([['song:Listen'], ['platform:youtube'], ['song:Band site']])
+    expect(onLinkClick.mock.calls).toEqual([['song:Listen', 'spotify'], ['platform:youtube'], ['song:Band site', 'other']])
   })
 
   it('renders merchandise with optional artwork, badge, and shop behavior', async () => {

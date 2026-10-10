@@ -2,8 +2,8 @@ export type PageType = 'main' | 'release'
 export type PageTheme = 'light' | 'dark'
 export type DraftTheme = PageTheme | null
 export type SaveState = 'saved' | 'dirty' | 'saving' | 'error' | 'expired'
-export type EditorTab = 'build' | 'appearance' | 'preview' | 'stats'
-export type LinkClickHandler = (target: string) => void
+export type EditorTab = 'build' | 'appearance' | 'tracking' | 'preview' | 'stats'
+export type LinkClickHandler = (target: string, platformId?: string) => void
 
 export interface Link {
   label: string
@@ -219,7 +219,17 @@ export interface DraftSection {
   widgets: DraftWidget[]
 }
 
+export interface MetaTracking {
+  pixelId: string
+  platforms: string[]
+}
+
+export interface PublicMetaTracking extends MetaTracking {
+  releaseId: string
+}
+
 export interface Layout {
+  metaTracking?: MetaTracking | null
   background: string
   font: string
   showBanner: boolean
@@ -294,6 +304,7 @@ export interface Release {
 }
 
 export interface ResolvedPage {
+  metaTracking?: PublicMetaTracking
   band: Band | null
   release: Release | null
   background: string

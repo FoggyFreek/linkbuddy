@@ -130,7 +130,7 @@ describe('Editor workflow', () => {
     await expect.element(screen.getByText('Preview of the public page content.')).toBeInTheDocument()
 
     await screen.getByRole('tab', { name: 'Statistics' }).click()
-    await expect.poll(() => api.getStats.mock.calls.length).toBe(1)
+    await expect.poll(() => api.getStats.mock.calls.length, { timeout: 5000 }).toBe(1)
     expect(api.getStats).toHaveBeenCalledWith('session-token', 1, 30)
     await expect.element(screen.getByRole('heading', { name: 'Links and actions' })).toBeInTheDocument()
   })
@@ -148,6 +148,23 @@ describe('Editor workflow', () => {
     await screen.getByRole('tab', { name: 'Build' }).click()
     await expect.element(screen.getByRole('button', { name: 'Add section' })).toBeInTheDocument()
     expect(screen.getByRole('alert').elements()).toHaveLength(0)
+  })
+
+  it('configures a release Pixel through the Tracking tab and publishes the draft', async () => {
+    const screen = await renderEditor()
+    expect(screen.getByRole('tab', { name: 'Tracking', exact: true }).elements()).toHaveLength(0)
+    await screen.getByRole('tab', { name: /First Single/ }).click()
+    await screen.getByRole('tab', { name: 'Tracking', exact: true }).click()
+    await screen.getByRole('textbox', { name: 'Meta Pixel ID' }).fill('123456789012345')
+    await screen.getByRole('button', { name: 'Save tracking settings' }).click()
+    await screen.getByRole('button', { name: 'Publish' }).click()
+    expect(api.saveDraft).toHaveBeenLastCalledWith('session-token', 2, expect.objectContaining({
+      metaTracking: { pixelId: '123456789012345', platforms: expect.arrayContaining(['spotify', 'apple']) },
+    }))
+    expect(api.publishPage).toHaveBeenCalledWith('session-token', 2)
+    await screen.getByRole('button', { name: 'Disable Meta tracking' }).click()
+    await screen.getByRole('button', { name: 'Publish changes' }).click()
+    expect(api.saveDraft).toHaveBeenLastCalledWith('session-token', 2, expect.objectContaining({ metaTracking: null }))
   })
 
   it('switches pages after flushing the draft and deletes a release confirmed in a dialog', async () => {

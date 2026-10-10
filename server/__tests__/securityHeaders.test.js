@@ -79,10 +79,10 @@ describe('security headers', () => {
     const csp = directives(res)
 
     expect(csp['default-src']).toEqual(["'self'"])
-    expect(csp['script-src']).toEqual(["'self'"])
+    expect(csp['script-src']).toEqual(["'self'", 'https://connect.facebook.net'])
     expect(csp['object-src']).toEqual(["'none'"])
     expect(csp['frame-ancestors']).toEqual(["'none'"])
-    expect(csp['connect-src']).toEqual(["'self'"])
+    expect(csp['connect-src']).toEqual(["'self'", 'https://www.facebook.com'])
     expect(csp['base-uri']).toEqual(["'self'"])
     expect(res.headers['x-content-type-options']).toBe('nosniff')
     expect(res.headers['x-frame-options']).toBe('DENY')
@@ -104,6 +104,6 @@ describe('security headers', () => {
     const hash = crypto.createHash('sha256').update(INLINE).digest('base64')
 
     expect(res.status).toBe(200)
-    expect(directives(res)['script-src']).toEqual(["'self'", `'sha256-${hash}'`])
+    expect(directives(res)['script-src']).toEqual(["'self'", 'https://connect.facebook.net', `'sha256-${hash}'`])
   })
 })
