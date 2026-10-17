@@ -10,7 +10,7 @@ export function generateCredentials() {
   const exportToken = randomToken()
   const integrationToken = randomToken()
   return {
-    linkbuddy: {
+    linkjack: {
       LINKBUDDY_SECRET: randomToken(),
       GIGBUDDY_HANDOFF_PUBLIC_KEY: publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),
       GIGBUDDY_EXPORT_TOKEN: exportToken,
@@ -26,8 +26,8 @@ export function generateCredentials() {
 }
 
 if (process.argv[1] === url.fileURLToPath(import.meta.url)) {
-  const { linkbuddy, gigbuddy } = generateCredentials()
+  const { linkjack, gigbuddy } = generateCredentials()
   const lines = (values) => Object.entries(values).map(([key, value]) => `${key}=${value}`).join('\n')
-  console.log(`# LinkBuddy (GitHub secrets of this repo)\n${lines(linkbuddy)}\n`)
+  console.log(`# LinkJack (GitHub secrets of this repo)\n${lines(linkjack)}\n`)
   console.log(`# GigBuddy (GitHub secrets of the gigbuddy repo)\n${lines(gigbuddy)}`)
 }

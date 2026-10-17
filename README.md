@@ -88,7 +88,7 @@ measures an outgoing click, not a confirmed stream. This integration uses the
 browser Pixel; Conversions API is not enabled.
 
 Selecting **Disable Meta tracking** and publishing removes tracking and its
-consent UI from that smart link. Anonymous LinkBuddy statistics remain separate.
+consent UI from that smart link. Anonymous LinkJack statistics remain separate.
 See [PRIVACY.md](./PRIVACY.md) for the optional advertising exception.
 
 ### Widget types
@@ -247,7 +247,7 @@ tenant → 429 when saturated) so it can't fan out into memory/socket pressure.
 - Handoff token (GigBuddy → here, in the `/edit` URL fragment): payload
   `{ t: 'handoff', iss: 'gigbuddy', aud: 'linkbuddy', slug, slugRevision, tenantId, n, exp }`,
   Ed25519-signed, 10 min TTL, single-use (the nonce `n` is consumed on exchange). Legacy tokens without `slugRevision` remain valid only while their slug
-  matches LinkBuddy's recorded tenant namespace; they can never rename it.
+  matches LinkJack's recorded tenant namespace; they can never rename it.
 - `PUT /api/integrations/gigbuddy/tenants/:tenantId/slug` atomically moves the
   tenant's main page and every `/<main>/<release>` path without replacing page
   rows. Send `{ oldSlug, newSlug, revision }` with the integration bearer.

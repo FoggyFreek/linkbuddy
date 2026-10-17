@@ -48,7 +48,7 @@ const UNPUBLISHED = { ...MAIN_PAGE, id: 3, slug: 'draftband', published_layout: 
 let distDir
 
 beforeAll(() => {
-  distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'linkbuddy-dist-'))
+  distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'linkjack-dist-'))
   fs.writeFileSync(path.join(distDir, 'index.html'), TEMPLATE)
   fs.mkdirSync(path.join(distDir, 'assets'))
   fs.writeFileSync(path.join(distDir, 'assets', 'index-Ab12Cd34.js'), 'export {}')

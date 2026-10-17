@@ -54,7 +54,7 @@ afterEach(async () => {
   await cleanup()
   localStorage.clear()
   delete window.fbq
-  document.querySelector('[data-linkbuddy-meta-pixel]')?.remove()
+  document.querySelector('[data-linkjack-meta-pixel]')?.remove()
   vi.restoreAllMocks()
   history.replaceState(null, '', '/')
 })
@@ -68,7 +68,7 @@ describe('smart-link advertising consent', () => {
     expect(dialog.element().textContent).not.toMatch(/Facebook|Instagram/)
     await expect.element(screen.getByText('Optional advertising cookies, with your consent.')).toBeInTheDocument()
     expect(window.fbq).not.toHaveBeenCalled()
-    expect(document.querySelector('[data-linkbuddy-meta-pixel]')).toBeNull()
+    expect(document.querySelector('[data-linkjack-meta-pixel]')).toBeNull()
     const accept = screen.getByRole('button', { name: 'Accept marketing cookies' }).element().getBoundingClientRect()
     const reject = screen.getByRole('button', { name: 'Reject marketing cookies' }).element().getBoundingClientRect()
     expect([accept.width, accept.height]).toEqual([reject.width, reject.height])

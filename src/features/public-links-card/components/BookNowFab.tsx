@@ -12,24 +12,24 @@ const WIDEN_AT = 1150
 const RING_AT = 1750
 
 const KEYFRAMES = {
-  '@keyframes lbFabEnter': {
+  '@keyframes ljFabEnter': {
     '0%': { opacity: 0, transform: 'translateY(16px) scale(0.3)' },
     '65%': { opacity: 1, transform: 'translateY(0) scale(1.12)' },
     '100%': { opacity: 1, transform: 'translateY(0) scale(1)' },
   },
   // The label is clipped to nothing, so the button is a circle until it widens.
-  '@keyframes lbFabLabel': {
+  '@keyframes ljFabLabel': {
     '0%': { maxWidth: 0, marginLeft: 0, opacity: 0 },
     '40%': { opacity: 0 },
     '100%': { maxWidth: '10em', marginLeft: '8px', opacity: 1 },
   },
   // 14px of padding either side of a 20px icon is exactly the 48px height, so
   // the button starts as a true circle and widens with its label.
-  '@keyframes lbFabWiden': {
+  '@keyframes ljFabWiden': {
     '0%': { paddingLeft: '14px', paddingRight: '14px' },
     '100%': { paddingLeft: '20px', paddingRight: '20px' },
   },
-  '@keyframes lbFabRing': {
+  '@keyframes ljFabRing': {
     '0%': { inset: 0, opacity: 0.5 },
     '100%': { inset: '-18px', opacity: 0 },
   },
@@ -67,7 +67,7 @@ export default function BookNowFab({ booking, bandName, onLinkClick = () => {} }
               borderColor: 'primary.main',
               opacity: 0,
               pointerEvents: 'none',
-              animation: `lbFabRing 1.5s ease-out ${RING_AT}ms 3 both`,
+              animation: `ljFabRing 1.5s ease-out ${RING_AT}ms 3 both`,
               ...STILL,
             }}
           />
@@ -84,8 +84,8 @@ export default function BookNowFab({ booking, bandName, onLinkClick = () => {} }
             position: 'relative',
             px: 2.5,
             animation: [
-              `lbFabEnter 560ms cubic-bezier(0.2, 0.9, 0.3, 1.2) ${ENTER_AT}ms both`,
-              `lbFabWiden 420ms cubic-bezier(0.2, 0.8, 0.2, 1) ${WIDEN_AT}ms both`,
+              `ljFabEnter 560ms cubic-bezier(0.2, 0.9, 0.3, 1.2) ${ENTER_AT}ms both`,
+              `ljFabWiden 420ms cubic-bezier(0.2, 0.8, 0.2, 1) ${WIDEN_AT}ms both`,
             ].join(', '),
             ...STILL,
           }}
@@ -99,7 +99,7 @@ export default function BookNowFab({ booking, bandName, onLinkClick = () => {} }
               whiteSpace: 'nowrap',
               maxWidth: '10em',
               ml: 1,
-              animation: `lbFabLabel 420ms cubic-bezier(0.2, 0.8, 0.2, 1) ${WIDEN_AT}ms both`,
+              animation: `ljFabLabel 420ms cubic-bezier(0.2, 0.8, 0.2, 1) ${WIDEN_AT}ms both`,
               ...STILL,
             }}
           >

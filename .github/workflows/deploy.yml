@@ -42,7 +42,7 @@ jobs:
             cat > .env <<'EOF'
             NODE_ENV=production
             # Port inside the container; compose publishes it on 127.0.0.1 only
-            # and nginx terminates TLS for link.jorisbos.nl in front of it.
+            # and nginx terminates TLS for link.gigjack.com in front of it.
             LINKPAGE_PORT=3010
             # Consumed by the postgres container, and by compose to build the
             # PG* vars it injects into `app` and `migrate`. LINKPAGE_DATABASE_URL

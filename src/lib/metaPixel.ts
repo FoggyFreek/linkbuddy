@@ -13,7 +13,7 @@ declare global {
   interface Window { fbq?: PixelFunction; _fbq?: PixelFunction }
 }
 
-const SCRIPT_SELECTOR = 'script[data-linkbuddy-meta-pixel]'
+const SCRIPT_SELECTOR = 'script[data-linkjack-meta-pixel]'
 const loads = new WeakMap<HTMLScriptElement, Promise<PixelFunction>>()
 
 function loadPixel(): Promise<PixelFunction> {
@@ -37,7 +37,7 @@ function loadPixel(): Promise<PixelFunction> {
   const script = document.createElement('script')
   script.async = true
   script.src = 'https://connect.facebook.net/en_US/fbevents.js'
-  script.dataset.linkbuddyMetaPixel = ''
+  script.dataset.linkjackMetaPixel = ''
   const ready = new Promise<PixelFunction>((resolve, reject) => {
     script.onload = () => resolve(pixel)
     script.onerror = () => {

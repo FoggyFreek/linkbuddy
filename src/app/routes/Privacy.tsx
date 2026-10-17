@@ -37,7 +37,7 @@ export default function Privacy() {
       <Typography variant="h2" component="h1" gutterBottom>Privacy notice</Typography>
       <Typography variant="body1" sx={{ mb: 2 }}>
         {advertising ? (
-          <>This smart link uses cookieless LinkBuddy statistics and optional Meta advertising. You can
+          <>This smart link uses cookieless LinkJack statistics and optional Meta advertising. You can
             visit and follow links without accepting marketing cookies. Your privacy choice is remembered
             on this device for this smart link and Pixel for up to 180 days.</>
         ) : (
@@ -57,11 +57,11 @@ export default function Privacy() {
         the button was used.
       </Typography>
 
-      <Typography variant="h3" component="h2" sx={{ mt: 3.5, mb: 1 }}>{advertising ? 'What LinkBuddy statistics do not collect' : 'What we do not collect'}</Typography>
+      <Typography variant="h3" component="h2" sx={{ mt: 3.5, mb: 1 }}>{advertising ? 'What LinkJack statistics do not collect' : 'What we do not collect'}</Typography>
       <Typography variant="body1" component="ul">
         <li>No IP addresses are stored.</li>
         <li>No full user-agent strings, no fingerprinting, no cross-site tracking.</li>
-        <li>{advertising ? 'No advertising identifiers are stored in LinkBuddy statistics.' : 'No cookies, local storage, or any other identifiers on your device.'}</li>
+        <li>{advertising ? 'No advertising identifiers are stored in LinkJack statistics.' : 'No cookies, local storage, or any other identifiers on your device.'}</li>
         <li>Nothing that identifies you as a person.</li>
       </Typography>
       <Typography variant="body1" sx={{ mb: 2 }}>
@@ -83,7 +83,7 @@ export default function Privacy() {
             Meta can receive your IP address, browser and device information, the page address (including
             campaign parameters), and cookie identifiers, and may associate them with your Meta account.
             Its Pixel can use cookies such as _fbp and _fbc. This information goes directly to Meta;
-            LinkBuddy&apos;s statistics database does not store it. Meta&apos;s processing and retention are
+            LinkJack&apos;s statistics database does not store it. Meta&apos;s processing and retention are
             described in its{' '}<Link href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.
           </Typography>
           <Typography variant="body1" sx={{ mb: 2 }}>

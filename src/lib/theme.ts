@@ -4,7 +4,7 @@ import { PAGE_FONT_FACE_CSS } from './pageFonts.js'
 const SYSTEM_FONT_STACK = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
 
 const typography = {
-  fontFamily: `var(--lb-page-font, ${SYSTEM_FONT_STACK})`,
+  fontFamily: `var(--lj-page-font, ${SYSTEM_FONT_STACK})`,
   htmlFontSize: 16,
   fontWeightMedium: 500,
   h1: { fontSize: '2.125rem', fontWeight: 600, lineHeight: 1.15 }, // band name (34px)

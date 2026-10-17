@@ -12,7 +12,7 @@ const INLINE = "document.documentElement.dataset.theme = 'dark'"
 let distDir
 
 beforeAll(() => {
-  distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'linkbuddy-dist-'))
+  distDir = fs.mkdtempSync(path.join(os.tmpdir(), 'linkjack-dist-'))
   fs.writeFileSync(
     path.join(distDir, 'index.html'),
     `<!doctype html><html><head><title>Band Links</title><script>${INLINE}</script></head>` +

@@ -5,7 +5,7 @@ import crypto from 'node:crypto'
 const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519')
 
 export const TEST_CREDENTIALS = {
-  LINKBUDDY_SECRET: 'test-linkbuddy-secret',
+  LINKBUDDY_SECRET: 'test-linkjack-secret',
   GIGBUDDY_EXPORT_TOKEN: 'test-export-token',
   GIGBUDDY_INTEGRATION_TOKEN: 'test-integration-token',
   GIGBUDDY_HANDOFF_PUBLIC_KEY: publicKey.export({ format: 'der', type: 'spki' }).toString('base64'),

@@ -8,7 +8,7 @@
 // public page view never talks to a font CDN — see PRIVACY.md.
 //
 // How a font reaches the page: the theme declares its `fontFamily` as
-// `var(--lb-page-font, <system stack>)`, so every MUI typography variant resolves
+// `var(--lj-page-font, <system stack>)`, so every MUI typography variant resolves
 // through that one variable. `pageFontSx` sets it on the page's scope element and
 // the whole subtree re-renders in the chosen face; nothing outside a scope (the
 // editor's own chrome) is touched, because the variable is unset at :root.
@@ -114,5 +114,5 @@ export const PAGE_FONT_OPTIONS = PAGE_FONT_KEYS.map((key) =>
 // pageBackgroundSx uses.
 export function pageFontSx(key: string): SystemStyleObject<Theme> | null {
   const font = FONTS[key]
-  return font ? { '--lb-page-font': stackOf(font) } : null
+  return font ? { '--lj-page-font': stackOf(font) } : null
 }
