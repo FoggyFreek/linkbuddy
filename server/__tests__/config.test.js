@@ -24,7 +24,7 @@ describe('runtime configuration', () => {
     ])
   })
 
-  it('refuses a short LinkBuddy secret and a handoff key that is not Ed25519', () => {
+  it('refuses a short LinkJack secret and a handoff key that is not Ed25519', () => {
     const rsa = crypto.generateKeyPairSync('rsa', { modulusLength: 1024 }).publicKey
     expect(configProblems({
       ...valid,

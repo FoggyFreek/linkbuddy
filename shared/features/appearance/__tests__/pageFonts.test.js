@@ -32,7 +32,7 @@ describe('page fonts', () => {
     for (const key of PAGE_FONT_KEYS.filter((k) => k !== DEFAULT_PAGE_FONT)) {
       const sx = pageFontSx(key)
       expect(sx, key).not.toBeNull()
-      const stack = sx['--lb-page-font']
+      const stack = sx['--lj-page-font']
       expect(stack, key).toBeTruthy()
       // The stack's first family is the custom face; the rest is the fallback.
       const primary = stack.split(',')[0].trim().replace(/^['"]|['"]$/g, '')

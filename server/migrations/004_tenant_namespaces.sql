@@ -9,7 +9,7 @@ BEGIN
      GROUP BY gigbuddy_tenant_id
     HAVING COUNT(*) > 1
   ) THEN
-    RAISE EXCEPTION 'cannot migrate: tenants with multiple main LinkBuddy pages exist';
+    RAISE EXCEPTION 'cannot migrate: tenants with multiple main LinkJack pages exist';
   END IF;
 
   IF EXISTS (
@@ -26,7 +26,7 @@ BEGIN
          )
        )
   ) THEN
-    RAISE EXCEPTION 'cannot migrate: malformed or orphaned LinkBuddy release paths exist';
+    RAISE EXCEPTION 'cannot migrate: malformed or orphaned LinkJack release paths exist';
   END IF;
 END
 $$;

@@ -6,7 +6,7 @@ import express from 'express'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
-import { linkbuddyKey, signSession, verifyHandoff, verifySession } from './features/editor/tokens.js'
+import { linkjackKey, signSession, verifyHandoff, verifySession } from './features/editor/tokens.js'
 import { consumeHandoffNonce } from './features/editor/handoffsRepo.js'
 import { fetchEditorAccess, fetchExport, gigbuddyWebOrigin } from './features/integrations/gigbuddy.js'
 import {
@@ -80,7 +80,7 @@ function beaconDimensions(req) {
       req.hostname || null,
     ),
     country: resolveCountry((name) => req.get(name), process.env.STATS_COUNTRY_HEADER),
-    visitorHash: visitorHash(req.ip, ua, linkbuddyKey('visitor-hash').toString('base64')),
+    visitorHash: visitorHash(req.ip, ua, linkjackKey('visitor-hash').toString('base64')),
   }
 }
 

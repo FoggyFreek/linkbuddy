@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 import { describe, it, expect, beforeAll, afterEach } from 'vitest'
-import { linkbuddyKey, signSession, verifyHandoff, verifySession } from '../tokens.js'
+import { linkjackKey, signSession, verifyHandoff, verifySession } from '../tokens.js'
 import { TEST_CREDENTIALS, configureCredentials, signHandoff } from '../../../__tests__/credentials.js'
 
 const exp = () => Math.floor(Date.now() / 1000) + 60
@@ -32,7 +32,7 @@ describe('editor sessions', () => {
     }
   })
 
-  it('refuse everything while LinkBuddy has no secret of its own', () => {
+  it('refuse everything while LinkJack has no secret of its own', () => {
     const token = signSession({ t: 'session', exp: exp() })
     process.env.LINKBUDDY_SECRET = ''
     expect(verifySession(token)).toBeNull()
@@ -60,7 +60,7 @@ describe('GigBuddy handoffs', () => {
     expect(verifyHandoff('garbage')).toBeNull()
   })
 
-  it('cannot be forged with a LinkBuddy session signature', () => {
+  it('cannot be forged with a LinkJack session signature', () => {
     const session = signSession({ t: 'handoff', slug: 'woods', tenantId: 1, exp: exp(), iss: 'gigbuddy', aud: 'linkbuddy' })
     expect(verifyHandoff(session)).toBeNull()
   })
@@ -68,6 +68,6 @@ describe('GigBuddy handoffs', () => {
 
 describe('derived keys', () => {
   it('differ per purpose', () => {
-    expect(linkbuddyKey('visitor-hash').equals(linkbuddyKey('editor-session'))).toBe(false)
+    expect(linkjackKey('visitor-hash').equals(linkjackKey('editor-session'))).toBe(false)
   })
 })

@@ -168,7 +168,7 @@ There is **no CSS file** — do not add one.
   rules are a **CSS string** in `theme.ts`'s `MuiCssBaseline.styleOverrides`
   (several `@font-face` rules can't share one style-object key — as objects they
   collapse into a single rule and only the last family survives). A *page* picks
-  a face by key: `typography.fontFamily` is `var(--lb-page-font, <system stack>)`,
+  a face by key: `typography.fontFamily` is `var(--lj-page-font, <system stack>)`,
   and `pageFontSx` sets that variable on the `PageScope` element, so the whole
   page subtree re-resolves while the editor chrome — where the variable is unset
   — stays on the system stack.

@@ -111,9 +111,9 @@ describe('BookNowFab', () => {
     await expect.element(pulse).toHaveAttribute('aria-hidden')
     expect(getComputedStyle(pulse.element()).pointerEvents).toBe('none')
     // The choreography is CSS on a delay, so it survives a re-render.
-    expect(getComputedStyle(pulse.element()).animationName).toBe('lbFabRing')
+    expect(getComputedStyle(pulse.element()).animationName).toBe('ljFabRing')
     const fab = screen.getByRole('button', { name: 'Book now' }).element()
-    expect(getComputedStyle(fab).animationName).toBe('lbFabEnter, lbFabWiden')
+    expect(getComputedStyle(fab).animationName).toBe('ljFabEnter, ljFabWiden')
 
     await screen.getByRole('button', { name: 'Book now' }).click()
     expect(screen.getByTestId('book-now-pulse').elements()).toHaveLength(0)

@@ -7,7 +7,7 @@
 import crypto from 'node:crypto'
 
 // A per-purpose subkey of LINKBUDDY_SECRET, so no two uses share key material.
-export function linkbuddyKey(purpose) {
+export function linkjackKey(purpose) {
   const secret = process.env.LINKBUDDY_SECRET
   if (!secret) throw new Error('LINKBUDDY_SECRET is not configured')
   return Buffer.from(crypto.hkdfSync('sha256', secret, '', `linkbuddy:${purpose}`, 32))
@@ -34,7 +34,7 @@ function splitToken(token) {
 
 export function signSession(payload) {
   const body = Buffer.from(JSON.stringify(payload)).toString('base64url')
-  const mac = crypto.createHmac('sha256', linkbuddyKey('editor-session')).update(body).digest('base64url')
+  const mac = crypto.createHmac('sha256', linkjackKey('editor-session')).update(body).digest('base64url')
   return `${body}.${mac}`
 }
 
@@ -44,7 +44,7 @@ export function verifySession(token) {
   if (!process.env.LINKBUDDY_SECRET) return null
   const parts = splitToken(token)
   if (!parts) return null
-  const expected = crypto.createHmac('sha256', linkbuddyKey('editor-session')).update(parts.body).digest()
+  const expected = crypto.createHmac('sha256', linkjackKey('editor-session')).update(parts.body).digest()
   if (parts.signature.length !== expected.length || !crypto.timingSafeEqual(parts.signature, expected)) return null
   return decodePayload(parts.body)
 }

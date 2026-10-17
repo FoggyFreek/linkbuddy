@@ -34,18 +34,18 @@ afterEach(async () => {
 describe('EditorHeader', () => {
   it('shows the centered light-theme logo at the very top', async () => {
     const screen = await renderHeader()
-    const brand = screen.getByRole('img', { name: 'linkBuddy' })
+    const brand = screen.getByRole('img', { name: 'linkJack' })
     await expect.element(brand).toBeInTheDocument()
-    expect(brand.element()).toHaveAttribute('src', '/icons/lb_blue_txt_600.png')
+    expect(brand.element()).toHaveAttribute('src', '/icons/lj_blue_txt_360.webp')
     expect(getComputedStyle(brand.element()).width).toBe('120px')
     expect(getComputedStyle(brand.element()).display).not.toBe('none')
   })
 
   it('shows the dark-theme logo in dark mode', async () => {
     const screen = await renderHeader({}, 'dark')
-    const brand = screen.getByRole('img', { name: 'linkBuddy' })
+    const brand = screen.getByRole('img', { name: 'linkJack' })
     await expect.element(brand).toBeInTheDocument()
-    expect(brand.element()).toHaveAttribute('src', '/icons/lb_blue_drk_txt_600.png')
+    expect(brand.element()).toHaveAttribute('src', '/icons/lj_blue_drk_txt_360.webp')
     expect(getComputedStyle(brand.element()).display).not.toBe('none')
   })
 })

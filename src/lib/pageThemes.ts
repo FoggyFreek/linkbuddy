@@ -6,7 +6,7 @@
 // palette *variables* on the page's scope element, so every MUI component and
 // every `theme.vars` reference inside that subtree resolves to the variant while
 // the editor chrome around it keeps the app's own palette — the same mechanism
-// the page font uses (`--lb-page-font`), applied to colour.
+// the page font uses (`--lj-page-font`), applied to colour.
 //
 // Each variant therefore has to carry the whole set: a half-overridden palette
 // would mix, say, a forest-green canvas with midnight-blue cards. The scheme's

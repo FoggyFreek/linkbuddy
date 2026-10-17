@@ -16,7 +16,7 @@ below.
 
 ## Hard rules (enforced in code — do not weaken)
 
-1. **No cookies, no device storage** for LinkBuddy statistics. Main pages and
+1. **No cookies, no device storage** for LinkJack statistics. Main pages and
    smart links without a configured Meta Pixel keep this rule. This
    keeps the page out of consent-banner territory (ePrivacy): nothing is read
    from or written to the visitor's device. (The editor uses `sessionStorage`
@@ -53,7 +53,7 @@ below.
    window is synced from GigBuddy per page; `STATS_RETENTION_DAYS` is the
    fallback, and 90 days is a hard cap regardless of configuration). Enforced
    by a daily in-process purge and `npm run stats:purge`.
-9. **Kill switch**: `STATS_DISABLED=1` stops LinkBuddy statistics collection without affecting
+9. **Kill switch**: `STATS_DISABLED=1` stops LinkJack statistics collection without affecting
    the page.
    Optional Meta advertising is controlled separately by each release page's
    published Tracking settings and the visitor's consent.
@@ -70,11 +70,11 @@ below.
 
 ## Operator notes (GDPR)
 
-- The anonymous-statistics rules below apply to LinkBuddy's own event database,
+- The anonymous-statistics rules below apply to LinkJack's own event database,
   **not to optional Meta advertising**. With consent, Meta receives connection
   information, page URLs/campaign parameters, cookie identifiers, views and
   selected platform clicks and can associate them with a Meta account. These
-  data go directly from the browser to Meta, never into LinkBuddy statistics.
+  data go directly from the browser to Meta, never into LinkJack statistics.
 - Advertising is off by default and available only on release smart links. The
   artist configures their own Pixel in Tracking and publishes it. The consent
   overlay offers equally prominent accept/reject buttons and a privacy link.

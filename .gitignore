@@ -5,3 +5,4 @@ coverage
 coverage-browser
 
 .claude/settings.local.json
+MIGRATE.md
