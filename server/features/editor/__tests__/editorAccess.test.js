@@ -120,7 +120,7 @@ describe('editor access', () => {
     const res = await draft(app)
 
     expect(res.status).toBe(401)
-    expect(res.body.error).toMatch(/reopen the editor from GigBuddy/)
+    expect(res.body.error).toMatch(/reopen the editor from GigJack/)
     expect(pool.writes).toHaveLength(1)
   })
 

@@ -49,8 +49,8 @@ export default function AppearancePanel({
         title="Banner image"
         hint={
           bannerUrl
-            ? 'Shows your GigBuddy banner across the top of the page, with your profile picture overlapping it.'
-            : 'Set a banner image in GigBuddy to enable this.'
+            ? 'Shows your GigJack banner across the top of the page, with your profile picture overlapping it.'
+            : 'Set a banner image in GigJack to enable this.'
         }
       >
         <FormControlLabel

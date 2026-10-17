@@ -221,7 +221,7 @@ export default function Editor() {
     dirty: 'Unsaved changes…',
     saving: 'Saving…',
     error: 'Save failed — retrying on next change',
-    expired: 'Session expired — reopen from GigBuddy',
+    expired: 'Session expired — reopen from GigJack',
   }[saveState]
 
   const canAdd = (needs?: ContentNeed) => hasContentFor(content, needs)

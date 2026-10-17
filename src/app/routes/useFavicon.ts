@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
-import fallbackIconUrl from '../../../shared/features/branding/icons/gb_whiteback_128.png'
+import fallbackIconUrl from '../../../shared/features/branding/icons/gj_light_128.webp'
 
 // The browser tab icon, written from the page payload the way document.title is:
 // each route passes the image that identifies it (a band's avatar, a release's
-// cover art) and anything without one gets the GigBuddy logo. The <link> from
+// cover art) and anything without one gets the GigJack logo. The <link> from
 // index.html is reused when present so the tab never carries two icons.
 export default function useFavicon(href?: string | null) {
   useEffect(() => {

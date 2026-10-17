@@ -56,12 +56,12 @@ describe('tab icon', () => {
     expect(iconHref()).toBe(AVATAR)
   })
 
-  it('falls back to the GigBuddy logo when the band has no avatar', async () => {
+  it('falls back to the GigJack logo when the band has no avatar', async () => {
     state.page = mockPage()
     const screen = await renderRoute(<BandPage slug="testers" />)
     await expect.element(screen.getByRole('heading', { level: 1 })).toBeInTheDocument()
 
-    expect(iconHref()).toMatch(/gb_whiteback_128/)
+    expect(iconHref()).toMatch(/gj_light_128/)
   })
 
   it("uses the release's cover art on a release page", async () => {
@@ -74,12 +74,12 @@ describe('tab icon', () => {
 
   // A release page is about the release, so a coverless one falls back to the
   // logo rather than borrowing the band's avatar.
-  it('falls back to the GigBuddy logo when the release has no cover art', async () => {
+  it('falls back to the GigJack logo when the release has no cover art', async () => {
     state.page = mockPage({ avatarUrl: AVATAR }, { release: { title: 'Hurricane EP', artist: 'The Testers' } })
     const screen = await renderRoute(<ReleasePage slug="testers/hurricane" />)
     await expect.element(screen.getByText('Hurricane EP')).toBeInTheDocument()
 
-    expect(iconHref()).toMatch(/gb_whiteback_128/)
+    expect(iconHref()).toMatch(/gj_light_128/)
   })
 
   it('reuses the existing icon link rather than stacking a second one', async () => {

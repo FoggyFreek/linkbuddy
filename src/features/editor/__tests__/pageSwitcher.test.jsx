@@ -72,7 +72,7 @@ describe('PageSwitcher', () => {
     const add = screen.getByRole('tab', { name: 'New release page' })
     await expect.element(add).toBeDisabled()
     await userEvent.hover(add)
-    await expect.element(screen.getByRole('tooltip')).toHaveTextContent('Add streaming links to a song or album in GigBuddy first')
+    await expect.element(screen.getByRole('tooltip')).toHaveTextContent('Add streaming links to a song or album in GigJack first')
     expect(handlers.onNewRelease).not.toHaveBeenCalled()
   })
 })

@@ -128,7 +128,7 @@ function SongWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: SongWi
   return (
   <Stack spacing={1}>
   <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
-        Fetches the album art and any streaming links for the selected song from gigBuddy and displays them in a row with platform icons. 
+        Fetches the album art and any streaming links for the selected song from GigJack and displays them in a row with platform icons. 
   </Typography>
   <SongSelect value={widget.songId} songs={songs} onChange={(songId) => onChange({ ...widget, songId, hiddenLinks: [] })} />
   {links.length > 0 ? (
@@ -143,7 +143,7 @@ function SongWidgetEditor({ widget, songs, onChange }: Readonly<{ widget: SongWi
       ))}
     </Stack>
   ) : (
-    <Box sx={{ pl: 3 }}><Hint>This song has no streaming links in GigBuddy yet.</Hint></Box>
+    <Box sx={{ pl: 3 }}><Hint>This song has no streaming links in GigJack yet.</Hint></Box>
   )}
   {links.length > 0 && links.every((link) => hidden.includes(link.url)) && (
     <Box sx={{ pl: 3 }}><Hint>With every link unticked, this song is hidden on the public page.</Hint></Box>
@@ -156,7 +156,7 @@ function PlatformsWidgetEditor({ widget, songs, albums, onChange }: Readonly<{ w
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
-        Fetches the streaming links for the selected song or album from gigBuddy and displays them in a list.
+        Fetches the streaming links for the selected song or album from GigJack and displays them in a list.
       </Typography>
       <TextField
         size="small"
@@ -182,7 +182,7 @@ function GigsWidgetEditor({ widget, onChange }: Readonly<{ widget: GigsWidgetDra
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" sx={{ pl:3, pb:2 }} >
-        Fetches only the announced gigs from gigBuddy and displays them in a list. Ticket links are included if available. The list is automatically updated when new gigs are announced. 
+        Fetches only the announced gigs from GigJack and displays them in a list. Ticket links are included if available. The list is automatically updated when new gigs are announced. 
       </Typography>
       <TextField
         size="small"
@@ -402,12 +402,12 @@ export function WidgetEditor({ widget, content, onChange, onUnfurl }: Readonly<{
       return <PlatformsWidgetEditor widget={widget} songs={content.songs || []} albums={content.albums || []} onChange={onChange} />
     case 'accolades':
       return <Stack spacing={1}>
-        <Typography variant="caption" color="text.secondary">Awards and quotes from GigBuddy appear in a swipeable carousel.</Typography>
+        <Typography variant="caption" color="text.secondary">Awards and quotes from GigJack appear in a swipeable carousel.</Typography>
         <TextField size="small" fullWidth label="Accolades title" value={widget.title || ''} onChange={(e) => onChange({ ...widget, title: e.target.value })} />
       </Stack>
     case 'discography':
       return <Stack spacing={1}>
-        <Typography variant="caption" color="text.secondary">Albums marked as discography in GigBuddy appear in a swipeable carousel.</Typography>
+        <Typography variant="caption" color="text.secondary">Albums marked as discography in GigJack appear in a swipeable carousel.</Typography>
         <TextField size="small" fullWidth label="Discography title" value={widget.title || ''} onChange={(e) => onChange({ ...widget, title: e.target.value })} />
       </Stack>
     case 'gigs':

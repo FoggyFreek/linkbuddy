@@ -53,7 +53,7 @@ export function useEditorSession(
         }
         const stored = getStoredSession()
         if (!stored) {
-          setFatal('Open the editor from GigBuddy (Profile → Edit link page).')
+          setFatal('Open the editor from GigJack (Profile → Edit link page).')
           return
         }
         const { pages: loadedPages } = await listEditorPages(stored)

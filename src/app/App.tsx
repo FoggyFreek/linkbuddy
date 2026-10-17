@@ -16,7 +16,7 @@ export default function App() {
   if (path === '/edit') return <Editor />
   if (path === '/privacy') return <Privacy />
   if (path === '/') {
-    return <CenteredStatus>This is a GigBuddy band link page server. Open a band&apos;s page via its own address.</CenteredStatus>
+    return <CenteredStatus>This is a GigJack band link page server. Open a band&apos;s page via its own address.</CenteredStatus>
   }
   // Malformed percent-encoding (e.g. /%E0%A4%A) yields null → not-found,
   // rather than throwing a URIError during render.

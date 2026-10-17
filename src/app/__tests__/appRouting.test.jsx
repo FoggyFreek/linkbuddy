@@ -40,7 +40,7 @@ afterEach(() => window.history.pushState({}, '', original))
 describe('App routing', () => {
   it('shows the server placeholder at the root', async () => {
     const screen = await renderAt('/')
-    await expect.element(screen.getByText(/GigBuddy band link page server/)).toBeInTheDocument()
+    await expect.element(screen.getByText(/GigJack band link page server/)).toBeInTheDocument()
   })
 
   it('renders the privacy notice at /privacy', async () => {

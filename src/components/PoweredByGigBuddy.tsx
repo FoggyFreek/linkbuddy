@@ -2,7 +2,8 @@ import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Box from '@mui/material/Box'
 import { useScopedPortalProps } from './ColorSchemeScope.js'
-import logoUrl from '../../shared/features/branding/icons/gb_whiteback_128.png'
+import lightLogoUrl from '../../shared/features/branding/icons/gj_light_128.webp'
+import darkLogoUrl from '../../shared/features/branding/icons/gj_dark_128.webp'
 import type { SxProps, Theme } from '@mui/material/styles'
 
 // The GigBuddy attribution badge — the top-left mirror of ShareButton on the
@@ -29,20 +30,21 @@ export default function PoweredByGigBuddy({ href, variant = 'corner' }: Readonly
     inline: { alignSelf: 'center' },
   }[variant] as SxProps<Theme>
   const logoSize = variant === 'inline' ? 40 : 28
+  const logoSx = { width: logoSize, height: logoSize, display: 'block' }
 
   return (
-    <Tooltip title="powered by gigBuddy" slotProps={{ popper: scopedPortalProps }}>
+    <Tooltip title="powered by GigJack" slotProps={{ popper: scopedPortalProps }}>
       <IconButton
         component="a"
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label="powered by gigBuddy"
+        aria-label="powered by GigJack"
         sx={{ p: '4px', ...variantSx }}
       >
-        {/* The logo ships with a white plate; the circle keeps it reading as a
-            badge on the dark paper surface too. */}
-        <Box component="img" src={logoUrl} alt="" sx={{ width: logoSize, height: logoSize, borderRadius: '50%', display: 'block' }} />
+        {/* Filled pick on a light page, outlined on a dark one, per the enclosing scope. */}
+        <Box component="img" src={lightLogoUrl} alt="" sx={[logoSx, (theme: Theme) => theme.applyStyles('dark', { display: 'none' })]} />
+        <Box component="img" src={darkLogoUrl} alt="" sx={[logoSx, { display: 'none' }, (theme: Theme) => theme.applyStyles('dark', { display: 'block' })]} />
       </IconButton>
     </Tooltip>
   )

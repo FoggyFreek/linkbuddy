@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import theme from '../../lib/theme.js'
 import ShareButton from '../ShareButton.jsx'
 import PoweredByGigBuddy from '../PoweredByGigBuddy.jsx'
+import ColorSchemeScope from '../ColorSchemeScope.jsx'
 
 const originalShare = Object.getOwnPropertyDescriptor(navigator, 'share')
 const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard')
@@ -86,7 +87,7 @@ describe('ShareButton', () => {
 describe('PoweredByGigBuddy', () => {
   it('stays hidden without an upstream URL', async () => {
     const screen = await render(<PoweredByGigBuddy />)
-    expect(screen.getByRole('link', { name: 'powered by gigBuddy' }).elements()).toHaveLength(0)
+    expect(screen.getByRole('link', { name: 'powered by GigJack' }).elements()).toHaveLength(0)
   })
 
   it('renders the inline attribution as a safe external link', async () => {
@@ -95,8 +96,28 @@ describe('PoweredByGigBuddy', () => {
         <PoweredByGigBuddy href="https://gigbuddy.example" variant="inline" />
       </ThemeProvider>,
     )
-    const link = screen.getByRole('link', { name: 'powered by gigBuddy' })
+    const link = screen.getByRole('link', { name: 'powered by GigJack' })
     await expect.element(link).toHaveAttribute('href', 'https://gigbuddy.example')
     await expect.element(link).toHaveAttribute('rel', 'noopener noreferrer')
   })
+
+  // The logo follows the page's scope, never the document's scheme.
+  for (const [pageMode, docMode, logo] of [['light', 'dark', /gj_light_128\.webp$/], ['dark', 'light', /gj_dark_128\.webp$/]]) {
+    it(`shows the ${pageMode} logo on a ${pageMode} page inside a ${docMode} document`, async () => {
+      const screen = await render(
+        <ThemeProvider theme={theme} defaultMode={docMode}>
+          <CssBaseline enableColorScheme />
+          <ColorSchemeScope mode={pageMode}>
+            <PoweredByGigBuddy href="https://gigbuddy.example" />
+          </ColorSchemeScope>
+        </ThemeProvider>,
+      )
+      const imgs = () => [...screen.getByRole('link', { name: 'powered by GigJack' }).element().querySelectorAll('img')]
+      await vi.waitFor(() => {
+        const shown = imgs().filter((el) => getComputedStyle(el).display !== 'none')
+        expect(shown).toHaveLength(1)
+        expect(shown[0].getAttribute('src')).toMatch(logo)
+      })
+    })
+  }
 })

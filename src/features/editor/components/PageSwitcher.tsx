@@ -46,7 +46,7 @@ export default function PageSwitcher({ pages, currentId, canCreateRelease, label
         disabled={!canCreateRelease}
         sx={{ minWidth: 48 }}
         label={(
-          <Tooltip title={canCreateRelease ? 'New release page' : 'Add streaming links to a song or album in GigBuddy first'}>
+          <Tooltip title={canCreateRelease ? 'New release page' : 'Add streaming links to a song or album in GigJack first'}>
             {/* A disabled Tab drops pointer events, which would swallow the hover too. */}
             <Box component="span" sx={{ display: 'flex', pointerEvents: 'auto' }}><AddIcon fontSize="small" /></Box>
           </Tooltip>

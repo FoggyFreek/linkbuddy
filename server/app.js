@@ -464,10 +464,10 @@ export function createApp(pool, overrides = {}) {
         (handoff.slugRevision !== undefined &&
           (!Number.isSafeInteger(handoff.slugRevision) || handoff.slugRevision < 0))
       ) {
-        return res.status(401).json({ error: 'Invalid or expired editor link — reopen it from GigBuddy' })
+        return res.status(401).json({ error: 'Invalid or expired editor link — reopen it from GigJack' })
       }
       if (!(await consumeHandoffNonce(pool, handoff.n, handoff.exp))) {
-        return res.status(401).json({ error: 'This editor link was already used — reopen it from GigBuddy' })
+        return res.status(401).json({ error: 'This editor link was already used — reopen it from GigJack' })
       }
       let reconciled
       try {
@@ -478,7 +478,7 @@ export function createApp(pool, overrides = {}) {
         const reopen = ['namespace_sync_required', 'revision_gap', 'revision_conflict'].includes(error.code)
         return res.status(response.status).json({
           error: reopen
-            ? 'Link-page address is still synchronizing - reopen the editor from GigBuddy'
+            ? 'Link-page address is still synchronizing - reopen the editor from GigJack'
             : 'This link-page address is already in use - contact support to resolve it',
           code: error.code,
         })
@@ -498,12 +498,12 @@ export function createApp(pool, overrides = {}) {
         if (!page) {
           return res.status(409).json({
             code: 'namespace_sync_required',
-            error: 'Link-page address changed again - reopen the editor from GigBuddy',
+            error: 'Link-page address changed again - reopen the editor from GigJack',
           })
         }
       } catch (err) {
         console.error(`content sync failed for ${page.slug}:`, err.message)
-        return res.status(502).json({ error: 'Could not load content from GigBuddy — reopen the editor from GigBuddy' })
+        return res.status(502).json({ error: 'Could not load content from GigJack — reopen the editor from GigJack' })
       }
       const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS
       const session = signSession({
@@ -533,7 +533,7 @@ export function createApp(pool, overrides = {}) {
       !Number.isSafeInteger(session.userId) ||
       session.userId <= 0
     ) {
-      return res.status(401).json({ error: 'Session expired — reopen the editor from GigBuddy' })
+      return res.status(401).json({ error: 'Session expired — reopen the editor from GigJack' })
     }
     req.editorSession = session
     next()
@@ -546,7 +546,7 @@ export function createApp(pool, overrides = {}) {
       const revisionMismatch = Number.isSafeInteger(sessionRevision) &&
         sessionRevision !== Number(namespace?.slug_revision)
       if (!namespace || namespace.main_slug !== req.editorSession.mainSlug || revisionMismatch) {
-        return res.status(401).json({ error: 'Session expired - reopen the editor from GigBuddy' })
+        return res.status(401).json({ error: 'Session expired - reopen the editor from GigJack' })
       }
       next()
     } catch (error) {
@@ -561,10 +561,10 @@ export function createApp(pool, overrides = {}) {
       allowed = await confirmEditorAccess(tenantId, userId)
     } catch (error) {
       console.error(`editor access check failed for tenant ${tenantId}:`, error.message)
-      return res.status(503).json({ error: 'Could not confirm your access with GigBuddy — try again' })
+      return res.status(503).json({ error: 'Could not confirm your access with GigJack — try again' })
     }
     if (!allowed) {
-      return res.status(401).json({ error: 'Your access to this link page has ended — reopen the editor from GigBuddy' })
+      return res.status(401).json({ error: 'Your access to this link page has ended — reopen the editor from GigJack' })
     }
     next()
   }
@@ -625,13 +625,13 @@ export function createApp(pool, overrides = {}) {
       const { tenantId, mainSlug } = req.editorSession
       const main = await getPageBySlug(pool, mainSlug)
       if (!main || main.gigbuddy_tenant_id !== tenantId) {
-        return res.status(401).json({ error: 'Session expired — reopen the editor from GigBuddy' })
+        return res.status(401).json({ error: 'Session expired — reopen the editor from GigJack' })
       }
       const ref = parseReleaseRef(req.body)
       const item = ref && releaseSource(main.content || {}, ref)
       if (!item) return res.status(400).json({ error: 'Pick a song or album from the list' })
       if (!(item.links || []).length) {
-        return res.status(400).json({ error: `“${item.title}” has no streaming links — add them in GigBuddy first` })
+        return res.status(400).json({ error: `“${item.title}” has no streaming links — add them in GigJack first` })
       }
 
       // Plan cap on smart link pages (silver 3, gold 30; the main page is free).
@@ -641,7 +641,7 @@ export function createApp(pool, overrides = {}) {
         const releaseCount = existing.filter((p) => p.page_type === 'release').length
         if (releaseCount >= maxReleasePages) {
           return res.status(403).json({
-            error: `Your plan allows up to ${maxReleasePages} release pages — delete one or upgrade in GigBuddy`,
+            error: `Your plan allows up to ${maxReleasePages} release pages — delete one or upgrade in GigJack`,
             code: 'limit_reached',
           })
         }
@@ -685,7 +685,7 @@ export function createApp(pool, overrides = {}) {
           (Number.isSafeInteger(req.editorSession.slugRevision) &&
             Number(namespace.slug_revision) !== req.editorSession.slugRevision)
         ) {
-          return res.status(401).json({ error: 'Session expired - reopen the editor from GigBuddy' })
+          return res.status(401).json({ error: 'Session expired - reopen the editor from GigJack' })
         }
         return res.status(409).json({ error: 'That slug is already taken' })
       }
@@ -747,7 +747,7 @@ export function createApp(pool, overrides = {}) {
           req.editorSession.slugRevision,
         )
         if (!page) {
-          return res.status(401).json({ error: 'Session expired - reopen the editor from GigBuddy' })
+          return res.status(401).json({ error: 'Session expired - reopen the editor from GigJack' })
         }
         res.json(editorPagePayload(page))
       } catch (err) {
